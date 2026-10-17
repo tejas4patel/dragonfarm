@@ -49,7 +49,7 @@ schema_problems <- function(value, schema, path = "input") {
     number = is.numeric(v) && length(v) == 1 && !is.na(v),
     boolean = is.logical(v) && length(v) == 1 && !is.na(v),
     null = is.null(v),
-    array = is.list(v) && is.null(names(v)) || (is.atomic(v) && length(v) != 1) || is.data.frame(v),
+    array = (is.list(v) && is.null(names(v))) || (is.atomic(v) && !is.null(v)) || is.data.frame(v),
     object = is.list(v) && (!is.null(names(v)) || length(v) == 0) && !is.data.frame(v),
     FALSE)
   types <- unlist(schema$type)
@@ -110,9 +110,8 @@ tool_call <- function(name, args = list()) {
   t0 <- Sys.time()
   out <- tryCatch(
     list(ok = TRUE, result = tool_impl[[name]](args)),
-    dragonfarm_not_a_set = function(e) list(ok = FALSE, code = "NOT_A_SET", error = conditionMessage(e)),
-    dragonfarm_not_a_run = function(e) list(ok = FALSE, code = "NOT_A_RUN", error = conditionMessage(e)),
-    dragonfarm_worker_error = function(e) list(ok = FALSE, code = e$code %||% "UNKNOWN", error = conditionMessage(e)),
+    # The package's own errors carry a code (see inst/tools/error_codes.json).
+    dragonfarm_error = function(e) list(ok = FALSE, code = e$code %||% "UNKNOWN", error = conditionMessage(e)),
     error = function(e) list(ok = FALSE, code = "UNKNOWN", error = conditionMessage(e))
   )
   # Every call is recorded: which tool, with what, whether it worked, how long.
@@ -160,6 +159,15 @@ tool_impl <- list(
     runs <- dragon_runs()
     runs <- runs[order(runs$created_at, decreasing = TRUE), , drop = FALSE]
     rows_as_list(utils::head(runs, args$limit), c("id", "model", "state"))
+  },
+  read_documents = function(args) {
+    docs <- suppressWarnings(dragon_documents(unlist(args$paths), name = args$name, index = TRUE))
+    store_sync_set(store_open(), docs$name, docs$dir)
+    con <- store_open()
+    version <- DBI::dbGetQuery(con, "SELECT MAX(version) v FROM set_versions WHERE set_name = ?", params = list(docs$name))$v
+    failed <- Filter(function(src) !is.null(src$error), docs$manifest$sources)
+    list(name = docs$name, n_sources = length(docs$manifest$sources), n_chunks = as.integer(docs$manifest$n_chunks %||% 0L),
+         version = as.integer(version), failed = lapply(failed, function(src) list(name = src$name, error = src$error)))
   },
   run_status = function(args) {
     run <- run_from(args$run)

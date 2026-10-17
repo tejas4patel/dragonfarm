@@ -53,7 +53,8 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   check_number(min_words, "min_words", min = 1, max = max_words, integer = TRUE)
   local <- paths[!is_url(paths)]
   missing <- local[!file.exists(local)]
-  if (length(missing)) cli::cli_abort("{cli::qty(length(missing))}Path{?s} not found: {.path {missing}}.")
+  if (length(missing)) cli::cli_abort("{cli::qty(length(missing))}Path{?s} not found: {.path {missing}}.",
+                                       class = "dragonfarm_error", code = "FILE_NOT_FOUND")
   if (is.null(name)) {
     name <- if (length(paths) == 1L) slugify(tools::file_path_sans_ext(basename(paths))) else "documents"
   }
@@ -77,7 +78,7 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
     codes <- vapply(summary$failed, function(f) f$code %||% if (grepl("no text layer", f$error %||% "", fixed = TRUE)) "NO_TEXT_LAYER" else "UNKNOWN", "")
     if (length(codes) && all(codes == "NO_TEXT_LAYER")) {
       cli::cli_abort(c("No text could be read from {.arg paths}: {cli::qty(length(codes))}{?the PDF looks/every PDF looks} scanned (pictures of pages, no text).",
-                       "i" = "Run OCR first, for example {.code ocrmypdf in.pdf out.pdf}, and read the result."))
+                       "i" = "Run OCR first, for example {.code ocrmypdf in.pdf out.pdf}, and read the result."), class = "dragonfarm_error", code = "NO_TEXT_LAYER")
     }
     cli::cli_abort(c("No text could be read from {.arg paths}.",
                      "i" = "Supported: PDF, HTML, Markdown, text, Word (.docx), .xlsx, .csv, .tsv, and URLs."))
@@ -127,7 +128,7 @@ dragon_documents_load <- function(dir, runs_dir = dragon_runs_dir()) {
   }
   manifest_path <- file.path(dir, "manifest.json")
   if (!file.exists(manifest_path)) {
-    cli::cli_abort("{.path {dir}} is not a document set (no manifest.json).", class = "dragonfarm_not_a_set")
+    cli::cli_abort("{.path {dir}} is not a document set (no manifest.json).", class = "dragonfarm_error", code = "NOT_A_SET")
   }
   manifest <- read_json(manifest_path)
   structure(

@@ -1,0 +1,31 @@
+{
+  "name": "read_documents",
+  "title": "Read documents into a set",
+  "description": "Read files, folders, or web pages into a named document set and index it for search. Re-reading the same name keeps unchanged sources and records a new version when anything changed. Reports files that could not be read and files a folder held that no reader handles.",
+  "side_effect": "writes",
+  "cost": {"gpu": false, "typical_seconds": 30},
+  "errors": ["FILE_NOT_FOUND", "NO_TEXT_LAYER", "PASSWORD_PROTECTED", "UNSUPPORTED_FILE_TYPE", "FETCH_FAILED", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["paths", "name"],
+    "additionalProperties": false,
+    "properties": {
+      "paths": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Files, folders, or http(s) URLs."},
+      "name": {"type": "string", "minLength": 1, "description": "Name of the document set to create or update."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["name", "n_sources", "n_chunks", "version", "failed"],
+    "properties": {
+      "name": {"type": "string"},
+      "n_sources": {"type": "integer"},
+      "n_chunks": {"type": "integer"},
+      "version": {"type": "integer"},
+      "failed": {
+        "type": "array",
+        "items": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "error": {"type": "string"}}}
+      }
+    }
+  }
+}

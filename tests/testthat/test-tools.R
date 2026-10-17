@@ -73,11 +73,31 @@ test_that("failures come back as typed codes, never as thrown errors", {
   expect_equal(dragonfarm:::tool_call("run_status", list(run = "missing"))$code, "NOT_A_RUN")
   testthat::local_mocked_bindings(
     dragon_documents_load = function(dir, ...) structure(list(name = "kb"), class = "dragon_documents"),
-    dragon_ask = function(...) rlang::abort("The inference worker reported an error.", class = "dragonfarm_worker_error",
+    dragon_ask = function(...) rlang::abort("The inference worker reported an error.", class = "dragonfarm_error",
                                             code = "OUT_OF_MEMORY")
   )
   r <- dragonfarm:::tool_call("answer_question", list(set = "kb", question = "q"))
   expect_false(r$ok)
   expect_equal(r$code, "OUT_OF_MEMORY")
   expect_equal(dragonfarm:::tool_call("list_document_sets")$result, list())   # an empty runs folder lists nothing
+})
+
+test_that("read_documents reads a set, records its version, and codes a missing path", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  missing <- dragonfarm:::tool_call("read_documents", list(paths = file.path(runs, "nope.pdf"), name = "x"))
+  expect_equal(missing$code, "FILE_NOT_FOUND")
+
+  f <- write_fake_set(root = runs)
+  docs <- dragon_documents_load(f$dir)
+  testthat::local_mocked_bindings(dragon_documents = function(paths, name = NULL, ...) docs)
+  r <- dragonfarm:::tool_call("read_documents", list(paths = list("a.pdf", "b.md"), name = "kb"))
+  expect_true(r$ok)
+  expect_equal(r$result$version, 1L)
+  expect_equal(r$result$failed[[1]]$name, "bad.docx")              # the fake set has one unreadable source
+  expect_equal(dragonfarm:::schema_problems(r$result, dragonfarm:::tool_registry()$read_documents$output, "output"), character())
+  r2 <- dragonfarm:::tool_call("read_documents", list(paths = "a.pdf", name = "kb"))   # a single path from R is a list of one
+  expect_true(r2$ok)
+  expect_equal(r2$result$version, 1L)                               # nothing changed: same version
 })
