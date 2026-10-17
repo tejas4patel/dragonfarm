@@ -134,7 +134,7 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
     system <- self$system
     if (!is.null(self$documents)) {
       hits <- chat_retrieve(self$documents, text, last_user_text(self$messages), self$k)
-      sent <- documents_prompt(text, hits)
+      sent <- documents_prompt(text, hits, mark = datamark_for(self$target))
       system <- documents_system(self$system, small = decline_note_for(self$target),
                                  full = full_answers_for(self$target))
       self$last_sources <- hits
