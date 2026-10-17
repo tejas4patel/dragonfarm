@@ -22,3 +22,5 @@ inst/doc
 # Internal planning notes and local tooling config: kept on disk, not published
 BACKLOG.md
 .claude/
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds

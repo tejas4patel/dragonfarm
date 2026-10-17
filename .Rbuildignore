@@ -21,3 +21,5 @@
 ^dragonfarm_.*\.tar\.gz$
 ^vignettes/articles$
 ^CONTRIBUTING\.md$
+^tests/testthat/_problems$
+^tests/testthat/testthat-problems\.rds$
