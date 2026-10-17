@@ -130,7 +130,15 @@ tool_call <- function(name, args = list(), agent = NULL) {
     error = function(e) list(ok = FALSE, code = "UNKNOWN", error = conditionMessage(e))
   )
   # Every call is recorded: which tool, with what, whether it worked, how long.
-  store_record_event("tool", name, ok = out$ok, code = out$code, detail = list(agent = agent, args = args),
+  # A successful call also records a fingerprint of its result and what it
+  # depended on, so it can be replayed and compared (tool_replay()).
+  detail <- list(agent = agent, args = args)
+  if (isTRUE(out$ok)) {
+    detail$result_hash <- result_hash(out$result)
+    detail$result_preview <- result_preview(out$result)
+    detail$context <- tool_context(args, out$result)
+  }
+  store_record_event("tool", name, ok = out$ok, code = out$code, detail = detail,
                      duration_ms = round(1000 * as.numeric(difftime(Sys.time(), t0, units = "secs"))))
   out
 }

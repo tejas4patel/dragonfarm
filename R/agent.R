@@ -94,7 +94,8 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   t0 <- Sys.time()
   finish <- function(answer, stopped) {
     store_record_event("agent_run", agent, ok = identical(stopped, "answered"), code = if (!identical(stopped, "answered")) stopped,
-                       detail = list(goal = goal, steps = length(steps), tools = vapply(steps, `[[`, "", "tool")),
+                       detail = list(goal = goal, model = target$model, max_steps = max_steps, steps = length(steps),
+                                     tools = vapply(steps, `[[`, "", "tool"), answer_hash = result_hash(answer)),
                        duration_ms = round(1000 * as.numeric(difftime(Sys.time(), t0, units = "secs"))))
     list(answer = answer, steps = steps, stopped = stopped)
   }
