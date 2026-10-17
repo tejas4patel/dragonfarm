@@ -852,8 +852,11 @@ def changelog_like(display_name, chunks):
 
 
 # ---------------------------------------------------------------- building a set
-def expand_paths(paths):
-    """Files and URLs to read, in order; directories are walked for supported files."""
+def expand_paths(paths, skipped=None):
+    """Files and URLs to read, in order; directories are walked for supported
+    files. Files in a directory that no reader handles are added to `skipped`
+    (hidden files and Office lock files "~$..." aside), so the user can be told
+    rather than left wondering where their .doc went."""
     out = []
     for p in paths:
         if is_url(p):
@@ -862,8 +865,13 @@ def expand_paths(paths):
         path = Path(p)
         if path.is_dir():
             for f in sorted(path.rglob("*")):
-                if f.is_file() and f.suffix.lower() in SUPPORTED and not f.name.startswith("."):
+                if not f.is_file() or f.name.startswith((".", "~$")):
+                    continue
+                if f.suffix.lower() in SUPPORTED:
                     out.append(("file", str(f)))
+                elif skipped is not None:
+                    skipped.append({"name": f.relative_to(path).as_posix(), "ext": f.suffix.lower() or "(none)",
+                                    "hint": SAVE_AS.get(f.suffix.lower())})
         else:
             out.append(("file", str(path)))
     return out
@@ -920,7 +928,8 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
 
     sources, all_chunks = [], []
     n_reused = 0
-    for kind, locator in expand_paths(paths):
+    skipped = []
+    for kind, locator in expand_paths(paths, skipped):
         shown = display_name(kind, locator)
         entry = {"locator": locator, "kind": kind, "name": shown, "reader": Path(shown).suffix.lower() or "url",
                  "sha256": None, "bytes": None, "n_chunks": 0, "n_words": 0,
@@ -984,7 +993,8 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     return {"dir": str(out_dir), "name": name, "n_sources": len(sources), "n_chunks": len(all_chunks),
             "n_reused": n_reused, "n_failed": sum(1 for s in sources if s["error"]),
-            "failed": [{"name": s["name"], "error": s["error"], "code": s.get("code") or "UNKNOWN"} for s in sources if s["error"]]}
+            "failed": [{"name": s["name"], "error": s["error"], "code": s.get("code") or "UNKNOWN"} for s in sources if s["error"]],
+            "skipped": skipped}
 
 
 def main(argv=None):

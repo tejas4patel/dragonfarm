@@ -71,6 +71,8 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   if (res$status != 0) python_failure_message(res, "Reading documents")
   summary <- parse_last_json(res$stdout, "Reading documents")
   for (f in summary$failed) cli::cli_warn("Could not read {.path {f$name}}: {f$error}")
+  note <- skipped_note(summary$skipped)
+  if (!is.null(note)) cli::cli_alert_info(note)
   if (summary$n_chunks == 0) {
     codes <- vapply(summary$failed, function(f) f$code %||% if (grepl("no text layer", f$error %||% "", fixed = TRUE)) "NO_TEXT_LAYER" else "UNKNOWN", "")
     if (length(codes) && all(codes == "NO_TEXT_LAYER")) {
@@ -232,4 +234,21 @@ parse_last_json <- function(stdout, what) {
   if (!length(lines)) cli::cli_abort("{what} produced no output.")
   tryCatch(jsonlite::fromJSON(lines[length(lines)], simplifyVector = FALSE),
            error = function(e) cli::cli_abort("{what} returned something that is not JSON: {lines[length(lines)]}"))
+}
+
+# One line about files a folder held that no reader handles, grouped by type:
+# "Skipped 4 files dragonfarm can't read: 2 .png, 1 .doc (save it as .docx),
+# 1 .pptx (export it to PDF)." NULL when nothing was skipped.
+skipped_note <- function(skipped) {
+  if (!length(skipped)) return(NULL)
+  ext <- vapply(skipped, function(s) s$ext %||% "(none)", "")
+  hint <- vapply(skipped, function(s) s$hint %||% "", "")
+  hint <- sub(" and add that$", "", sub(" [(].*[)]", "", hint))
+  counts <- sort(table(ext), decreasing = TRUE)
+  parts <- vapply(names(counts), function(e) {
+    h <- hint[match(e, ext)]
+    paste0(counts[[e]], " ", e, if (nzchar(h)) paste0(" (", h, ")") else "")
+  }, "")
+  sprintf("Skipped %d file%s dragonfarm can't read: %s.", length(skipped), if (length(skipped) == 1) "" else "s",
+          paste(parts, collapse = ", "))
 }

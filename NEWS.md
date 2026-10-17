@@ -94,6 +94,11 @@ PDF and as Word, live web pages, and a spreadsheet.
   reported as scanned. When every file is a scan, `dragon_documents()` says so
   and suggests OCR, instead of listing the supported formats.
 
+* Reading a folder now says which files it skipped because no reader handles
+  them, in one line grouped by type, with what to save them as ("Skipped 2
+  files dragonfarm can't read: 1 .doc (save it as .docx), 1 .pptx (export it
+  to PDF)."). Before, they were left out silently.
+
 * Encrypted PDFs that open without a password (common for official
   documents) are read; before, AES-encrypted ones failed with "cryptography
   is required". A PDF that needs a password says so in plain words. Text,

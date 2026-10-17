@@ -57,3 +57,20 @@ def test_a_failed_source_records_its_code():
         failed = {f["name"]: f for f in summary["failed"]}
         assert failed["notes.doc"]["code"] == "UNSUPPORTED_FILE_TYPE"
         assert "save it as .docx" in failed["notes.doc"]["error"]
+
+
+def test_files_a_folder_holds_that_no_reader_handles_are_listed_not_hidden():
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "src"
+        (src / "old").mkdir(parents=True)
+        (src / "ok.md").write_text("# Returns\n\n" + "Any device can be returned within 30 days. " * 10, encoding="utf-8")
+        (src / "old" / "notes.doc").write_bytes(b"x")
+        (src / "deck.pptx").write_bytes(b"x")
+        (src / "photo.png").write_bytes(b"x")
+        (src / "~$ok.docx").write_bytes(b"x")          # Office lock file: not mentioned
+        (src / ".DS_Store").write_bytes(b"x")          # hidden: not mentioned
+        summary = D.build([str(src)], Path(tmp) / "set", "t", max_words=120, min_words=20)
+        names = {s["name"]: s for s in summary["skipped"]}
+        assert set(names) == {"old/notes.doc", "deck.pptx", "photo.png"}
+        assert "docx" in names["old/notes.doc"]["hint"] and "PDF" in names["deck.pptx"]["hint"]
+        assert names["photo.png"]["hint"] is None and summary["n_chunks"] >= 1

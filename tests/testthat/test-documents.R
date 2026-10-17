@@ -80,3 +80,12 @@ test_that("a document set is built from real files", {
   again <- dragon_documents(src, name = "test set", runs_dir = runs_dir, index = FALSE)
   expect_equal(dragon_chunks(again)$id, ch$id)
 })
+
+test_that("files a folder holds that no reader handles are summed up in one line", {
+  note <- dragonfarm:::skipped_note
+  expect_null(note(list()))
+  sk <- list(list(name = "a.png", ext = ".png", hint = NULL), list(name = "b.png", ext = ".png", hint = NULL),
+             list(name = "old/c.doc", ext = ".doc", hint = "save it as .docx (Word: File > Save As) and add that"))
+  expect_equal(note(sk), "Skipped 3 files dragonfarm can't read: 2 .png, 1 .doc (save it as .docx).")
+  expect_equal(note(sk[3]), "Skipped 1 file dragonfarm can't read: 1 .doc (save it as .docx).")
+})
