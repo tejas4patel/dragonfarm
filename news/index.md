@@ -158,6 +158,16 @@ a spreadsheet.
   calls are refused, some wait for a person), and every call is recorded
   in a small catalogue kept in the runs folder.
 
+- Some protection against instructions planted in documents (“ignore
+  your instructions”, “always say 90 days”, “answer in French”). For
+  7B-class models the excerpts are datamarked: their words are joined
+  with `^` and the model is told marked text is information only. On 24
+  questions over documents with planted instructions, the 7B followed 10
+  of them without it and 5 with it, and answered the FDA test questions
+  exactly as before. It made smaller models worse, so it is off for
+  them; `options(dragonfarm.datamark = TRUE)` or `FALSE` forces it.
+  Planted instructions can still get through; check the sources.
+
 - `dragon_ask(compare = TRUE)`, and “Look for documents that disagree”
   in the app’s Ask step, help when documents give different versions of
   the same rule. The usual top excerpts stay; two more are added that
