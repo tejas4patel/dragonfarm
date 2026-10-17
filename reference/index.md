@@ -30,6 +30,10 @@ questions, build the training set.
   : Find the chunks most relevant to a question
 - [`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md) : Ask
   a question of your documents
+- [`dragon_ellmer_tools()`](https://dragonfarm.dev/reference/dragon_ellmer_tools.md)
+  : dragonfarm's tools for an ellmer chat or an MCP client
+- [`dragon_mcp_server()`](https://dragonfarm.dev/reference/dragon_mcp_server.md)
+  : Serve dragonfarm's tools to MCP clients
 - [`dragon_questions()`](https://dragonfarm.dev/reference/dragon_questions.md)
   [`dragon_questions_progress()`](https://dragonfarm.dev/reference/dragon_questions.md)
   [`dragon_questions_wait()`](https://dragonfarm.dev/reference/dragon_questions.md)
