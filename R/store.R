@@ -26,11 +26,14 @@ store_ddl <- c(
 # Open (or create) the catalog for a runs folder; one connection per folder
 # per session.
 store_open <- function(runs_dir = dragon_runs_dir()) {
-  runs_dir <- normalizePath(runs_dir, winslash = "/", mustWork = FALSE)
+  # Create first, then normalise: a path that does not exist yet normalises
+  # differently from the same path once it does (/var vs /private/var on
+  # macOS, short 8.3 names on Windows), which would open a second connection.
+  dir.create(runs_dir, recursive = TRUE, showWarnings = FALSE)
+  runs_dir <- normalizePath(runs_dir, winslash = "/", mustWork = TRUE)
   if (is.null(the$stores)) the$stores <- list()
   con <- the$stores[[runs_dir]]
   if (!is.null(con) && DBI::dbIsValid(con)) return(con)
-  dir.create(runs_dir, recursive = TRUE, showWarnings = FALSE)
   con <- DBI::dbConnect(RSQLite::SQLite(), file.path(runs_dir, "dragonfarm.sqlite"))
   DBI::dbExecute(con, "PRAGMA busy_timeout = 5000")
   store_migrate(con)
