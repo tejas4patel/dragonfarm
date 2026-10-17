@@ -96,16 +96,31 @@ with_defaults <- function(args, schema) {
 
 # Call a tool by name. Never throws: returns list(ok = TRUE, result = ...) or
 # list(ok = FALSE, code = "<CODE>", error = "<message>").
-tool_call <- function(name, args = list()) {
-  refuse <- function(error) {
-    store_record_event("tool", name, ok = FALSE, code = "INVALID_ARGUMENTS", detail = list(args = args, error = error))
-    list(ok = FALSE, code = "INVALID_ARGUMENTS", error = error)
+# `agent` names the agent making the call; NULL means a person acting
+# directly, which needs no approval. An agent's call is checked against the
+# current policy: refused (NOT_ALLOWED), or held for a person (NEEDS_APPROVAL,
+# recorded as an approval request).
+tool_call <- function(name, args = list(), agent = NULL) {
+  refuse <- function(code, error, kind = "tool") {
+    store_record_event(kind, name, ok = FALSE, code = code, detail = list(agent = agent, args = args, error = error))
+    list(ok = FALSE, code = code, error = error)
   }
   args <- args %||% list()
   tool <- tool_registry()[[name]]
-  if (is.null(tool)) return(refuse(sprintf("No tool called '%s'.", name)))
+  if (is.null(tool)) return(refuse("INVALID_ARGUMENTS", sprintf("No tool called '%s'.", name)))
   problems <- schema_problems(args, tool$input)
-  if (length(problems)) return(refuse(paste(problems, collapse = "; ")))
+  if (length(problems)) return(refuse("INVALID_ARGUMENTS", paste(problems, collapse = "; ")))
+  if (!is.null(agent)) {
+    policy <- policy_current()
+    verdict <- policy_check(policy, agent, tool)
+    if (identical(verdict, "NOT_ALLOWED")) {
+      return(refuse("NOT_ALLOWED", sprintf("Policy version %d does not let agent '%s' call '%s'.", policy$version, agent, name)))
+    }
+    if (identical(verdict, "NEEDS_APPROVAL")) {
+      return(refuse("NEEDS_APPROVAL", sprintf("Policy version %d says a person must approve '%s' first.", policy$version, name),
+                    kind = "approval_request"))
+    }
+  }
   args <- with_defaults(args, tool$input)
   t0 <- Sys.time()
   out <- tryCatch(
@@ -115,7 +130,7 @@ tool_call <- function(name, args = list()) {
     error = function(e) list(ok = FALSE, code = "UNKNOWN", error = conditionMessage(e))
   )
   # Every call is recorded: which tool, with what, whether it worked, how long.
-  store_record_event("tool", name, ok = out$ok, code = out$code, detail = list(args = args),
+  store_record_event("tool", name, ok = out$ok, code = out$code, detail = list(agent = agent, args = args),
                      duration_ms = round(1000 * as.numeric(difftime(Sys.time(), t0, units = "secs"))))
   out
 }

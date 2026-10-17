@@ -19,6 +19,9 @@ store_ddl <- c(
         "state TEXT, created_at TEXT, updated_at TEXT NOT NULL)"),
   paste("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL,",
         "actor TEXT, kind TEXT NOT NULL, name TEXT, ok INTEGER, code TEXT, detail TEXT, duration_ms INTEGER)"),
+  "CREATE TABLE IF NOT EXISTS policies (version INTEGER PRIMARY KEY, body TEXT NOT NULL, set_by TEXT, set_at TEXT NOT NULL)",
+  "CREATE TRIGGER IF NOT EXISTS policies_no_update BEFORE UPDATE ON policies BEGIN SELECT RAISE(ABORT, 'policy versions are append-only'); END",
+  "CREATE TRIGGER IF NOT EXISTS policies_no_delete BEFORE DELETE ON policies BEGIN SELECT RAISE(ABORT, 'policy versions are append-only'); END",
   "CREATE TRIGGER IF NOT EXISTS events_no_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT, 'events are append-only'); END",
   "CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'events are append-only'); END"
 )

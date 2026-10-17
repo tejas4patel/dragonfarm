@@ -101,3 +101,35 @@ test_that("read_documents reads a set, records its version, and codes a missing 
   expect_true(r2$ok)
   expect_equal(r2$result$version, 1L)                               # nothing changed: same version
 })
+
+test_that("agents are held to the policy; people acting directly are not", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_current()
+  expect_equal(pol$version, 1L)
+  expect_equal(dragonfarm:::policy_problems(pol), character())
+
+  # an agent calling a tool outside its list is refused, and the refusal is recorded
+  r <- dragonfarm:::tool_call("read_documents", list(paths = "x.pdf", name = "x"), agent = "answer")
+  expect_equal(r$code, "NOT_ALLOWED")
+  # writes need approval once the policy says so; the request is recorded, nothing runs
+  pol2 <- pol; pol2$approvals$side_effects <- list("writes", "irreversible", "outbound")
+  expect_equal(dragonfarm:::policy_set(pol2, set_by = "admin"), 2L)
+  r2 <- dragonfarm:::tool_call("read_documents", list(paths = "x.pdf", name = "x"), agent = "ingestion")
+  expect_equal(r2$code, "NEEDS_APPROVAL")
+  ev <- dragonfarm:::store_events(runs_dir = runs)
+  expect_true("approval_request" %in% ev$kind)
+  expect_true("policy_set" %in% ev$kind)
+  # a person calling directly is not held (here the path is missing, so it fails on its own terms)
+  expect_equal(dragonfarm:::tool_call("read_documents", list(paths = "x.pdf", name = "x"))$code, "FILE_NOT_FOUND")
+  # an allowed read-only call goes through for the agent
+  expect_equal(dragonfarm:::tool_call("list_document_sets", agent = "answer")$ok, TRUE)
+
+  # policy versions cannot be edited, and a broken policy is refused
+  con <- dragonfarm:::store_open(runs)
+  expect_error(DBI::dbExecute(con, "DELETE FROM policies"), "append-only")
+  bad <- pol; bad$agents$answer$tools <- list("make_coffee")
+  expect_error(dragonfarm:::policy_set(bad), "unknown tool 'make_coffee'")
+  expect_equal(dragonfarm:::policy_current()$version, 2L)
+})

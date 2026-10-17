@@ -1,0 +1,14 @@
+{
+  "description": "Default policy: which agent may call which tool, which calls wait for a person, and how much an agent task may spend. Agents can read the policy; only an admin can change it, and every change is a new version.",
+  "approvals": {
+    "side_effects": ["irreversible", "outbound"],
+    "tools": ["train_model", "promote_model", "delete_run", "delete_document_set"]
+  },
+  "agents": {
+    "supervisor": {"tools": ["list_document_sets", "list_runs", "run_status"]},
+    "answer": {"tools": ["list_document_sets", "search_documents", "answer_question"]},
+    "ingestion": {"tools": ["list_document_sets", "read_documents", "search_documents"]},
+    "ops": {"tools": ["list_document_sets", "list_runs", "run_status"]}
+  },
+  "budgets": {"max_steps": 30, "max_gpu_minutes": 120}
+}
