@@ -21,14 +21,18 @@ agent_roles <- list(
   supervisor = "You find out what the user's document sets and training runs hold, using the tools, and report it plainly."
 )
 
-# Which models may drive agents. Measured on 20 tool-use tasks (the right
-# tool, valid arguments, the key values right): 0.5B 13, 1.5B 15, 3B 17, 7B
-# 18 of 20. 3B and up are reliable enough; smaller models get the fixed
-# workflows. A model of unknown size (a server or an outside model the user
-# chose) is allowed.
-agent_model_ok <- function(model) {
+# Which models may drive agents. The smallest size is set in the policy:
+# 3B by default (20 tool-use tasks: 0.5B 13, 1.5B 15, 3B 17, 7B 18 right),
+# more for an agent that must match its fixed workflow in the evaluation
+# harness (the answer agent: 7B). A model of unknown size (a server or an
+# outside model the user chose) is allowed.
+agent_model_ok <- function(model, min_b = 3) {
   size <- model_size_b(model)
-  is.na(size) || size >= 3
+  is.na(size) || size >= min_b
+}
+
+agent_min_model_b <- function(agent = NULL, policy = policy_current()) {
+  as.numeric(policy$agents[[agent %||% ""]]$min_model_b %||% policy$min_model_b$default %||% 3)
 }
 
 # Whether agents are on for this machine, and one plain sentence saying so.
@@ -78,8 +82,10 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   max_steps <- as.integer(max_steps %||% policy$budgets$max_steps %||% 10L)
   specs <- agent_tool_specs(agent, policy)
   target <- resolve_target(model %||% default_answer_model())
-  if (!agent_model_ok(target$model)) {
-    store_record_event("agent_run", agent, ok = FALSE, code = "AGENT_MODEL_TOO_SMALL", detail = list(goal = goal, model = target$model))
+  min_b <- agent_min_model_b(agent, policy)
+  if (!agent_model_ok(target$model, min_b)) {
+    store_record_event("agent_run", agent, ok = FALSE, code = "AGENT_MODEL_TOO_SMALL",
+                       detail = list(goal = goal, model = target$model, min_model_b = min_b))
     return(list(answer = NA_character_, steps = list(), stopped = "AGENT_MODEL_TOO_SMALL"))
   }
   convo <- list(list(role = "system", content = agent_roles[[agent]] %||% "Use the tools to do what the user asks."),

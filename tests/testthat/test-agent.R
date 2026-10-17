@@ -64,3 +64,19 @@ test_that("only models of 3B and up drive agents, and the mode is said plainly",
   expect_false(called)                                                 # the small model is never asked
   expect_equal(dragonfarm:::store_events(runs_dir = runs)$code[1], "AGENT_MODEL_TOO_SMALL")
 })
+
+test_that("the policy sets the smallest model per agent: 7B for answer, 3B otherwise", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_default()
+  expect_equal(dragonfarm:::agent_min_model_b("answer", pol), 7)
+  expect_equal(dragonfarm:::agent_min_model_b("ops", pol), 3)
+  testthat::local_mocked_bindings(backend_generate = function(...) list("All done."))
+  r <- dragonfarm:::agent_run("How long is the return window?", agent = "answer", model = "Qwen/Qwen2.5-3B-Instruct")
+  expect_equal(r$stopped, "AGENT_MODEL_TOO_SMALL")
+  r <- dragonfarm:::agent_run("Which runs failed?", agent = "ops", model = "Qwen/Qwen2.5-3B-Instruct")
+  expect_equal(r$stopped, "answered")
+  bad <- pol; bad$agents$answer$min_model_b <- "big"
+  expect_match(dragonfarm:::policy_problems(bad), "min_model_b for 'answer'")
+})

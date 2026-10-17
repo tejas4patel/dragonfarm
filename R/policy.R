@@ -29,6 +29,12 @@ policy_problems <- function(policy) {
     unknown <- setdiff(unlist(policy$agents[[a]]$tools), known)
     if (length(unknown)) p <- c(p, sprintf("agent '%s' lists unknown tool '%s'", a, unknown))
   }
+  sizes <- Filter(Negate(is.null), c(list(default = policy$min_model_b$default), lapply(policy$agents, `[[`, "min_model_b")))
+  for (n in names(sizes)) {
+    if (!is.numeric(sizes[[n]]) || length(sizes[[n]]) != 1 || is.na(sizes[[n]]) || sizes[[n]] < 0) {
+      p <- c(p, sprintf("min_model_b for '%s' must be a number of billions of parameters", n))
+    }
+  }
   bad <- setdiff(unlist(policy$approvals$side_effects), tool_side_effects)
   if (length(bad)) p <- c(p, sprintf("unknown side effect '%s'", bad))
   p

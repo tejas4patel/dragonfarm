@@ -15,6 +15,6 @@
   "NEEDS_APPROVAL": "The policy says a person must approve this call first; a request was recorded.",
   "BUDGET_EXHAUSTED": "An agent used its whole step budget without finishing.",
   "GPU_BUSY": "Another heavy GPU job (training, question writing, evaluation, merging) is still running.",
-  "AGENT_MODEL_TOO_SMALL": "The model is too small to drive agents reliably (under 3B); use the fixed workflows.",
+  "AGENT_MODEL_TOO_SMALL": "The model is smaller than the policy allows for this agent (3B by default); use the fixed workflows.",
   "UNKNOWN": "Anything not named above."
 }
