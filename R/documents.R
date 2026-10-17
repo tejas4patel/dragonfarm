@@ -88,6 +88,10 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
     "Document set {.strong {name}}: {summary$n_sources} source{?s}, {summary$n_chunks} chunk{?s}{if (summary$n_reused > 0) sprintf(' (%d unchanged)', summary$n_reused) else ''}."
   )
   if (isTRUE(index)) docs <- dragon_index(docs)
+  # Record the set's version in the catalogue: a new version whenever its
+  # chunks changed. The catalogue never stops a read.
+  tryCatch(store_sync_set(store_open(runs_dir), docs$name, docs$dir),
+           error = function(e) cli::cli_warn("Could not record the set in the catalogue: {conditionMessage(e)}"))
   docs
 }
 

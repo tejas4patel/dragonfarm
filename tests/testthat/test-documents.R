@@ -89,3 +89,20 @@ test_that("files a folder holds that no reader handles are summed up in one line
   expect_equal(note(sk), "Skipped 3 files dragonfarm can't read: 2 .png, 1 .doc (save it as .docx).")
   expect_equal(note(sk[3]), "Skipped 1 file dragonfarm can't read: 1 .doc (save it as .docx).")
 })
+
+test_that("every read records the set's version in the catalogue", {
+  runs_dir <- tempfile("runs-")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  f <- write_fake_set(root = runs_dir, name = "kb")
+  src <- tempfile(fileext = ".md"); writeLines("x", src)
+  ok <- '{"n_sources": 3, "n_chunks": 3, "n_reused": 0, "failed": [], "skipped": []}'
+  testthat::local_mocked_bindings(run_python = function(module, args, ...) list(status = 0L, stdout = ok, stderr = ""))
+  versions <- function() DBI::dbGetQuery(dragonfarm:::store_open(runs_dir), "SELECT version FROM set_versions WHERE set_name = 'kb'")$version
+  suppressMessages(dragon_documents(src, name = "kb", runs_dir = runs_dir, index = FALSE))
+  expect_equal(versions(), 1L)
+  suppressMessages(dragon_documents(src, name = "kb", runs_dir = runs_dir, index = FALSE))
+  expect_equal(versions(), 1L)                                  # unchanged chunks: same version
+  cat('{"id": "kb-9", "source": "x.md", "text": "new"}\n', file = file.path(f$dir, "chunks.jsonl"), append = TRUE)
+  suppressMessages(dragon_documents(src, name = "kb", runs_dir = runs_dir, index = FALSE))
+  expect_equal(versions(), 1:2)                                 # changed chunks: a new version, the old one kept
+})

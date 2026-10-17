@@ -177,7 +177,6 @@ tool_impl <- list(
   },
   read_documents = function(args) {
     docs <- suppressWarnings(dragon_documents(unlist(args$paths), name = args$name, index = TRUE))
-    store_sync_set(store_open(), docs$name, docs$dir)
     con <- store_open()
     version <- DBI::dbGetQuery(con, "SELECT MAX(version) v FROM set_versions WHERE set_name = ?", params = list(docs$name))$v
     failed <- Filter(function(src) !is.null(src$error), docs$manifest$sources)

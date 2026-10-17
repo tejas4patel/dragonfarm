@@ -91,7 +91,10 @@ test_that("read_documents reads a set, records its version, and codes a missing 
 
   f <- write_fake_set(root = runs)
   docs <- dragon_documents_load(f$dir)
-  testthat::local_mocked_bindings(dragon_documents = function(paths, name = NULL, ...) docs)
+  testthat::local_mocked_bindings(dragon_documents = function(paths, name = NULL, ...) {
+    dragonfarm:::store_sync_set(dragonfarm:::store_open(), docs$name, docs$dir)   # as the real one does
+    docs
+  })
   r <- dragonfarm:::tool_call("read_documents", list(paths = list("a.pdf", "b.md"), name = "kb"))
   expect_true(r$ok)
   expect_equal(r$result$version, 1L)
