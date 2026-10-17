@@ -41,3 +41,7 @@ nvidia_driver_version <- function() {
   v <- suppressWarnings(as.numeric(trimws(out[1])))
   if (length(v) != 1 || is.na(v)) NA_real_ else v
 }
+
+.onUnload <- function(libpath) {
+  store_close_all()
+}

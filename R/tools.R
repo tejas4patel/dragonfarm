@@ -97,21 +97,28 @@ with_defaults <- function(args, schema) {
 # Call a tool by name. Never throws: returns list(ok = TRUE, result = ...) or
 # list(ok = FALSE, code = "<CODE>", error = "<message>").
 tool_call <- function(name, args = list()) {
-  tool <- tool_registry()[[name]]
-  if (is.null(tool)) return(list(ok = FALSE, code = "INVALID_ARGUMENTS", error = sprintf("No tool called '%s'.", name)))
-  args <- args %||% list()
-  problems <- schema_problems(args, tool$input)
-  if (length(problems)) {
-    return(list(ok = FALSE, code = "INVALID_ARGUMENTS", error = paste(problems, collapse = "; ")))
+  refuse <- function(error) {
+    store_record_event("tool", name, ok = FALSE, code = "INVALID_ARGUMENTS", detail = list(args = args, error = error))
+    list(ok = FALSE, code = "INVALID_ARGUMENTS", error = error)
   }
+  args <- args %||% list()
+  tool <- tool_registry()[[name]]
+  if (is.null(tool)) return(refuse(sprintf("No tool called '%s'.", name)))
+  problems <- schema_problems(args, tool$input)
+  if (length(problems)) return(refuse(paste(problems, collapse = "; ")))
   args <- with_defaults(args, tool$input)
-  tryCatch(
+  t0 <- Sys.time()
+  out <- tryCatch(
     list(ok = TRUE, result = tool_impl[[name]](args)),
     dragonfarm_not_a_set = function(e) list(ok = FALSE, code = "NOT_A_SET", error = conditionMessage(e)),
     dragonfarm_not_a_run = function(e) list(ok = FALSE, code = "NOT_A_RUN", error = conditionMessage(e)),
     dragonfarm_worker_error = function(e) list(ok = FALSE, code = e$code %||% "UNKNOWN", error = conditionMessage(e)),
     error = function(e) list(ok = FALSE, code = "UNKNOWN", error = conditionMessage(e))
   )
+  # Every call is recorded: which tool, with what, whether it worked, how long.
+  store_record_event("tool", name, ok = out$ok, code = out$code, detail = list(args = args),
+                     duration_ms = round(1000 * as.numeric(difftime(Sys.time(), t0, units = "secs"))))
+  out
 }
 
 rows_as_list <- function(df, cols) {

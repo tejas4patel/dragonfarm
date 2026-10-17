@@ -23,6 +23,11 @@ from a script file.
 
 ## Changes that touch the check
 
+* New imports 'DBI' and 'RSQLite' for a small catalog of document sets,
+  runs, and an append-only event log, kept in one SQLite file in the user's
+  runs folder (never in the package or home directory unless the user points
+  the runs folder there). Tests use temporary folders.
+
 * New 'Python' requirements for the document readers ('pypdf',
   'cryptography' for encrypted PDFs, 'python-docx', 'openpyxl') and for 4-bit loading ('bitsandbytes', skipped
   on macOS). They are declared with `reticulate::py_require()` and installed
