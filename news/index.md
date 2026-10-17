@@ -407,6 +407,11 @@ a spreadsheet.
 
 ### Fixes
 
+- Practice questions from models that wrap their labels in Markdown
+  (`**Q1:**`) are no longer thrown away: a 1.5B wrote every label in
+  bold and none of its 22 pairs were kept; now all 22 parse. Every
+  earlier question set re-parses identically (3,362 pairs).
+
 - Preset models are pinned to the Hub commit they were tested with, and
   runs record it, so a run trains and answers with exactly those weights
   even if the model’s page changes later. Models load from safetensors

@@ -42,8 +42,11 @@ serve them with the `mcptools` package, for example
 if (requireNamespace("ellmer", quietly = TRUE)) {
   names(dragon_ellmer_tools())
 }
-#> [1] "answer_question"    "list_document_sets" "list_runs"         
-#> [4] "read_documents"     "run_status"         "search_documents"  
+#>  [1] "answer_question"          "cancel_run"              
+#>  [3] "evaluate_run"             "list_document_sets"      
+#>  [5] "list_runs"                "read_documents"          
+#>  [7] "run_status"               "search_documents"        
+#>  [9] "train_model"              "write_practice_questions"
 if (FALSE) { # \dontrun{
 chat <- ellmer::chat_anthropic()
 chat$register_tools(dragon_ellmer_tools())
