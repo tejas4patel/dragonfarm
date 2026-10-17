@@ -263,7 +263,7 @@ worker_request <- function(req, on_token = NULL, timeout = 3600) {
       if (is.null(obj)) next
       if (!is.null(obj$id) && !identical(as.integer(obj$id), id)) next
       if (!isTRUE(obj$ok)) {
-        err <- explain_error(obj$error %||% "unknown")
+        err <- error_message(obj$error %||% "unknown", obj$code)
         cli::cli_abort(c("The inference worker reported an error.", "x" = "{err}"))
       }
       if (!is.null(obj$token)) {

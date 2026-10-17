@@ -37,6 +37,8 @@ import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
 
+from .errors import DragonError, classify
+
 SUPPORTED = {".pdf", ".html", ".htm", ".md", ".markdown", ".txt", ".docx", ".xlsx", ".xlsm", ".csv", ".tsv"}
 # Formats people often have, and the one-step way to a supported one.
 SAVE_AS = {
@@ -269,10 +271,10 @@ def pdf_to_text(fh):
         try:
             opened = reader.decrypt("")
         except pypdf.errors.DependencyError:
-            raise ValueError("this PDF is encrypted (AES) and reading it needs the Python package "
+            raise DragonError("ENCRYPTED_NEEDS_CRYPTOGRAPHY", "this PDF is encrypted (AES) and reading it needs the Python package "
                              "cryptography; install it in the Python dragonfarm uses") from None
         if not opened:
-            raise ValueError("this PDF is password-protected; open it, save an unlocked copy "
+            raise DragonError("PASSWORD_PROTECTED", "this PDF is password-protected; open it, save an unlocked copy "
                              "(or print it to PDF), and add that")
     pages = []
     for page in reader.pages:
@@ -531,7 +533,7 @@ def read_pdf(path):
         # No text layer: pages that are pictures of text (a scan, a photo, a
         # fax). Say so, rather than adding a source that contributes nothing.
         # A short PDF with no pictures at all (a one-line notice) is just short.
-        raise ValueError("no text layer; this looks like a scanned PDF. Run OCR on it first "
+        raise DragonError("NO_TEXT_LAYER", "no text layer; this looks like a scanned PDF. Run OCR on it first "
                          "(for example `ocrmypdf in.pdf out.pdf`) and add the result")
     return text
 
@@ -885,7 +887,7 @@ def read_source(kind, locator):
     reader = READERS.get(path.suffix.lower())
     if reader is None:
         hint = SAVE_AS.get(path.suffix.lower())
-        raise ValueError(f"unsupported file type {path.suffix or '(none)'}; "
+        raise DragonError("UNSUPPORTED_FILE_TYPE", f"unsupported file type {path.suffix or '(none)'}; "
                          + (hint or "supported: " + ", ".join(sorted(SUPPORTED))))
     return reader(str(path)), path.read_bytes()
 
@@ -949,6 +951,7 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
                 log(f"fetched {shown}: {words(text)} words -> {len(chunks)} chunks")
         except Exception as e:  # noqa: BLE001 - one bad source must not sink the set
             entry["error"] = f"{type(e).__name__}: {e}"
+            entry["code"] = classify(e)
             log(f"failed {shown}: {entry['error']}")
             sources.append(entry)
             continue
@@ -981,7 +984,7 @@ def build(paths, out_dir, name, max_words=170, min_words=35, log=None):
         json.dump(manifest, f, indent=2, ensure_ascii=False)
     return {"dir": str(out_dir), "name": name, "n_sources": len(sources), "n_chunks": len(all_chunks),
             "n_reused": n_reused, "n_failed": sum(1 for s in sources if s["error"]),
-            "failed": [{"name": s["name"], "error": s["error"]} for s in sources if s["error"]]}
+            "failed": [{"name": s["name"], "error": s["error"], "code": s.get("code") or "UNKNOWN"} for s in sources if s["error"]]}
 
 
 def main(argv=None):

@@ -18,6 +18,7 @@ import sys
 import traceback
 from pathlib import Path
 
+from .errors import classify
 from .status import Status, now_iso
 
 # Installed before torch is imported. A console Ctrl+C reaching this process
@@ -391,20 +392,15 @@ def main(argv=None):
         if isinstance(e, SystemExit) and e.code in (0, None):
             raise
         traceback.print_exc()
-        status.update(state="failed", finished_at=now_iso(), error=f"{type(e).__name__}: {e}" + memory_hint(e))
+        status.update(state="failed", finished_at=now_iso(), error=f"{type(e).__name__}: {e}" + memory_hint(e),
+                      error_code=classify(e))
         sys.exit(1)
 
 
-# Errors that mean the GPU ran out of memory. A 7B in 4-bit at batch size 4 on
-# an 8 GB laptop card failed with CUBLAS_STATUS_EXECUTION_FAILED rather than
-# an out-of-memory error, so name the usual fixes whatever form it takes.
-MEMORY_SIGNS = ("out of memory", "cublas_status_execution_failed", "cublas_status_alloc_failed",
-                "cudnn_status_alloc_failed", "cudnn_status_execution_failed")
-
-
+# The usual fixes, named in the status file whatever form the out-of-memory
+# error takes (see errors.MEMORY_SIGNS), so the log alone is enough to act on.
 def memory_hint(err):
-    text = f"{type(err).__name__} {err}".lower()
-    if "outofmemoryerror" not in text and not any(s in text for s in MEMORY_SIGNS):
+    if classify(err) != "OUT_OF_MEMORY":
         return ""
     return ("\nThis usually means the GPU ran out of memory. Try batch size 1 with gradient accumulation"
             " raised to keep the same effective batch, turn on gradient checkpointing, shorten the maximum"

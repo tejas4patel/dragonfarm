@@ -180,17 +180,3 @@ md_html <- function(text) {
   html <- gsub("<img[^>]*>", "", html, perl = TRUE)
   shiny::HTML(html)
 }
-
-# transformers' message for a model id that is neither a folder nor on the
-# Hugging Face Hub talks about private repositories and tokens, while most of
-# the time the id has a typo. Say what happened, and suggest the closest preset.
-explain_error <- function(err) {
-  m <- regmatches(err, regexec("([^ ]+) is not a local folder and is not a valid model identifier", err))[[1]]
-  if (length(m) < 2) return(err)
-  id <- m[2]
-  known <- dragon_presets()$id
-  d <- utils::adist(tolower(id), tolower(known))[1, ]
-  hint <- if (min(d) <= 3) sprintf(" Did you mean \"%s\"?", known[which.min(d)]) else ""
-  sprintf(paste0("There is no model called \"%s\": no folder by that name, and no model with that id on ",
-                 "Hugging Face.%s (A private or gated model also needs a Hugging Face token: `hf auth login`.)"), id, hint)
-}

@@ -18,7 +18,7 @@ Requests:
 Responses:
   {"ok": true, "outputs": [...], "device": "cuda:0"}      (generate)
   {"ok": true, "token": "..."}  ... {"ok": true, "done": true, "output": "..."}   (streaming, one conversation)
-  {"ok": false, "error": "..."}
+  {"ok": false, "error": "...", "code": "MODEL_NOT_FOUND" | "OUT_OF_MEMORY" | ... (see errors.py)}
 
 A request may carry "id"; every response line written for it then carries
 the same "id".
@@ -29,6 +29,8 @@ import sys
 import threading
 import traceback
 from collections import OrderedDict
+
+from .errors import describe
 
 
 # The id of the request being served. Every line written for it carries the
@@ -186,9 +188,9 @@ def main():
                     outputs = generate_all(tok, model, cache.hw, req)
                     emit({"ok": True, "outputs": outputs, "device": cache.hw.device_str})
             else:
-                emit({"ok": False, "error": f"unknown op {op!r}"})
+                emit({"ok": False, "error": f"unknown op {op!r}", "code": "UNKNOWN"})
         except Exception as e:  # noqa: BLE001 - report and keep serving
-            emit({"ok": False, "error": f"{type(e).__name__}: {e}", "traceback": traceback.format_exc()[-2000:]})
+            emit({"ok": False, **describe(e), "traceback": traceback.format_exc()[-2000:]})
 
 
 if __name__ == "__main__":

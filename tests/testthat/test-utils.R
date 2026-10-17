@@ -58,10 +58,26 @@ test_that("runs_change_signature does not walk deeper than a run's own files", {
 test_that("a model id that does not exist gets a plain message and a suggestion", {
   raw <- paste("OSError: Qwen/Qwen2.5-3B-Instuct is not a local folder and is not a valid model identifier listed on",
                "'https://huggingface.co/models' If this is a private repository, make sure to pass a token")
-  msg <- dragonfarm:::explain_error(raw)
+  msg <- dragonfarm:::error_message(raw)
   expect_match(msg, "There is no model called \"Qwen/Qwen2.5-3B-Instuct\"", fixed = TRUE)
   expect_match(msg, "Did you mean \"Qwen/Qwen2.5-3B-Instruct\"?", fixed = TRUE)
-  far <- dragonfarm:::explain_error("OSError: nobody/nothing-like-it is not a local folder and is not a valid model identifier")
+  far <- dragonfarm:::error_message("OSError: nobody/nothing-like-it is not a local folder and is not a valid model identifier")
   expect_false(grepl("Did you mean", far))
-  expect_equal(dragonfarm:::explain_error("CUDA out of memory"), "CUDA out of memory")
+  expect_equal(dragonfarm:::error_message("CUDA out of memory"), "CUDA out of memory")
+})
+
+test_that("error codes from Python are worded in one place", {
+  em <- dragonfarm:::error_message
+  # with a code, the type and the typo suggestion
+  msg <- em("OSError: Qwen/Qwen2.5-7B-Instruc is not a local folder and is not a valid model identifier", "MODEL_NOT_FOUND")
+  expect_match(msg, "Did you mean \"Qwen/Qwen2.5-7B-Instruct\"?", fixed = TRUE)
+  expect_match(em("RepositoryNotFoundError: 404", "MODEL_NOT_FOUND"), "could not be found")
+  # out of memory gets the usual fixes once, not twice
+  oom <- em("OutOfMemoryError: CUDA", "OUT_OF_MEMORY")
+  expect_match(oom, "batch size 1")
+  expect_equal(em(oom, "OUT_OF_MEMORY"), oom)
+  # other codes keep Python's own plain text; no code falls back to the text
+  expect_equal(em("DragonError: this PDF is password-protected", "PASSWORD_PROTECTED"), "DragonError: this PDF is password-protected")
+  expect_equal(em("CUDA error", NULL), "CUDA error")
+  expect_equal(em(NULL), "unknown error")
 })

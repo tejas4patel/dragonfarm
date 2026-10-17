@@ -166,7 +166,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
         if (!is.null(st$reward_mean)) shiny::div(class = "kv", shiny::span("Held-out reward"), shiny::strong(sprintf("%.3f", st$reward_mean))),
         if (!is.null(st$eval_loss) && is.null(st$pref_accuracy)) shiny::div(class = "kv", shiny::span("Eval loss"), shiny::strong(sprintf("%.3f (ppl %.2f)", st$eval_loss, st$perplexity))),
         if (!is.null(st$eval_warning)) shiny::div(class = "alert alert-warning py-1 px-2 small mt-2", st$eval_warning),
-        if (!is.null(st$error)) shiny::pre(class = "error-box", st$error)
+        if (!is.null(st$error)) shiny::pre(class = "error-box", error_message(st$error, st$error_code))
       )
     })
 
