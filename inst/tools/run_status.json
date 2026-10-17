@@ -1,0 +1,28 @@
+{
+  "name": "run_status",
+  "title": "Status of a training run",
+  "description": "State, progress and any error of one training run.",
+  "side_effect": "read_only",
+  "cost": {"gpu": false, "typical_seconds": 1},
+  "errors": ["NOT_A_RUN", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["run"],
+    "additionalProperties": false,
+    "properties": {
+      "run": {"type": "string", "minLength": 1, "description": "Run id (as listed by list_runs) or its folder."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["id", "state"],
+    "properties": {
+      "id": {"type": "string"},
+      "state": {"type": "string"},
+      "total_steps": {"type": ["integer", "null"]},
+      "eval_loss": {"type": ["number", "null"]},
+      "error": {"type": ["string", "null"]},
+      "error_code": {"type": ["string", "null"]}
+    }
+  }
+}

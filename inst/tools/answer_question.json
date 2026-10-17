@@ -1,0 +1,42 @@
+{
+  "name": "answer_question",
+  "title": "Answer a question from a document set",
+  "description": "Search a document set, then have a model answer using only those excerpts, citing them like [1]. Declines when the excerpts do not hold the answer. With compare, adds excerpts that differ and asks for each document's version.",
+  "side_effect": "read_only",
+  "cost": {"gpu": true, "typical_seconds": 15},
+  "errors": ["NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["set", "question"],
+    "additionalProperties": false,
+    "properties": {
+      "set": {"type": "string", "minLength": 1, "description": "Document set name or folder."},
+      "question": {"type": "string", "minLength": 1},
+      "model": {"type": ["string", "null"], "default": null, "description": "Model id or run id; null uses the model recommended for this machine."},
+      "k": {"type": "integer", "minimum": 1, "maximum": 12, "default": 4},
+      "compare": {"type": "boolean", "default": false, "description": "Look for documents that disagree."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["answer", "model", "sources"],
+    "properties": {
+      "answer": {"type": "string"},
+      "model": {"type": "string"},
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["n", "source", "cited"],
+          "properties": {
+            "n": {"type": "integer"},
+            "source": {"type": "string"},
+            "section": {"type": ["string", "null"]},
+            "page": {"type": ["integer", "null"]},
+            "cited": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}

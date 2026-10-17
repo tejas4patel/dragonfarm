@@ -1,0 +1,22 @@
+{
+  "name": "list_document_sets",
+  "title": "List document sets",
+  "description": "The document sets saved in the runs folder, with how many sources and chunks each holds and whether it is indexed for search.",
+  "side_effect": "read_only",
+  "cost": {"gpu": false, "typical_seconds": 1},
+  "errors": ["INVALID_ARGUMENTS"],
+  "input": {"type": "object", "additionalProperties": false, "properties": {}},
+  "output": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": ["name", "n_sources", "n_chunks", "indexed"],
+      "properties": {
+        "name": {"type": "string"},
+        "n_sources": {"type": "integer"},
+        "n_chunks": {"type": "integer"},
+        "indexed": {"type": "boolean"}
+      }
+    }
+  }
+}

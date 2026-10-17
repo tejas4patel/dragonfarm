@@ -38,7 +38,7 @@ dragon_run <- function(dir) {
   if (inherits(dir, "dragon_run")) return(dir)
   check_string(dir, "dir")
   if (!file.exists(file.path(dir, "config.json"))) {
-    cli::cli_abort("{.path {dir}} is not a run directory (no config.json).")
+    cli::cli_abort("{.path {dir}} is not a run directory (no config.json).", class = "dragonfarm_not_a_run")
   }
   new_run(dir)
 }

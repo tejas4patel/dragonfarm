@@ -1,0 +1,27 @@
+{
+  "name": "list_runs",
+  "title": "List training runs",
+  "description": "Training runs in the runs folder, newest first, with their base model and state.",
+  "side_effect": "read_only",
+  "cost": {"gpu": false, "typical_seconds": 1},
+  "errors": ["INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 20}
+    }
+  },
+  "output": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": ["id", "state"],
+      "properties": {
+        "id": {"type": "string"},
+        "model": {"type": ["string", "null"]},
+        "state": {"type": "string"}
+      }
+    }
+  }
+}

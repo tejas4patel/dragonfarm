@@ -127,7 +127,7 @@ dragon_documents_load <- function(dir, runs_dir = dragon_runs_dir()) {
   }
   manifest_path <- file.path(dir, "manifest.json")
   if (!file.exists(manifest_path)) {
-    cli::cli_abort("{.path {dir}} is not a document set (no manifest.json).")
+    cli::cli_abort("{.path {dir}} is not a document set (no manifest.json).", class = "dragonfarm_not_a_set")
   }
   manifest <- read_json(manifest_path)
   structure(

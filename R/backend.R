@@ -264,7 +264,8 @@ worker_request <- function(req, on_token = NULL, timeout = 3600) {
       if (!is.null(obj$id) && !identical(as.integer(obj$id), id)) next
       if (!isTRUE(obj$ok)) {
         err <- error_message(obj$error %||% "unknown", obj$code)
-        cli::cli_abort(c("The inference worker reported an error.", "x" = "{err}"))
+        cli::cli_abort(c("The inference worker reported an error.", "x" = "{err}"),
+                       class = "dragonfarm_worker_error", code = obj$code %||% "UNKNOWN")
       }
       if (!is.null(obj$token)) {
         if (!is.null(on_token)) on_token(obj$token)

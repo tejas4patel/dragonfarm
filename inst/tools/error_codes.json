@@ -1,0 +1,14 @@
+{
+  "MODEL_NOT_FOUND": "No folder by that name and no such model on the Hugging Face Hub.",
+  "OUT_OF_MEMORY": "The GPU (or CPU) ran out of memory.",
+  "NO_TEXT_LAYER": "A PDF with no text: a scan or photos of pages.",
+  "PASSWORD_PROTECTED": "A PDF that needs a password to open.",
+  "ENCRYPTED_NEEDS_CRYPTOGRAPHY": "An AES-encrypted PDF and no cryptography package.",
+  "UNSUPPORTED_FILE_TYPE": "A file type no reader handles.",
+  "FILE_NOT_FOUND": "A path that does not exist.",
+  "FETCH_FAILED": "A URL that could not be fetched.",
+  "NOT_A_SET": "No document set by that name or in that folder.",
+  "NOT_A_RUN": "No training run by that id or in that folder.",
+  "INVALID_ARGUMENTS": "A tool was called with arguments its contract does not allow.",
+  "UNKNOWN": "Anything not named above."
+}

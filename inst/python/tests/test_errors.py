@@ -74,3 +74,9 @@ def test_files_a_folder_holds_that_no_reader_handles_are_listed_not_hidden():
         assert set(names) == {"old/notes.doc", "deck.pptx", "photo.png"}
         assert "docx" in names["old/notes.doc"]["hint"] and "PDF" in names["deck.pptx"]["hint"]
         assert names["photo.png"]["hint"] is None and summary["n_chunks"] >= 1
+
+
+def test_python_codes_are_in_the_shared_list_r_reads():
+    import json
+    shared = json.loads((Path(__file__).resolve().parents[2] / "tools" / "error_codes.json").read_text(encoding="utf-8"))
+    assert set(CODES) <= set(shared)
