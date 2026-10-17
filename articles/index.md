@@ -37,6 +37,8 @@
 
 - [Requirements, models, run files, and
   settings](https://dragonfarm.dev/articles/under-the-hood.md):
+- [Install without the
+  internet](https://dragonfarm.dev/articles/offline-install.md):
 
 ### Announcements
 
