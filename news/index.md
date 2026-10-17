@@ -174,6 +174,17 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- [`dragon_resume()`](https://dragonfarm.dev/reference/dragon_resume.md)
+  after a crash is sturdier. A checkpoint cut short by the crash is
+  skipped for the one before it; the run’s log keeps what came before
+  the crash (it used to be replaced); steps trained again are no longer
+  drawn twice in the loss chart; a run that crashed before its first
+  checkpoint starts again instead of failing. GRPO runs now resume with
+  their adapter weights and optimizer state (they used to resume the
+  step count only, from fresh weights). Checked by killing runs mid-way:
+  a resumed 135M fine-tune ended at eval loss 1.188, against 1.189 for
+  the same run without a crash.
+
 - `dragon_ask(compare = TRUE)`, and “Look for documents that disagree”
   in the app’s Ask step, help when documents give different versions of
   the same rule. The usual top excerpts stay; two more are added that
