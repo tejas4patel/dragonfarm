@@ -136,6 +136,7 @@ articles:
   - "`articles/fda-guidance`"
 - title: Go further
   contents:
+  - "`articles/other-agents`"
   - post-training-loop
   - reinforcement-learning
   - "`articles/chat-and-feedback`"
