@@ -143,6 +143,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows.
 
+* For servers and machines without the internet, the package ships a lock
+  of its Python packages (`inst/python/requirements.lock`, pinned with
+  hashes, all platforms, from PyPI) and a new article, "Install without the
+  internet". An environment built from it offline, with an empty cache, was
+  identical to one built online. With `DRAGONFARM_PYTHON` set,
+  `dragon_check()` says whether the environment matches the lock.
+
 * `dragon_resume()` after a crash is sturdier. A checkpoint cut short by the
   crash is skipped for the one before it; the run's log keeps what came
   before the crash (it used to be replaced); steps trained again are no

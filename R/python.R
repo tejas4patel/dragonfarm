@@ -31,6 +31,44 @@ dragon_python_requirements <- function() {
   )
 }
 
+# The locked set: inst/python/requirements.lock pins every package with
+# hashes, for building environments on servers and machines without the
+# internet (scripts/lock_python.R regenerates it). Its header records a hash
+# of the requirements it was resolved from, so a stale lock is caught.
+requirements_hash <- function(reqs = dragon_python_requirements()) {
+  rlang::hash(paste(c(reqs$packages, reqs$python_version), collapse = "\n"))
+}
+
+lock_path <- function() system.file("python", "requirements.lock", package = "dragonfarm")
+
+# name -> version for every pinned package, names normalised as pip does.
+lock_pins <- function(path = lock_path()) {
+  if (!nzchar(path) || !file.exists(path)) return(character())
+  lines <- readLines(path, warn = FALSE)
+  m <- Filter(length, regmatches(lines, regexec("^([A-Za-z0-9._-]+)==([^ ;\\\\]+)", lines)))
+  stats::setNames(vapply(m, `[`, "", 3), normalise_package(vapply(m, `[`, "", 2)))
+}
+
+normalise_package <- function(x) gsub("[-_.]+", "-", tolower(x))
+
+# Installed packages in an interpreter, name -> version.
+python_packages <- function(py) {
+  code <- "import json, importlib.metadata as m; print(json.dumps({d.metadata['Name']: d.version for d in m.distributions()}))"
+  res <- processx::run(py, c("-c", code), error_on_status = FALSE, windows_hide_window = TRUE)
+  if (res$status != 0) return(NULL)
+  v <- unlist(jsonlite::fromJSON(res$stdout))
+  stats::setNames(as.character(v), normalise_package(names(v)))
+}
+
+# Installed packages whose version differs from the lock. A local build such
+# as torch "2.14.1+cu130" matches a lock pin of "2.14.1".
+lock_drift <- function(installed, pins = lock_pins()) {
+  common <- intersect(names(installed), names(pins))
+  base <- sub("[+].*$", "", installed[common])
+  bad <- common[base != pins[common]]
+  data.frame(package = bad, locked = unname(pins[bad]), installed = unname(installed[bad]))
+}
+
 # Path to the Python interpreter that has the declared requirements.
 # Cached per session. Set DRAGONFARM_PYTHON to bypass reticulate entirely and
 # use an interpreter you manage yourself.
@@ -148,6 +186,20 @@ dragon_check <- function() {
   if (is.null(py)) return(invisible(result))
   result$python <- py
   cli::cli_alert_success("Python: {.path {py}}")
+  # An environment an admin built (DRAGONFARM_PYTHON) is compared with the
+  # locked set, so two machines can be shown to be the same.
+  if (nzchar(Sys.getenv("DRAGONFARM_PYTHON")) && length(lock_pins())) {
+    installed <- python_packages(py)
+    if (!is.null(installed)) {
+      drift <- lock_drift(installed)
+      result$lock_drift <- drift
+      if (nrow(drift)) {
+        cli::cli_alert_warning("{nrow(drift)} package{?s} differ{?s/} from the locked set: {paste0(drift$package, ' ', drift$installed, ' (locked ', drift$locked, ')', collapse = ', ')}.")
+      } else {
+        cli::cli_alert_success("Python packages match the locked set ({length(intersect(names(installed), names(lock_pins())))} checked).")
+      }
+    }
+  }
 
   res <- processx::run(py, c("-m", "dragonfarm.check"), env = python_env(),
                        error_on_status = FALSE, windows_hide_window = TRUE)

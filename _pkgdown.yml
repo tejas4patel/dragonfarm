@@ -144,6 +144,7 @@ articles:
 - title: Reference notes
   contents:
   - "`articles/under-the-hood`"
+  - "`articles/offline-install`"
 - title: Announcements
   contents:
   - "`articles/introducing-0-4-0`"
