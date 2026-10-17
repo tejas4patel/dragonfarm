@@ -102,7 +102,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
 # for the plain sentence from agent_mode()).
 hw_badge <- function(hw) {
   if (is.null(hw)) return(shiny::tags$span(class = "hw-badge muted", "hardware not checked"))
-  label <- switch(hw$device, cuda = sprintf("GPU %s · %.0f GB", hw$device_name, hw$vram_gb),
+  label <- switch(hw$device, cuda = sprintf("GPU %s \u00b7 %.0f GB", hw$device_name, hw$vram_gb),
                   mps = "Apple GPU", "CPU only")
   mode <- agent_mode(hw)
   shiny::tags$span(class = paste("hw-badge", hw$device), title = mode$message, label,
