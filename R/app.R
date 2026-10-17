@@ -92,16 +92,22 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
     mod_chat_server("chat", state, runs_dir)
     mod_pipeline_server("pipeline", state, runs_dir)
 
-    output$hw_badge <- shiny::renderUI({
-      hw <- state$hardware
-      if (is.null(hw)) return(shiny::tags$span(class = "hw-badge muted", "hardware not checked"))
-      label <- switch(hw$device, cuda = sprintf("GPU %s \u00b7 %.0f GB", hw$device_name, hw$vram_gb),
-                      mps = "Apple GPU", "CPU only")
-      shiny::tags$span(class = paste("hw-badge", hw$device), label)
-    })
+    output$hw_badge <- shiny::renderUI(hw_badge(state$hardware))
   }
 
   shiny::shinyApp(ui, server, options = list(...))
+}
+
+# The header badge: the compute device, and whether agents are on (hover
+# for the plain sentence from agent_mode()).
+hw_badge <- function(hw) {
+  if (is.null(hw)) return(shiny::tags$span(class = "hw-badge muted", "hardware not checked"))
+  label <- switch(hw$device, cuda = sprintf("GPU %s · %.0f GB", hw$device_name, hw$vram_gb),
+                  mps = "Apple GPU", "CPU only")
+  mode <- agent_mode(hw)
+  shiny::tags$span(class = paste("hw-badge", hw$device), title = mode$message, label,
+                   shiny::tags$span(class = paste("agent-mode", if (mode$on) "on" else "off"),
+                                    if (mode$on) "agents on" else "fixed workflows"))
 }
 
 # The logo: the dragonfarm dragon on a navy tile, the same mark as the hex

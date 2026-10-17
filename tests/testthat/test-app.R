@@ -61,3 +61,12 @@ test_that("the RStudio add-in opens the app", {
   expect_true(is.function(get(binding, envir = asNamespace("dragonfarm"))))
   expect_true(binding %in% getNamespaceExports("dragonfarm"))
 })
+
+test_that("the header badge shows the device and whether agents are on", {
+  big <- as.character(dragonfarm:::hw_badge(list(device = "cuda", device_name = "RTX", vram_gb = 8,
+                                                 tier = list(model = "Qwen/Qwen2.5-7B-Instruct"))))
+  expect_match(big, "agents on"); expect_match(big, "GPU RTX")
+  small <- as.character(dragonfarm:::hw_badge(list(device = "cpu", tier = list(model = "Qwen/Qwen2.5-0.5B-Instruct"))))
+  expect_match(small, "fixed workflows"); expect_match(small, "3B or larger")
+  expect_match(as.character(dragonfarm:::hw_badge(NULL)), "not checked")
+})

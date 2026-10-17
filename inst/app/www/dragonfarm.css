@@ -102,6 +102,9 @@ code, pre, kbd { font-variant-ligatures: none; }
 .hw-badge.mps::before { background: #8FB8FF; }
 .hw-badge.cpu::before { background: #FFC857; }
 .hw-badge.muted { color: #9AA7C2; }
+.agent-mode { font-weight: 500; padding-left: 8px; border-left: 1px solid rgba(255, 255, 255, 0.18); }
+.agent-mode.on { color: #5BD08A; }
+.agent-mode.off { color: #9AA7C2; }
 .df-mode { display: inline-flex; align-items: center; margin-left: 6px; }
 .df-mode bslib-input-dark-mode { --text-1: #D5DCEC; --text-2: #FFB547; --vertical-correction: 0; }
 
