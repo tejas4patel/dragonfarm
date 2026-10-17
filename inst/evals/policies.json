@@ -1,0 +1,28 @@
+{
+  "name": "policies",
+  "description": "Questions over the bundled example policies (dragon_example_documents()): 12 with one known answer, 2 with two parts, 4 the documents do not cover, and 1 that needs a tool other than answering.",
+  "agent": "answer",
+  "playbook": "ask",
+  "set": "policies",
+  "tasks": [
+    {"id": "return-window", "goal": "How long is the return window?", "expect": {"all": ["30 days"]}},
+    {"id": "refund-timing", "goal": "How soon is a refund paid after a return arrives?", "expect": {"all": ["5 business days"]}},
+    {"id": "warranty-length", "goal": "How long is the warranty?", "expect": {"all": ["(2|two)[- ]year"]}},
+    {"id": "warranty-claim", "goal": "What does a customer need to give us to start a warranty claim?", "expect": {"all": ["serial"]}},
+    {"id": "standard-shipping", "goal": "How long does standard shipping take?", "expect": {"all": ["3 (to|-) ?5 business days"]}},
+    {"id": "clip-storage", "goal": "How long are doorbell video clips kept?", "expect": {"all": ["30 days"]}},
+    {"id": "battery-life", "goal": "How long does the doorbell battery last?", "expect": {"all": ["6 months"]}},
+    {"id": "cancel-order", "goal": "Can an order be cancelled, and until when?", "expect": {"all": ["24 hours"]}},
+    {"id": "support-hours", "goal": "When is support available?", "expect": {"all": ["8 ?am"]}},
+    {"id": "wifi-setup", "goal": "Why does device setup fail at the Wi-Fi step?", "expect": {"all": ["2[.]4 ?GHz"]}},
+    {"id": "app-fix", "goal": "Which app version fixes devices that show as offline?", "expect": {"all": ["4[.]12[.]2"]}},
+    {"id": "data-deletion", "goal": "How long does deleting account data take?", "expect": {"all": ["7 days"]}},
+    {"id": "damaged-two-parts", "goal": "A doorbell arrived damaged. What photos do we need, and how long does the replacement usually take?", "expect": {"all": ["label", "2 business days"]}},
+    {"id": "duplicate-two-parts", "goal": "How quickly is a duplicate charge refunded, and what must the customer give us first?", "expect": {"all": ["(one|1) business day", "last (four|4)"]}},
+    {"id": "not-price", "goal": "How much does the Sentry doorbell cost?", "expect": {"declines": true}},
+    {"id": "not-colours", "goal": "What colours does the thermostat come in?", "expect": {"declines": true}},
+    {"id": "not-smart-lock", "goal": "How do I pair the doorbell with a smart lock?", "expect": {"declines": true}},
+    {"id": "not-phone", "goal": "What is the support phone number?", "expect": {"declines": true}},
+    {"id": "list-sets", "goal": "Which document sets do I have?", "set": "none", "playbook": "none", "expect": {"all": ["policies"], "tools": ["list_document_sets"]}}
+  ]
+}
