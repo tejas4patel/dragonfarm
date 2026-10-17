@@ -70,7 +70,8 @@ whatever a server backend serves.</p>
 <span>  top_p <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  base <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  on_stage <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  on_token <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  on_token <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  compare <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -127,6 +128,15 @@ take a minute for a 7B.</p></dd>
 it is generated, for showing it as it is written (backends that stream:
 the local worker and servers). A reply that is asked again because it
 was only a citation is not streamed; the returned answer is final.</p></dd>
+
+
+<dt id="arg-compare">compare<a class="anchor" aria-label="anchor" href="#arg-compare"></a></dt>
+<dd><p>Look for documents that disagree: adds two excerpts that
+say something different from the top <code>k</code>, and asks the model to give
+each document's version when they differ. On a test set of rules that
+one later document changes, a 7B named both versions in 13 of 24
+answers instead of 6; it still sometimes calls differing documents
+consistent, so check the sources.</p></dd>
 
 </dl></div>
     <div class="section level2">

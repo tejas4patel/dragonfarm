@@ -143,6 +143,18 @@ a spreadsheet.
   150 words and were cut off mid-sentence at the old limits. It is a
   ceiling, so short answers are no slower.
 
+- `dragon_ask(compare = TRUE)`, and “Look for documents that disagree”
+  in the app’s Ask step, help when documents give different versions of
+  the same rule. The usual top excerpts stay; two more are added that
+  are relevant but say something different (a rule repeated by many
+  documents otherwise crowds out the one later document that changed
+  it), and the model is asked to give each document’s version. On a test
+  set of six such rules, both versions reached the model 6 of 6 times
+  instead of 3 or 4, and a 7B named both in 13 of 24 answers instead
+  of 6. It still sometimes calls differing documents consistent, so
+  check the sources. `dragon_retrieve(extra = )` exposes the extra
+  excerpts on their own.
+
 - Chat with documents understands short follow-ups. “And a boxplot?” or
   “Which ones, then?” names nothing to search for, so such a turn (ten
   words or fewer, leaning on the last one with “it”, “those”, “what

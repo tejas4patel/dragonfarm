@@ -5,7 +5,7 @@ Find the chunks most relevant to a question
 ## Usage
 
 ``` r
-dragon_retrieve(docs, query, k = 4, method = c("hybrid", "dense"))
+dragon_retrieve(docs, query, k = 4, method = c("hybrid", "dense"), extra = 0)
 ```
 
 ## Arguments
@@ -31,6 +31,13 @@ dragon_retrieve(docs, query, k = 4, method = c("hybrid", "dense"))
   embedding alone. On three document sets hybrid raised the share of
   questions whose source chunk was among the top four from 90.6 to 93.0,
   88 to 100, and 91 to 100 percent.
+
+- extra:
+
+  Chunks to add after the top `k` that say something different from
+  those already chosen (relevant, but not near-copies). A rule that
+  several documents repeat and one later document words differently is
+  otherwise crowded out; the top `k` itself is unchanged.
 
 ## Value
 
