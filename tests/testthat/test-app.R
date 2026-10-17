@@ -53,3 +53,11 @@ test_that("the app object builds", {
   app <- dragon_app(runs_dir = tempfile("runs-"))
   expect_s3_class(app, "shiny.appobj")
 })
+
+test_that("the RStudio add-in opens the app", {
+  dcf <- read.dcf(system.file("rstudio", "addins.dcf", package = "dragonfarm"))
+  expect_equal(unname(dcf[1, "Name"]), "dragonfarm")
+  binding <- unname(dcf[1, "Binding"])
+  expect_true(is.function(get(binding, envir = asNamespace("dragonfarm"))))
+  expect_true(binding %in% getNamespaceExports("dragonfarm"))
+})

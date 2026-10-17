@@ -16,6 +16,8 @@ library(dragonfarm)
 dragon_app()
 ```
 
+Or, in RStudio, pick **dragonfarm** from the Addins menu: no code at all.
+
 The app is a thin client over the R functions. Nothing happens in the app
 that you cannot do from the console, and every run it starts is a normal run
 directory.

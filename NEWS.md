@@ -230,6 +230,8 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## The app
 
+* The app opens from RStudio's Addins menu ("dragonfarm"), no code needed.
+
 * Every model choice in the app has an (i) icon: hovering over it, or
   focusing it with the keyboard, shows how the four model sizes compare on
   that task, as measured for the "Choosing a model size" article. Answering

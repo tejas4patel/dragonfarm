@@ -1,0 +1,4 @@
+Name: dragonfarm
+Description: Open the dragonfarm app: read documents, ask them, write practice questions, train and test a model.
+Binding: dragon_app
+Interactive: true
