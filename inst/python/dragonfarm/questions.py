@@ -90,11 +90,18 @@ def generate_batch(batch, gen_fn, log=None):
     return outputs, skipped
 
 
+# A Q/A label at the start of a line, with the Markdown some models wrap it
+# in: "**Q1:**", "**Q1**:", "### Q1:", "- Q1.". A 1.5B wrote every label in
+# bold, and all of its replies were thrown away as unparsed.
+LABEL = re.compile(r"^[ \t>#*_-]*(?:\*\*|__)?\s*([QA])(\d+)\s*(?:\*\*|__)?\s*[:.)]\s*(?:\*\*|__)?[ \t]*", re.M)
+
+
 def parse(output):
+    output = LABEL.sub(lambda m: f"{m.group(1)}{m.group(2)}: ", output)
     pairs = []
     for m in re.finditer(r"Q(\d+)\s*:\s*(.+?)\s*\n+\s*A\1\s*:\s*(.+?)(?=\n+\s*Q\d+\s*:|\Z)", output, re.S):
-        q = re.sub(r"\s+", " ", m.group(2)).strip()
-        a = re.sub(r"\s+", " ", m.group(3)).strip()
+        q = re.sub(r"\s+", " ", m.group(2)).strip().strip("*_ ").strip()
+        a = re.sub(r"\s+", " ", m.group(3)).strip().strip("*_ ").strip()
         pairs.append((q, a))
     return pairs
 

@@ -92,3 +92,13 @@ def test_mix_asks_for_varied_question_types_only_when_asked():
     p = prompt_for(chunk, 3, mix=True)
     assert MIX in p and p.index(MIX) < p.index("Use exactly this format:")
     assert p.endswith("A3: ...")
+
+
+def test_labels_wrapped_in_markdown_still_parse():
+    from dragonfarm.questions import parse
+    plain = "Q1: How long is the warranty?\nA1: Two years.\nQ2: Can I return it?\nA2: Within 30 days."
+    bold = "**Q1:** How long is the warranty?\n\n**A1:** Two years.\n\n**Q2**: Can I return it?\n**A2**: Within 30 days."
+    heads = "### Q1: How long is the warranty?\n### A1: Two years."
+    assert parse(plain) == [("How long is the warranty?", "Two years."), ("Can I return it?", "Within 30 days.")]
+    assert parse(bold) == parse(plain)
+    assert parse(heads) == [("How long is the warranty?", "Two years.")]
