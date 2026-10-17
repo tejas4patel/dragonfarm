@@ -61,6 +61,15 @@ mod_monitor_ui <- function(id) {
         shiny::p(class = "hint", "Every run in this directory with whatever has been measured for it: loss, preference accuracy, task metrics, and the latest judge result from the Try it panel."),
         shiny::div(class = "table-wrap", shiny::tableOutput(ns("compare")))
       )
+    ),
+    bslib::card(
+      bslib::card_header("Activity"),
+      shiny::p(class = "hint", "Everything the tools and agents did, newest first: each call, whether it worked, and why not. Calls an agent was refused and calls waiting for a person are kept too."),
+      shiny::radioButtons(ns("activity_filter"), NULL, inline = TRUE,
+                          choices = c("Everything" = "all", "Refused or failed" = "failed", "Waiting for approval" = "approval")),
+      shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
+      shiny::selectInput(ns("activity_pick"), "Details of", choices = c("Pick an entry" = ""), width = "100%"),
+      shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE)
     )
   )
 }
@@ -77,6 +86,40 @@ mod_monitor_server <- function(id, state, runs_dir) {
       valueFunc = function() dragon_archived_runs(runs_dir)
     )
     runs <- shiny::reactive(if (isTRUE(input$show_archived)) archived_runs_poll() else active_runs())
+
+    # The catalogue's event log, re-read only when a new event lands.
+    events <- shiny::reactivePoll(3000, session,
+      checkFunc = function() tryCatch(DBI::dbGetQuery(store_open(runs_dir), "SELECT MAX(id) AS m FROM events")$m, error = function(e) NA),
+      valueFunc = function() tryCatch(store_events(200L, runs_dir = runs_dir), error = function(e) NULL)
+    )
+    shown_events <- shiny::reactive({
+      ev <- events()
+      if (is.null(ev) || !nrow(ev)) return(ev)
+      switch(input$activity_filter %||% "all",
+             failed = ev[!is.na(ev$ok) & ev$ok == 0 & ev$kind != "approval_request", , drop = FALSE],
+             approval = ev[ev$kind == "approval_request", , drop = FALSE],
+             ev)
+    })
+    output$activity <- shiny::renderTable({
+      ev <- shown_events()
+      if (is.null(ev) || !nrow(ev)) return(data.frame(Note = "Nothing recorded yet."))
+      data.frame(When = sub("T", " ", sub("Z$", "", ev$at)), What = ev$kind, Name = ev$name %||% "",
+                 Worked = ifelse(is.na(ev$ok), "", ifelse(ev$ok == 1, "yes", "no")), Code = ifelse(is.na(ev$code), "", ev$code),
+                 `Took (ms)` = ifelse(is.na(ev$duration_ms), "", ev$duration_ms), check.names = FALSE)
+    })
+    shiny::observe({
+      ev <- shown_events()
+      choices <- if (is.null(ev) || !nrow(ev)) character() else stats::setNames(as.character(ev$id), sprintf("#%s %s %s", ev$id, ev$kind, ev$name %||% ""))
+      shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices))
+    })
+    output$activity_detail <- shiny::renderText({
+      id <- input$activity_pick
+      ev <- events()
+      if (is.null(id) || !nzchar(id) || is.null(ev)) return("")
+      row <- ev[as.character(ev$id) == id, , drop = FALSE]
+      if (!nrow(row) || is.na(row$detail)) return("")
+      jsonlite::prettify(row$detail)
+    })
 
     # Resend the choices only when the list itself changed. Resending an
     # unchanged list also resent the server's last-known selection, which

@@ -62,3 +62,27 @@ test_that("run buttons follow the run's state", {
   expect_no_match(html("succeeded"), "Cancel|Resume")
   expect_no_match(html(NULL), "Cancel|Resume")
 })
+
+test_that("the Activity card lists events, filters them, and shows details", {
+  runs_dir <- tempfile("runs-")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  dragonfarm:::store_record_event("tool", "search_documents", ok = TRUE, detail = list(args = list(query = "warranty")),
+                                  duration_ms = 40, runs_dir = runs_dir)
+  dragonfarm:::store_record_event("tool", "read_documents", ok = FALSE, code = "NOT_ALLOWED", runs_dir = runs_dir)
+  dragonfarm:::store_record_event("approval_request", "read_documents", ok = FALSE, code = "NEEDS_APPROVAL", runs_dir = runs_dir)
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs_dir), {
+    session$setInputs(activity_filter = "all")
+    html <- output$activity
+    expect_match(html, "search_documents")
+    expect_match(html, "NOT_ALLOWED")
+    session$setInputs(activity_filter = "approval")
+    expect_match(output$activity, "NEEDS_APPROVAL")
+    expect_false(grepl("search_documents", output$activity))
+    session$setInputs(activity_filter = "failed")
+    expect_match(output$activity, "NOT_ALLOWED")
+    expect_false(grepl("NEEDS_APPROVAL", output$activity))
+    session$setInputs(activity_filter = "all", activity_pick = "1")
+    expect_match(output$activity_detail, "warranty")
+  })
+})
