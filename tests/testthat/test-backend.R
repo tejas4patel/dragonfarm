@@ -277,3 +277,15 @@ test_that("the local backend validates and forwards load_in_4bit", {
   dragon_generate("Qwen/Qwen2.5-7B-Instruct", "hi", backend = dragon_backend_local())
   expect_equal(seen$load_in_4bit, "auto")
 })
+
+test_that("conversations reach the worker as a JSON array even when named", {
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    worker_start = function(backend) invisible(NULL),
+    worker_request = function(req, on_token = NULL) { seen <<- req; list(outputs = list("a", "b")) }
+  )
+  convos <- list(q1 = list(list(role = "user", content = "x")), q2 = list(list(role = "user", content = "y")))
+  backend_generate(dragon_backend_local(keep_loaded = TRUE), list(model = "m"), convos)
+  json <- as.character(jsonlite::toJSON(seen$conversations, auto_unbox = TRUE))
+  expect_true(startsWith(json, "[["))
+})

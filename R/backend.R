@@ -126,7 +126,9 @@ backend_generate.dragon_backend_local <- function(backend, target, conversations
     trust_remote_code = isTRUE(target$trust_remote_code),
     device = backend$device, dtype = backend$dtype,
     load_in_4bit = backend$load_in_4bit %||% "auto",
-    conversations = conversations,
+    # unname(): a named list would reach the worker as a JSON object, not an
+    # array of conversations.
+    conversations = unname(conversations),
     max_new_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p,
     stream = !is.null(on_token)
   )
