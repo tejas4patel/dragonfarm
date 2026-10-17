@@ -44,6 +44,8 @@ reference:
   - dragon_index
   - dragon_retrieve
   - dragon_ask
+  - dragon_ellmer_tools
+  - dragon_mcp_server
   - dragon_questions
   - dragon_questions_load
   - dragon_questions_dataset

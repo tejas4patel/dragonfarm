@@ -48,11 +48,41 @@ dragon_python <- function(quiet = FALSE) {
   if (configure_torch_index() && !quiet) {
     cli::cli_alert_info("NVIDIA GPU detected: using the CUDA build of torch from {.url {Sys.getenv('UV_EXTRA_INDEX_URL')}}. Set {.envvar DRAGONFARM_TORCH_INDEX} to \"\" to use the CPU build instead.")
   }
-  reticulate::py_config()
-  py <- reticulate::py_exe()
+  py <- if (isTRUE(getOption("dragonfarm.python_in_child"))) python_from_child() else {
+    reticulate::py_config()
+    reticulate::py_exe()
+  }
   if (is.null(py) || !nzchar(py)) cli::cli_abort("reticulate could not report a Python executable.")
   the$python <- py
   py
+}
+
+# Find the Python environment from a child R process that has no stdin.
+# reticulate starts uv and Python helpers that inherit this process's stdin;
+# under an MCP server that is the client's open message stream, so they wait
+# on it for ever. The child declares the same requirements, so it resolves
+# the same cached environment.
+python_from_child <- function() {
+  reqs <- dragon_python_requirements()
+  script <- tempfile(fileext = ".R")
+  on.exit(unlink(script), add = TRUE)
+  writeLines(c(
+    sprintf("reticulate::py_require(%s, python_version = %s)", paste(deparse(reqs$packages), collapse = ""),
+            deparse(reqs$python_version)),
+    "reticulate::py_config()",
+    "cat('\\nDRAGONFARM_PYTHON=', reticulate::py_exe(), '\\n', sep = '')"
+  ), script)
+  p <- processx::process$new(file.path(R.home("bin"), "Rscript"), script, stdin = NULL, stdout = "|", stderr = "|",
+                             windows_hide_window = TRUE)
+  out <- character()
+  while (p$is_alive() || p$is_incomplete_output()) {
+    p$poll_io(1000)
+    out <- c(out, p$read_output_lines())
+    p$read_error_lines()
+  }
+  line <- grep("^DRAGONFARM_PYTHON=", out, value = TRUE)
+  if (!length(line)) cli::cli_abort("Could not prepare the Python environment in a child process.")
+  sub("^DRAGONFARM_PYTHON=", "", line[length(line)])
 }
 
 python_source_dir <- function() {

@@ -120,6 +120,14 @@ PDF and as Word, live web pages, and a spreadsheet.
   were cut off mid-sentence at the old limits. It is a ceiling, so short
   answers are no slower.
 
+* `dragon_ellmer_tools()` hands dragonfarm's tools to any `ellmer` chat, or
+  to Claude Desktop and other MCP clients with `dragon_mcp_server()`: search a
+  document set, answer from it with citations, read documents, list sets and
+  runs, check a run. Every call is checked against the tool's contract,
+  callers named as agents are held to a policy (some calls are refused, some
+  wait for a person), and every call is recorded in a small catalogue kept in
+  the runs folder.
+
 * `dragon_ask(compare = TRUE)`, and "Look for documents that disagree" in the
   app's Ask step, help when documents give different versions of the same
   rule. The usual top excerpts stay; two more are added that are relevant but
