@@ -12,5 +12,6 @@
   "INVALID_ARGUMENTS": "A tool was called with arguments its contract does not allow.",
   "NOT_ALLOWED": "The policy does not let this agent call this tool.",
   "NEEDS_APPROVAL": "The policy says a person must approve this call first; a request was recorded.",
+  "BUDGET_EXHAUSTED": "An agent used its whole step budget without finishing.",
   "UNKNOWN": "Anything not named above."
 }

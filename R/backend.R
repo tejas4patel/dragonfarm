@@ -108,13 +108,13 @@ is_server_backend <- function(b) inherits(b, "dragon_backend_server")
 # `target` comes from resolve_target() and is ignored by server backends.
 # `on_token` streams the first conversation's reply piece by piece.
 backend_generate <- function(backend, target, conversations, max_new_tokens = 256, temperature = 0.7,
-                             top_p = 0.9, on_token = NULL) {
+                             top_p = 0.9, on_token = NULL, tools = NULL) {
   UseMethod("backend_generate")
 }
 
 #' @export
 backend_generate.dragon_backend_local <- function(backend, target, conversations, max_new_tokens = 256,
-                                                  temperature = 0.7, top_p = 0.9, on_token = NULL) {
+                                                  temperature = 0.7, top_p = 0.9, on_token = NULL, tools = NULL) {
   if (is.null(target)) cli::cli_abort("The local backend needs a model to load: pass a run, adapter, or model id.")
   req <- list(
     op = "generate",
@@ -128,6 +128,8 @@ backend_generate.dragon_backend_local <- function(backend, target, conversations
     max_new_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p,
     stream = !is.null(on_token)
   )
+  # Tool specs for templates that support tool calling (agents).
+  if (length(tools)) req$tools <- tools
   worker_start(backend)
   on.exit(if (!backend$keep_loaded) dragon_worker_stop(), add = TRUE)
   res <- worker_request(req, on_token = on_token)
@@ -136,7 +138,8 @@ backend_generate.dragon_backend_local <- function(backend, target, conversations
 
 #' @export
 backend_generate.dragon_backend_server <- function(backend, target, conversations, max_new_tokens = 256,
-                                                   temperature = 0.7, top_p = 0.9, on_token = NULL) {
+                                                   temperature = 0.7, top_p = 0.9, on_token = NULL, tools = NULL) {
+  if (length(tools)) cli::cli_abort("Agents need the local backend for now; a server backend does not take tools yet.")
   lapply(seq_along(conversations), function(i) {
     chat_completion(backend, conversations[[i]], max_new_tokens = max_new_tokens, temperature = temperature,
                     top_p = top_p, on_token = if (i == 1) on_token)
