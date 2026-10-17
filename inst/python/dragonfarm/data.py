@@ -36,9 +36,13 @@ def fallback_prompt(messages) -> str:
     return "\n".join(parts)
 
 
-def render_prompt(tok, messages) -> str:
-    """Text of the conversation up to and including the assistant cue."""
+def render_prompt(tok, messages, tools=None) -> str:
+    """Text of the conversation up to and including the assistant cue. With
+    `tools` (JSON Schema function specs), templates that support tool calling
+    describe them to the model."""
     if has_chat_template(tok):
+        if tools:
+            return tok.apply_chat_template(messages, tools=tools, tokenize=False, add_generation_prompt=True)
         return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     return fallback_prompt(messages) + "\n### Assistant:\n"
 

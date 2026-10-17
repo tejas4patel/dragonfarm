@@ -191,8 +191,8 @@ def evaluate_or_warn(status, label, fn):
 
 
 @torch.no_grad()
-def generate_reply(model, tok, messages, device, max_new_tokens=256, temperature=0.7, top_p=0.9):
-    text = render_prompt(tok, messages)
+def generate_reply(model, tok, messages, device, max_new_tokens=256, temperature=0.7, top_p=0.9, tools=None):
+    text = render_prompt(tok, messages, tools)
     enc = tok(text, return_tensors="pt", add_special_tokens=False).to(device)
     kwargs = dict(max_new_tokens=max_new_tokens, pad_token_id=tok.pad_token_id)
     if temperature and temperature > 0:
@@ -205,7 +205,7 @@ def generate_reply(model, tok, messages, device, max_new_tokens=256, temperature
 
 
 def generate_replies(model, tok, conversations, device, max_new_tokens=256, temperature=0.7, top_p=0.9,
-                     batch_size=8):
+                     batch_size=8, tools=None):
     """Replies for several conversations, a batch at a time with left padding.
 
     One prompt at a time costs a full forward pass per token per prompt, which
@@ -215,7 +215,7 @@ def generate_replies(model, tok, conversations, device, max_new_tokens=256, temp
     if not conversations:
         return []
     if len(conversations) == 1 or batch_size <= 1:
-        return [generate_reply(model, tok, m, device, max_new_tokens, temperature, top_p) for m in conversations]
+        return [generate_reply(model, tok, m, device, max_new_tokens, temperature, top_p, tools) for m in conversations]
     kwargs = dict(max_new_tokens=max_new_tokens, pad_token_id=tok.pad_token_id)
     if temperature and temperature > 0:
         kwargs.update(do_sample=True, temperature=float(temperature), top_p=float(top_p))
@@ -224,7 +224,7 @@ def generate_replies(model, tok, conversations, device, max_new_tokens=256, temp
     out = []
     for i in range(0, len(conversations), batch_size):
         batch = conversations[i:i + batch_size]
-        texts = [render_prompt(tok, m) for m in batch]
+        texts = [render_prompt(tok, m, tools) for m in batch]
         side = tok.padding_side
         tok.padding_side = "left"
         try:

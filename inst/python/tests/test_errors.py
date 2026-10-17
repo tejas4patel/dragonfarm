@@ -80,3 +80,24 @@ def test_python_codes_are_in_the_shared_list_r_reads():
     import json
     shared = json.loads((Path(__file__).resolve().parents[2] / "tools" / "error_codes.json").read_text(encoding="utf-8"))
     assert set(CODES) <= set(shared)
+
+
+def test_tools_reach_the_chat_template_only_when_given():
+    from dragonfarm.data import render_prompt
+
+    class Tok:
+        chat_template = "{{ messages }}"
+
+        def __init__(self):
+            self.calls = []
+
+        def apply_chat_template(self, messages, **kw):
+            self.calls.append(kw)
+            return "prompt"
+
+    tok = Tok()
+    render_prompt(tok, [{"role": "user", "content": "hi"}])
+    spec = [{"type": "function", "function": {"name": "list_runs", "parameters": {"type": "object", "properties": {}}}}]
+    render_prompt(tok, [{"role": "user", "content": "hi"}], tools=spec)
+    assert "tools" not in tok.calls[0]
+    assert tok.calls[1]["tools"] == spec and tok.calls[1]["add_generation_prompt"] is True

@@ -108,6 +108,7 @@ def generate_all(tok, model, hw, req):
         temperature=float(req.get("temperature", 0.7)),
         top_p=float(req.get("top_p", 0.9)),
         batch_size=int(req.get("batch_size", 8)),
+        tools=req.get("tools"),
     )
 
 
@@ -119,7 +120,7 @@ def generate_stream(tok, model, hw, req):
     from .data import render_prompt
 
     messages = req["conversations"][0]
-    text = render_prompt(tok, messages)
+    text = render_prompt(tok, messages, req.get("tools"))
     enc = tok(text, return_tensors="pt", add_special_tokens=False).to(hw.device)
     streamer = TextIteratorStreamer(tok, skip_prompt=True, skip_special_tokens=True)
     kwargs = dict(**enc, streamer=streamer, max_new_tokens=int(req.get("max_new_tokens", 256)),
