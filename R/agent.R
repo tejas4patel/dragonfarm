@@ -14,6 +14,10 @@ agent_roles <- list(
   ),
   ingestion = "You read the user's files and web pages into document sets with the tools, and report what was read and what could not be.",
   ops = "You report on the user's document sets and training runs using the tools.",
+  trainer = paste(
+    "You help the user turn a document set into a trained model with the tools: write practice questions,",
+    "train on them, check the run, evaluate it. Training waits for the user's approval; say so when it does."
+  ),
   supervisor = "You find out what the user's document sets and training runs hold, using the tools, and report it plainly."
 )
 

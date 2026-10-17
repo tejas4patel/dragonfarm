@@ -1,0 +1,28 @@
+{
+  "name": "write_practice_questions",
+  "title": "Write practice questions from a document set",
+  "description": "Have a model write question-and-answer pairs from each passage of a document set, mixing what/which, why/how and comparison questions, then filter them. Returns the file of pairs for review and training. Uses the GPU for minutes to an hour.",
+  "side_effect": "writes",
+  "cost": {"gpu": true, "typical_seconds": 900},
+  "errors": ["NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["set"],
+    "additionalProperties": false,
+    "properties": {
+      "set": {"type": "string", "minLength": 1, "description": "Document set name or folder."},
+      "model": {"type": ["string", "null"], "default": null, "description": "Local model id that writes the pairs; null uses the model recommended for this machine."},
+      "n_per_chunk": {"type": "integer", "minimum": 1, "maximum": 5, "default": 3},
+      "mix": {"type": "boolean", "default": true, "description": "Ask for a mix of question types."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["questions", "n_pairs", "n_kept"],
+    "properties": {
+      "questions": {"type": "string", "description": "Path of the saved question set."},
+      "n_pairs": {"type": "integer"},
+      "n_kept": {"type": "integer"}
+    }
+  }
+}

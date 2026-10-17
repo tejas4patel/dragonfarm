@@ -1,0 +1,24 @@
+{
+  "name": "cancel_run",
+  "title": "Cancel a training run",
+  "description": "Stop a queued or running training run. The adapter keeps its last checkpoint, so the run can be resumed later.",
+  "side_effect": "writes",
+  "cost": {"gpu": false, "typical_seconds": 10},
+  "errors": ["NOT_A_RUN", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["run"],
+    "additionalProperties": false,
+    "properties": {
+      "run": {"type": "string", "minLength": 1, "description": "Run id or folder."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["run", "state"],
+    "properties": {
+      "run": {"type": "string"},
+      "state": {"type": "string"}
+    }
+  }
+}

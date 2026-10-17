@@ -1,0 +1,28 @@
+{
+  "name": "train_model",
+  "title": "Train a model on practice questions",
+  "description": "Start fine-tuning a model (LoRA) on a reviewed question set, with each question paired with the excerpts search finds for it and some 'not covered' examples. Training runs in the background; this returns the run id at once. Large models load in 4-bit when the GPU needs it.",
+  "side_effect": "writes",
+  "cost": {"gpu": true, "typical_seconds": 2400},
+  "errors": ["FILE_NOT_FOUND", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["questions", "model"],
+    "additionalProperties": false,
+    "properties": {
+      "questions": {"type": "string", "minLength": 1, "description": "Path of a question set from write_practice_questions."},
+      "model": {"type": "string", "minLength": 1, "description": "Base model id, for example Qwen/Qwen2.5-3B-Instruct."},
+      "name": {"type": ["string", "null"], "default": null, "description": "A short name for the run."},
+      "epochs": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["run", "state"],
+    "properties": {
+      "run": {"type": "string"},
+      "state": {"type": "string"},
+      "load_in_4bit": {"type": "boolean"}
+    }
+  }
+}

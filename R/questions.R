@@ -166,7 +166,7 @@ report_questions <- function(qa) {
 #' @export
 dragon_questions_load <- function(path) {
   check_string(path, "path")
-  if (!file.exists(path)) cli::cli_abort("{.path {path}} does not exist.")
+  if (!file.exists(path)) cli::cli_abort("{.path {path}} does not exist.", class = "dragonfarm_error", code = "FILE_NOT_FOUND")
   recs <- read_jsonl(path)
   df <- data.frame(
     id = vapply(recs, function(r) r$id, ""), chunk_id = vapply(recs, function(r) r$chunk_id, ""),

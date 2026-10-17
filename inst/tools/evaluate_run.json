@@ -1,0 +1,27 @@
+{
+  "name": "evaluate_run",
+  "title": "Evaluate a training run",
+  "description": "Score a finished run on its held-out rows: loss and perplexity (or preference accuracy for preference runs), plus a few generated samples. Results are saved with the run.",
+  "side_effect": "writes",
+  "cost": {"gpu": true, "typical_seconds": 120},
+  "errors": ["NOT_A_RUN", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "input": {
+    "type": "object",
+    "required": ["run"],
+    "additionalProperties": false,
+    "properties": {
+      "run": {"type": "string", "minLength": 1, "description": "Run id or folder."}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["run"],
+    "properties": {
+      "run": {"type": "string"},
+      "eval_loss": {"type": ["number", "null"]},
+      "perplexity": {"type": ["number", "null"]},
+      "pref_accuracy": {"type": ["number", "null"]},
+      "n_samples": {"type": "integer"}
+    }
+  }
+}

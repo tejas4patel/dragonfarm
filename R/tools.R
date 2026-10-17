@@ -183,6 +183,34 @@ tool_impl <- list(
     list(name = docs$name, n_sources = length(docs$manifest$sources), n_chunks = as.integer(docs$manifest$n_chunks %||% 0L),
          version = as.integer(version), failed = lapply(failed, function(src) list(name = src$name, error = src$error)))
   },
+  write_practice_questions = function(args) {
+    docs <- dragon_documents_load(args$set)
+    qa <- dragon_questions(docs, generator = args$model, n_per_chunk = as.integer(args$n_per_chunk), mix = isTRUE(args$mix), wait = TRUE)
+    list(questions = attr(qa, "path"), n_pairs = nrow(qa), n_kept = sum(qa$keep))
+  },
+  train_model = function(args) {
+    qa <- dragon_questions_load(args$questions)
+    ds <- dragon_questions_dataset(qa)
+    hw <- tryCatch(hardware_info(), error = function(e) NULL)
+    four_bit <- isTRUE(suggest_train_4bit(args$model, hw))
+    # A model that needs 4-bit on this GPU also needs batch 1 and gradient
+    # checkpointing to fit (measured: a 3B without checkpointing ran out of 8 GB).
+    targs <- if (four_bit) dragon_train_args(epochs = args$epochs, batch_size = 1, grad_accum = 16, gradient_checkpointing = TRUE, max_seq_len = 1536)
+             else dragon_train_args(epochs = args$epochs)
+    run <- dragon_train(ds, args$model, args = targs, hardware = dragon_hardware(load_in_4bit = four_bit), name = args$name, wait = FALSE)
+    list(run = run$id, state = dragon_status(run)$state %||% "queued", load_in_4bit = four_bit)
+  },
+  evaluate_run = function(args) {
+    run <- run_from(args$run)
+    e <- dragon_evaluate(run)
+    list(run = run$id, eval_loss = e$eval_loss, perplexity = e$perplexity, pref_accuracy = e$pref_accuracy,
+         n_samples = if (is.data.frame(e$samples)) nrow(e$samples) else 0L)
+  },
+  cancel_run = function(args) {
+    run <- run_from(args$run)
+    if (dragon_status(run)$state %in% c("queued", "running")) dragon_cancel(run)
+    list(run = run$id, state = dragon_status(run)$state %||% "unknown")
+  },
   run_status = function(args) {
     run <- run_from(args$run)
     st <- dragon_status(run)

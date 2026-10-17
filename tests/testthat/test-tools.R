@@ -136,3 +136,54 @@ test_that("agents are held to the policy; people acting directly are not", {
   expect_error(dragonfarm:::policy_set(bad), "unknown tool 'make_coffee'")
   expect_equal(dragonfarm:::policy_current()$version, 2L)
 })
+
+test_that("the teach, train, evaluate and cancel tools keep their contracts", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  f <- write_fake_set(root = runs, name = "kb")
+  docs <- dragon_documents_load(f$dir)
+  run <- structure(list(id = "20261017-0001-test", dir = file.path(runs, "20261017-0001-test")), class = "dragon_run")
+  trained <- NULL; cancelled <- FALSE
+  testthat::local_mocked_bindings(
+    dragon_questions = function(docs, generator = NULL, n_per_chunk = 3, mix = TRUE, ...) {
+      structure(data.frame(question = c("a?", "b?"), keep = c(TRUE, FALSE)), path = "/x/q.jsonl")
+    },
+    dragon_questions_load = function(path) structure(data.frame(question = "a?", keep = TRUE), class = c("dragon_questions", "data.frame")),
+    dragon_questions_dataset = function(qa, ...) "dataset",
+    hardware_info = function() list(device = "cuda", vram_gb = 8),
+    dragon_train = function(dataset, model, args, hardware, name = NULL, wait = FALSE, ...) {
+      trained <<- list(model = model, four_bit = hardware$load_in_4bit, gc = args$gradient_checkpointing); run
+    },
+    dragon_status = function(run) list(state = if (cancelled) "cancelled" else "running"),
+    run_from = function(r) run,
+    dragon_evaluate = function(run, ...) list(eval_loss = 0.5, perplexity = 1.65, samples = data.frame(prompt = 1:3)),
+    dragon_cancel = function(run, ...) { cancelled <<- TRUE; invisible(run) }
+  )
+  reg <- dragonfarm:::tool_registry(refresh = TRUE)
+  ok <- function(name, args) {
+    r <- dragonfarm:::tool_call(name, args)
+    expect_true(r$ok, label = name)
+    expect_equal(dragonfarm:::schema_problems(r$result, reg[[name]]$output, "output"), character(), label = name)
+    r$result
+  }
+  w <- ok("write_practice_questions", list(set = "kb"))
+  expect_equal(c(w$n_pairs, w$n_kept), c(2L, 1L))
+  t3 <- ok("train_model", list(questions = "/x/q.jsonl", model = "Qwen/Qwen2.5-3B-Instruct"))
+  expect_true(t3$load_in_4bit)                              # a 3B on 8 GB trains in 4-bit ...
+  expect_true(trained$gc)                                   # ... with gradient checkpointing
+  t05 <- ok("train_model", list(questions = "/x/q.jsonl", model = "Qwen/Qwen2.5-0.5B-Instruct"))
+  expect_false(t05$load_in_4bit)
+  e <- ok("evaluate_run", list(run = "20261017-0001-test"))
+  expect_equal(e$n_samples, 3L)
+  ok("cancel_run", list(run = "20261017-0001-test"))
+  expect_true(cancelled)
+  # an agent asking to train waits for a person
+  expect_equal(dragonfarm:::tool_call("train_model", list(questions = "/x/q.jsonl", model = "m"), agent = "trainer")$code, "NEEDS_APPROVAL")
+})
+
+test_that("a missing question file is FILE_NOT_FOUND", {
+  withr::local_options(dragonfarm.runs_dir = tempfile("runs-"))
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  expect_equal(dragonfarm:::tool_call("train_model", list(questions = "nope.jsonl", model = "m"))$code, "FILE_NOT_FOUND")
+})
