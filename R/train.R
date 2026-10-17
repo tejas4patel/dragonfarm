@@ -177,12 +177,22 @@ launch_trainer <- function(run_dir, resume = FALSE) {
   warn_other_workers("Training")
   p <- processx::process$new(
     py, args,
-    stdout = log, stderr = "2>&1",
+    stdout = log_target(log, resume), stderr = "2>&1",
     env = python_env(),
     cleanup = FALSE, cleanup_tree = FALSE,
     windows_hide_window = TRUE
   )
   new_run(run_dir, p)
+}
+
+# Where a trainer's output goes. A resume adds to the run's log instead of
+# replacing it: processx 3.9.0 and later append with ">>"; with older ones the
+# earlier log is kept beside it as log-before-<time>.txt.
+log_target <- function(log, resume, append_ok = utils::packageVersion("processx") >= "3.9.0") {
+  if (!resume || !file.exists(log)) return(log)
+  if (append_ok) return(paste0(">>", log))
+  file.copy(log, sub("\\.txt$", format(Sys.time(), "-before-%Y%m%d-%H%M%S.txt"), log))
+  log
 }
 
 #' Resume a run from its latest checkpoint

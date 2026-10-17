@@ -30,3 +30,16 @@ test_that("launch_trainer leaves the worker alone when none is running", {
   withr::defer(if (run$process$is_alive()) run$process$kill())
   expect_false(stopped)
 })
+
+test_that("a resumed trainer adds to the run's log instead of replacing it", {
+  dir <- withr::local_tempdir()
+  log <- file.path(dir, "log.txt")
+  expect_equal(dragonfarm:::log_target(log, resume = TRUE), log)        # no log yet
+  writeLines("before the crash", log)
+  expect_equal(dragonfarm:::log_target(log, resume = FALSE), log)       # a new run starts a new log
+  expect_equal(dragonfarm:::log_target(log, resume = TRUE, append_ok = TRUE), paste0(">>", log))
+  expect_equal(dragonfarm:::log_target(log, resume = TRUE, append_ok = FALSE), log)
+  kept <- list.files(dir, pattern = "^log-before-")
+  expect_length(kept, 1)
+  expect_equal(readLines(file.path(dir, kept)), "before the crash")
+})

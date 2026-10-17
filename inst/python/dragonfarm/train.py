@@ -18,6 +18,7 @@ import sys
 import traceback
 from pathlib import Path
 
+from .resume import checkpoint_step, latest_checkpoint, trim_progress
 from .errors import classify
 from .status import Status, now_iso
 
@@ -39,14 +40,19 @@ for _sig in (signal.SIGINT, signal.SIGTERM):
         pass
 
 
-def latest_checkpoint(run_dir: Path):
-    ck = run_dir / "checkpoints"
-    if not ck.exists():
+def resume_point(run_dir: Path, resume: bool):
+    """The checkpoint to resume from, with progress rows after it dropped."""
+    if not resume:
         return None
-    cands = [p for p in ck.iterdir() if p.is_dir() and p.name.startswith("checkpoint-")]
-    if not cands:
+    ckpt = latest_checkpoint(run_dir)
+    if ckpt is None:
+        print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
+        trim_progress(run_dir, 0)
         return None
-    return max(cands, key=lambda p: int(p.name.split("-")[-1]))
+    dropped = trim_progress(run_dir, checkpoint_step(ckpt))
+    print(f"[dragonfarm] resuming from {ckpt.name}" + (f"; {dropped} progress rows after it are retrained" if dropped else ""),
+          flush=True)
+    return str(ckpt)
 
 
 def eval_batch_size(cfg):
@@ -252,9 +258,7 @@ def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
     targs = training_arguments(cfg, run_dir, hw, eval_ds is not None)
     trainer = make_trainer(Trainer, model, tok, targs, train_ds, eval_ds, PadCollator(tok.pad_token_id),
                            [ProgressCallback(run_dir, status, cancel)])
-    resume_from = str(latest_checkpoint(run_dir)) if resume else None
-    if resume and resume_from is None:
-        print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
+    resume_from = resume_point(run_dir, resume)
     print(f"[dragonfarm] training {len(train_ds)} examples"
           + (f", evaluating on {len(eval_ds)}" if eval_ds is not None else ""), flush=True)
     trainer.train(resume_from_checkpoint=resume_from)
@@ -304,9 +308,7 @@ def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
     trainer = make_trainer(PreferenceTrainer, model, tok, targs, train_ds, eval_ds, PairCollator(tok.pad_token_id),
                            [ProgressCallback(run_dir, status, cancel)],
                            method=method, beta=beta, pad_id=tok.pad_token_id)
-    resume_from = str(latest_checkpoint(run_dir)) if resume else None
-    if resume and resume_from is None:
-        print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
+    resume_from = resume_point(run_dir, resume)
     print(f"[dragonfarm] {method} (beta={beta}) on {len(train_ds)} pairs"
           + (f", evaluating on {len(eval_ds)}" if eval_ds is not None else ""), flush=True)
     trainer.train(resume_from_checkpoint=resume_from)

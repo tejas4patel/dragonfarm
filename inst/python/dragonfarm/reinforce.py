@@ -21,6 +21,8 @@ import time
 import torch
 
 from .callbacks import append_progress
+from .resume import (checkpoint_step, latest_checkpoint, restore_reinforce_checkpoint,
+                          save_reinforce_checkpoint, trim_progress)
 from .data import IGNORE_INDEX, render_prompt
 from .losses import token_logps
 from .rewards import RewardSet
@@ -149,13 +151,18 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
 
     start_step = 0
     if resume:
-        state_file = run_dir / "checkpoints" / "reinforce_state.json"
-        if state_file.exists():
-            with open(state_file, encoding="utf-8") as f:
-                start_step = int(json.load(f).get("step", 0))
+        ckpt = latest_checkpoint(run_dir)
+        if ckpt is None:
+            print("[dragonfarm] no checkpoint found, starting from scratch", flush=True)
+            trim_progress(run_dir, 0)
+        else:
+            start_step = checkpoint_step(ckpt)
+            with_optimizer = restore_reinforce_checkpoint(model, optimizer, ckpt)
+            trim_progress(run_dir, start_step)
             for _ in range(start_step):
                 scheduler.step()
-            print(f"[dragonfarm] resuming at step {start_step}", flush=True)
+            print(f"[dragonfarm] resuming at step {start_step} from {ckpt.name} (adapter weights"
+                  + (" and optimizer" if with_optimizer else "") + " restored)", flush=True)
 
     rng = random.Random(int(t.get("seed", 42)))
     order = list(range(len(records)))
@@ -268,10 +275,7 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
         print(json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in row.items()}), flush=True)
 
         if step % int(t["save_steps"]) == 0 or step == total_steps or cancel.check():
-            ckpt = run_dir / "checkpoints" / f"checkpoint-{step}"
-            model.save_pretrained(str(ckpt))
-            with open(run_dir / "checkpoints" / "reinforce_state.json", "w", encoding="utf-8") as f:
-                json.dump({"step": step}, f)
+            save_reinforce_checkpoint(model, optimizer, run_dir, step)
             status.update(latest_checkpoint=f"checkpoints/checkpoint-{step}")
         if cancel.check():
             print("[dragonfarm] cancel requested; stopping after this step", flush=True)
