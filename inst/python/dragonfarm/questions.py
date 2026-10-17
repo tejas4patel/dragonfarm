@@ -213,7 +213,7 @@ def write_json(path, obj):
 
 
 def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max_new_tokens=420,
-             include_quotes=False, include_code=True, include_changelog=False, chunk_ids=None, mix=False):
+             include_quotes=False, include_code=True, include_changelog=False, chunk_ids=None, mix=False, revision=None):
     import torch
     from transformers import AutoTokenizer
 
@@ -237,10 +237,10 @@ def generate(set_dir, out, model_id, n=3, load_in_4bit="auto", batch_size=4, max
 
     hw = resolve({"device": "auto", "dtype": "auto"})
     four_bit = wants_4bit(load_in_4bit, model_id, hw.kind, hw.vram_gb)
-    tok = AutoTokenizer.from_pretrained(model_id, padding_side="left")
+    tok = AutoTokenizer.from_pretrained(model_id, revision=revision, padding_side="left")
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    model = load_for_inference(model_id, hw, load_in_4bit=four_bit)
+    model = load_for_inference(model_id, hw, revision=revision, load_in_4bit=four_bit)
     meta["load_in_4bit"] = four_bit
     print(f"[dragonfarm] writing questions for {len(chunks)} chunks with {model_id}" + (" (4-bit)" if four_bit else ""),
           file=sys.stderr, flush=True)
@@ -295,6 +295,7 @@ def main(argv=None):
     g = sub.add_parser("generate"); selection(g)
     g.add_argument("--out", required=True)
     g.add_argument("--model", required=True)
+    g.add_argument("--revision", default=None)
     g.add_argument("--load-in-4bit", default="auto")
     g.add_argument("--batch-size", type=int, default=4)
     g.add_argument("--max-new-tokens", type=int, default=420)
@@ -326,7 +327,7 @@ def main(argv=None):
         return
     four = {"true": True, "false": False}.get(str(a.load_in_4bit).lower(), "auto")
     generate(a.dir, a.out, a.model, n=a.per_chunk, load_in_4bit=four, batch_size=a.batch_size,
-             max_new_tokens=a.max_new_tokens, mix=a.mix, **kw)
+             max_new_tokens=a.max_new_tokens, mix=a.mix, revision=a.revision, **kw)
 
 
 if __name__ == "__main__":

@@ -118,7 +118,8 @@ build_config <- function(run_id, model, files, lora, args, hardware, n_samples,
     created_at = now_iso(),
     stage = stage,
     model = list(
-      id = model, revision = revision, trust_remote_code = isTRUE(trust_remote_code),
+      id = model, revision = revision %||% preset_revision(model), trust_remote_code = isTRUE(trust_remote_code),
+      allow_pickle = allow_pickle_weights(),
       base_run = base$run_id,
       base_adapters = if (length(base$adapters)) as.list(base$adapters)
     ),

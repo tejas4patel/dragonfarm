@@ -48,7 +48,7 @@ resolve_target <- function(x) {
       cli::cli_abort("Run {.strong {x$id}} has no saved adapter yet (state: {st$state}).")
     }
     base_adapters <- vapply(cfg$model$base_adapters %||% list(), function(p) run_path(x, p), character(1))
-    return(list(model = cfg$model$id, adapter = adapter, base_adapters = base_adapters,
+    return(list(model = cfg$model$id, revision = cfg$model$revision, adapter = adapter, base_adapters = base_adapters,
                 trust_remote_code = cfg$model$trust_remote_code))
   }
   check_string(x, "x")
@@ -59,12 +59,12 @@ resolve_target <- function(x) {
     }
     if (file.exists(file.path(x, "adapter_config.json"))) {
       base <- read_json(file.path(x, "adapter_config.json"))$base_model_name_or_path
-      return(list(model = base, adapter = x, base_adapters = character(), trust_remote_code = FALSE))
+      return(list(model = base, revision = preset_revision(base), adapter = x, base_adapters = character(), trust_remote_code = FALSE))
     }
     if (file.exists(file.path(x, "config.json"))) {
       return(list(model = x, adapter = NULL, base_adapters = character(), trust_remote_code = FALSE))
     }
     cli::cli_abort("{.path {x}} is neither a run, an adapter, nor a model directory.")
   }
-  list(model = x, adapter = NULL, base_adapters = character(), trust_remote_code = FALSE)
+  list(model = x, revision = preset_revision(x), adapter = NULL, base_adapters = character(), trust_remote_code = FALSE)
 }

@@ -12,6 +12,10 @@ error_message <- function(error, code = NULL) {
       error, "\nThis usually means the GPU ran out of memory. Try batch size 1 with gradient accumulation raised to ",
       "keep the same effective batch, turn on gradient checkpointing, shorten the maximum sequence length, or ",
       "load the model in 4-bit."),
+    PICKLE_WEIGHTS_ONLY = paste(
+      "This model's weights exist only in the pickle (.bin) format, which can run code when loaded, so dragonfarm",
+      "does not load it. Use a model that ships safetensors, or, if you trust this one, set",
+      "options(dragonfarm.allow_pickle_weights = TRUE).", paste0("(", error, ")")),
     error
   )
 }

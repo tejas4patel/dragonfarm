@@ -33,6 +33,15 @@ dragon_presets <- function() {
       "Qwen/Qwen2.5-3B-Instruct",
       "Qwen/Qwen2.5-7B-Instruct"
     ),
+    # The Hub commit each preset is pinned to (checked 2026-10-17), so a run
+    # trains and answers with exactly the weights it was tested with.
+    revision = c(
+      "12fd25f77366fa6b3b4b768ec3050bf629380bac", "a10cc1512eabd3dde888204e902eca88bddb4951",
+      "7ae557604adf67be50417f59c2c2f167def9a775", "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+      "9213176726f574b556790deb65791e0c5aa438b6", "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "31b70e2e869a7173562077fd711b654946d38674", "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+      "a09a35458c702b33eeacc393d103063234e8bc28"
+    ),
     params = c("135M", "360M", "0.5B", "1B", "1.2B", "1.5B", "1.7B", "3B", "7B"),
     license = c("Apache 2.0", "Apache 2.0", "Apache 2.0", "Gemma", "Llama 3.2", "Apache 2.0", "Apache 2.0",
                 "Qwen Research", "Apache 2.0"),
@@ -106,3 +115,15 @@ batch_for_4bit <- function(batch_size, grad_accum) {
   if (is.na(a) || a < 1) a <- 1L
   list(batch_size = 1L, grad_accum = b * a)
 }
+
+# The pinned Hub commit for a preset model id; NULL for anything else.
+preset_revision <- function(model) {
+  if (!is.character(model) || length(model) != 1) return(NULL)
+  p <- dragon_presets()
+  r <- p$revision[match(model, p$id)]
+  if (is.na(r)) NULL else r
+}
+
+# Weights in the pickle (.bin) format can run code when loaded, so models are
+# loaded from safetensors only unless this option is set.
+allow_pickle_weights <- function() isTRUE(getOption("dragonfarm.allow_pickle_weights", FALSE))

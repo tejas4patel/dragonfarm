@@ -92,7 +92,8 @@ dragon_questions <- function(docs, generator = NULL, n_per_chunk = 3, mix = TRUE
   py <- dragon_python(quiet = TRUE)
   args <- c("-m", "dragonfarm.questions", "generate", "--dir", docs$dir, "--out", out, "--model", model,
             "--load-in-4bit", tolower(as.character(load_in_4bit)), "--batch-size", as.character(as.integer(batch_size)),
-            "--max-new-tokens", as.character(as.integer(max_new_tokens)), sel)
+            "--max-new-tokens", as.character(as.integer(max_new_tokens)), sel,
+            if (!is.null(rev <- preset_revision(model))) c("--revision", rev))
   log <- paste0(out, ".log")
   p <- processx::process$new(py, args, stdout = log, stderr = "2>&1", env = python_env(), cleanup = TRUE,
                              windows_hide_window = TRUE)

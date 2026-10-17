@@ -34,7 +34,7 @@ def main():
     tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
     model = load_for_inference(m["id"], hw, adapter=adapter, revision=m.get("revision"),
                                trust_remote_code=m.get("trust_remote_code", False),
-                               base_adapters=base_adapters)
+                               base_adapters=base_adapters, allow_pickle=bool(m.get("allow_pickle", False)))
     max_len = int(cfg["train"]["max_seq_len"])
     stage = cfg.get("stage", "sft")
 

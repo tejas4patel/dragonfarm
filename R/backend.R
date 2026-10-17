@@ -119,6 +119,8 @@ backend_generate.dragon_backend_local <- function(backend, target, conversations
   req <- list(
     op = "generate",
     model = target$model,
+    revision = target$revision,
+    allow_pickle = allow_pickle_weights(),
     adapter = target$adapter,
     base_adapters = as.list(target$base_adapters %||% character()),
     trust_remote_code = isTRUE(target$trust_remote_code),

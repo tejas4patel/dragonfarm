@@ -28,10 +28,12 @@ def load_tokenizer(model_id, revision=None, trust_remote_code=False):
     return tok
 
 
-def load_base_model(model_id, hw, revision=None, trust_remote_code=False, load_in_4bit=False):
+def load_base_model(model_id, hw, revision=None, trust_remote_code=False, load_in_4bit=False, allow_pickle=False):
     from transformers import AutoModelForCausalLM
 
-    kwargs = dict(revision=revision, trust_remote_code=trust_remote_code)
+    # Safetensors only, unless the caller allows pickle weights: loading a
+    # pickle (.bin) file can run code hidden in it.
+    kwargs = dict(revision=revision, trust_remote_code=trust_remote_code, use_safetensors=None if allow_pickle else True)
     if load_in_4bit:
         if hw.kind != "cuda":
             raise RuntimeError("load_in_4bit needs an NVIDIA GPU; this machine would run on " + hw.kind)
@@ -76,14 +78,14 @@ def apply_base_adapters(model, adapter_dirs):
 
 
 def load_for_inference(model_id, hw, adapter=None, revision=None, trust_remote_code=False, base_adapters=None,
-                       load_in_4bit=False):
+                       load_in_4bit=False, allow_pickle=False):
     """Base model, earlier-stage adapters folded in, plus optional adapter, in eval mode."""
     if load_in_4bit and base_adapters:
         # merge_and_unload() cannot write merged weights into 4-bit tensors.
         raise RuntimeError("a run that continues from another run cannot be loaded in 4-bit; "
                            "merge it first with dragon_merge(), or load it in full precision")
     model = load_base_model(model_id, hw, revision=revision, trust_remote_code=trust_remote_code,
-                            load_in_4bit=load_in_4bit)
+                            load_in_4bit=load_in_4bit, allow_pickle=allow_pickle)
     model = apply_base_adapters(model, base_adapters)
     if adapter:
         from peft import PeftModel

@@ -37,7 +37,7 @@ test_that("config round-trips through JSON", {
   dragonfarm:::write_json(cfg, f)
   txt <- paste(readLines(f), collapse = "\n")
   expect_match(txt, '"schema_version": 1')
-  expect_match(txt, '"revision": null')
+  expect_match(txt, '"revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac"')   # presets are pinned
   expect_match(txt, '"q_proj"')
   expect_match(txt, '"lr_scheduler_type": "linear"')
   back <- dragonfarm:::read_json(f)

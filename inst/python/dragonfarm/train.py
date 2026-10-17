@@ -134,6 +134,7 @@ def load_policy(cfg, run_dir, hw, status):
     model = load_base_model(
         m["id"], hw, revision=m.get("revision"),
         trust_remote_code=m.get("trust_remote_code", False), load_in_4bit=load_4bit,
+        allow_pickle=bool(m.get("allow_pickle", False)),
     )
     if base_adapters:
         print(f"[dragonfarm] folding in {len(base_adapters)} earlier adapter(s) from {m.get('base_run')}", flush=True)

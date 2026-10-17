@@ -334,6 +334,13 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* Preset models are pinned to the Hub commit they were tested with, and runs
+  record it, so a run trains and answers with exactly those weights even if
+  the model's page changes later. Models load from safetensors only: weights
+  that exist only in the older pickle (`.bin`) format can run code when
+  loaded and are refused with a plain message, unless you set
+  `options(dragonfarm.allow_pickle_weights = TRUE)` for a model you trust.
+
 * A model id with a typo ("Qwen/Qwen2.5-0.5B-Instruc") now says there is no
   such model and suggests the closest preset, instead of passing on a
   message about private repositories and tokens.

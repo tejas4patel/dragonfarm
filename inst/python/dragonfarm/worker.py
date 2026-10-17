@@ -55,8 +55,8 @@ class ModelCache:
         self.hw = None
 
     def key(self, req, four_bit=False):
-        return json.dumps([req["model"], req.get("adapter"), req.get("base_adapters") or [],
-                           bool(req.get("trust_remote_code", False)), bool(four_bit)])
+        return json.dumps([req["model"], req.get("revision"), req.get("adapter"), req.get("base_adapters") or [],
+                           bool(req.get("trust_remote_code", False)), bool(four_bit), bool(req.get("allow_pickle", False))])
 
     def get(self, req):
         from .hardware import resolve, wants_4bit
@@ -82,9 +82,10 @@ class ModelCache:
         trust = bool(req.get("trust_remote_code", False))
         if four_bit:
             print(f"[dragonfarm] loading {req['model']} in 4-bit (NF4)", file=sys.stderr, flush=True)
-        tok = load_tokenizer(req["model"], trust_remote_code=trust)
-        model = load_for_inference(req["model"], self.hw, adapter=req.get("adapter"), trust_remote_code=trust,
-                                   base_adapters=req.get("base_adapters") or [], load_in_4bit=four_bit)
+        tok = load_tokenizer(req["model"], req.get("revision"), trust_remote_code=trust)
+        model = load_for_inference(req["model"], self.hw, adapter=req.get("adapter"), revision=req.get("revision"),
+                                   trust_remote_code=trust, base_adapters=req.get("base_adapters") or [],
+                                   load_in_4bit=four_bit, allow_pickle=bool(req.get("allow_pickle", False)))
         self.items[k] = (tok, model)
         return tok, model
 

@@ -14,6 +14,7 @@ CODES = (
     "UNSUPPORTED_FILE_TYPE",        # a file type no reader handles
     "FILE_NOT_FOUND",               # a path that does not exist
     "FETCH_FAILED",                 # a URL that could not be fetched
+    "PICKLE_WEIGHTS_ONLY",          # a model whose weights exist only as pickle (.bin) files
     "UNKNOWN",
 )
 
@@ -66,6 +67,8 @@ def classify(err):
         return "MODEL_NOT_FOUND"
     if any(s in text for s in MEMORY_SIGNS):
         return "OUT_OF_MEMORY"
+    if "safetensors" in text and ("does not appear to have" in text or "no file named" in text):
+        return "PICKLE_WEIGHTS_ONLY"
     return "UNKNOWN"
 
 

@@ -7,6 +7,7 @@
   "UNSUPPORTED_FILE_TYPE": "A file type no reader handles.",
   "FILE_NOT_FOUND": "A path that does not exist.",
   "FETCH_FAILED": "A URL that could not be fetched.",
+  "PICKLE_WEIGHTS_ONLY": "A model whose weights exist only in the pickle (.bin) format, which can run code when loaded.",
   "NOT_A_SET": "No document set by that name or in that folder.",
   "NOT_A_RUN": "No training run by that id or in that folder.",
   "INVALID_ARGUMENTS": "A tool was called with arguments its contract does not allow.",

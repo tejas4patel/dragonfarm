@@ -101,3 +101,8 @@ def test_tools_reach_the_chat_template_only_when_given():
     render_prompt(tok, [{"role": "user", "content": "hi"}], tools=spec)
     assert "tools" not in tok.calls[0]
     assert tok.calls[1]["tools"] == spec and tok.calls[1]["add_generation_prompt"] is True
+
+
+def test_a_model_with_only_pickle_weights_gets_its_own_code():
+    err = OSError("Qwen/x does not appear to have a file named model.safetensors or model.safetensors.index.json")
+    assert classify(err) == "PICKLE_WEIGHTS_ONLY"
