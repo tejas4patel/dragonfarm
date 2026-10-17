@@ -138,6 +138,11 @@ PDF and as Word, live web pages, and a spreadsheet.
   `options(dragonfarm.datamark = TRUE)` or `FALSE` forces it. Planted
   instructions can still get through; check the sources.
 
+* `dragon_check()` now says whether agents are on for this machine. Agents
+  need a model of 3B or larger: on 20 tool-use tasks, 3B and 7B models got
+  17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
+  everything still works through the fixed workflows.
+
 * `dragon_ask(compare = TRUE)`, and "Look for documents that disagree" in the
   app's Ask step, help when documents give different versions of the same
   rule. The usual top excerpts stay; two more are added that are relevant but

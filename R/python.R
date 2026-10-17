@@ -195,6 +195,9 @@ dragon_check <- function() {
   }
   if (!is.null(info$tier)) {
     cli::cli_alert_info("Default model for answering and question generation here: {.val {info$tier$model}}{if (isTRUE(info$tier$load_in_4bit)) ' in 4-bit' else ''} ({info$tier$label}).")
+    mode <- agent_mode(info)
+    result$agents <- mode$on
+    if (mode$on) cli::cli_alert_success(mode$message) else cli::cli_alert_info(mode$message)
   }
   if (hf_token_present()) {
     cli::cli_alert_success("Hugging Face token found (needed for gated models such as Gemma and Llama).")

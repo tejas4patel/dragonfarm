@@ -21,6 +21,29 @@ agent_roles <- list(
   supervisor = "You find out what the user's document sets and training runs hold, using the tools, and report it plainly."
 )
 
+# Which models may drive agents. Measured on 20 tool-use tasks (the right
+# tool, valid arguments, the key values right): 0.5B 13, 1.5B 15, 3B 17, 7B
+# 18 of 20. 3B and up are reliable enough; smaller models get the fixed
+# workflows. A model of unknown size (a server or an outside model the user
+# chose) is allowed.
+agent_model_ok <- function(model) {
+  size <- model_size_b(model)
+  is.na(size) || size >= 3
+}
+
+# Whether agents are on for this machine, and one plain sentence saying so.
+agent_mode <- function(info = the$hardware) {
+  model <- info$tier$model %||% default_answer_model()
+  on <- agent_model_ok(model)
+  list(on = on, model = model, message = if (on) {
+    sprintf("Agents: on, driven by %s.", model)
+  } else {
+    paste0("Agents: off. They need a model of 3B or larger, and the one recommended for this machine is ", model,
+           ". Everything still works through the fixed workflows. To turn agents on, pass a 3B or larger model, ",
+           "connect a model server with dragon_backend_server(), or allow an outside model.")
+  })
+}
+
 agent_tool_specs <- function(agent, policy = policy_current()) {
   reg <- tool_registry()
   names <- intersect(unlist(policy$agents[[agent]]$tools), names(reg))
@@ -55,6 +78,10 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   max_steps <- as.integer(max_steps %||% policy$budgets$max_steps %||% 10L)
   specs <- agent_tool_specs(agent, policy)
   target <- resolve_target(model %||% default_answer_model())
+  if (!agent_model_ok(target$model)) {
+    store_record_event("agent_run", agent, ok = FALSE, code = "AGENT_MODEL_TOO_SMALL", detail = list(goal = goal, model = target$model))
+    return(list(answer = NA_character_, steps = list(), stopped = "AGENT_MODEL_TOO_SMALL"))
+  }
   convo <- list(list(role = "system", content = agent_roles[[agent]] %||% "Use the tools to do what the user asks."),
                 list(role = "user", content = goal))
   steps <- list()

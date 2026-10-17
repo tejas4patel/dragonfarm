@@ -43,3 +43,24 @@ test_that("the loop runs the model's tool calls through tool_call() and stops at
   expect_equal(r2$stopped, "BUDGET_EXHAUSTED")
   expect_length(r2$steps, 3)
 })
+
+test_that("only models of 3B and up drive agents, and the mode is said plainly", {
+  expect_true(dragonfarm:::agent_model_ok("Qwen/Qwen2.5-7B-Instruct"))
+  expect_true(dragonfarm:::agent_model_ok("Qwen/Qwen2.5-3B-Instruct"))
+  expect_false(dragonfarm:::agent_model_ok("Qwen/Qwen2.5-1.5B-Instruct"))
+  expect_true(dragonfarm:::agent_model_ok("my-server-model"))          # unknown size: the user's choice
+  on <- dragonfarm:::agent_mode(list(tier = list(model = "Qwen/Qwen2.5-7B-Instruct")))
+  expect_true(on$on); expect_match(on$message, "Agents: on")
+  off <- dragonfarm:::agent_mode(list(tier = list(model = "Qwen/Qwen2.5-1.5B-Instruct")))
+  expect_false(off$on); expect_match(off$message, "fixed workflows")
+
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  called <- FALSE
+  testthat::local_mocked_bindings(backend_generate = function(...) { called <<- TRUE; list("x") })
+  r <- dragonfarm:::agent_run("What sets do I have?", model = "Qwen/Qwen2.5-0.5B-Instruct")
+  expect_equal(r$stopped, "AGENT_MODEL_TOO_SMALL")
+  expect_false(called)                                                 # the small model is never asked
+  expect_equal(dragonfarm:::store_events(runs_dir = runs)$code[1], "AGENT_MODEL_TOO_SMALL")
+})
