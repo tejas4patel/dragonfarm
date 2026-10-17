@@ -22,6 +22,8 @@
 
 ### Go further
 
+- [Let other agents ride your
+  dragon](https://dragonfarm.dev/articles/other-agents.md):
 - [The post-training loop: fine-tune, judge, prefer,
   repeat](https://dragonfarm.dev/articles/post-training-loop.md):
 - [Reinforcement learning with rewards you can

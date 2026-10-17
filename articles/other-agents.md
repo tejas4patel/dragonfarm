@@ -1,0 +1,55 @@
+# Let other agents ride your dragon
+
+Your dragon already knows your documents. Now Claude, or any chat you
+run from R, can ask it directly: search a document set, answer from it
+with citations, read new documents in, list your sets and runs, check on
+a training run.
+
+## From an ellmer chat
+
+``` r
+
+library(dragonfarm)
+chat <- ellmer::chat_anthropic()
+chat$register_tools(dragon_ellmer_tools())
+chat$chat("What do my FDA guidances say about covariate adjustment?")
+```
+
+The chat decides when to search, reads the excerpts it gets back, and
+answers with their sources.
+
+## From Claude Desktop, Claude Code, or any MCP client
+
+Add a server to the client’s configuration:
+
+``` json
+{
+  "mcpServers": {
+    "dragonfarm": {
+      "command": "Rscript",
+      "args": ["-e", "dragonfarm::dragon_mcp_server()"]
+    }
+  }
+}
+```
+
+Six tools appear in the client: `search_documents`, `answer_question`,
+`read_documents`, `list_document_sets`, `list_runs`, and `run_status`.
+Searching and listing are marked read-only, so clients can tell them
+apart from `read_documents`, which writes a document set.
+
+## What keeps it tame
+
+- **Every call is checked first.** Arguments must fit the tool’s
+  contract, so a bad call comes back as a plain code (`NOT_A_SET`,
+  `INVALID_ARGUMENTS`) instead of a crash.
+- **Agents follow a policy.** Name the caller as an agent,
+  `dragon_ellmer_tools(agent = "answer")`, and it may only use that
+  agent’s tools. The policy also says which kinds of call wait for a
+  person: training, promoting a model, deleting anything, and anything
+  that leaves your machine.
+- **Every call is written down.** Each one, refused ones included, lands
+  in a small catalogue in your runs folder, in an append-only log.
+- **Your documents stay home.** The tools run on your machine; only what
+  the chat model itself sees, the question and the excerpts it gets
+  back, goes to the model you chose to chat with.
