@@ -54,14 +54,32 @@ mod_pipeline_server <- function(id, state, runs_dir) {
       if (identical(input$judge_kind, "anthropic") && !nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) out <- c(out, "ANTHROPIC_API_KEY is not set in this R session; set it or pick a local judge.")
       out
     })
+    # The recipe's steps, built once for both the plan and the start button.
+    recipe_steps <- shiny::reactive({
+      if (length(problems())) return(NULL)
+      judge <- if (identical(input$judge_kind, "local")) trimws(input$judge_model %||% "") else dragon_judge_anthropic(model = input$judge_model %||% "claude-sonnet-5")
+      list(
+        dragon_step_train(state$mapped),
+        dragon_step_synthesize_pairs(prompts = "train", n = input$pair_prompts %||% 60, judge = judge),
+        dragon_step_prefer(method = "dpo"),
+        dragon_step_judge(against = "base", judge = judge, n = input$judge_n %||% 12),
+        dragon_step_evaluate(metrics = c("token_f1", "length_ratio"))
+      )
+    })
+    plan <- shiny::reactive({
+      steps <- recipe_steps()
+      if (is.null(steps)) return(NULL)
+      tryCatch(pipeline_plan(state$model$id, steps, runs_dir), error = function(e) NULL)
+    })
+
+    # The plan: each step, the GPU, anything that leaves the machine, and how
+    # long it took here before. Starting the recipe is the approval.
     output$recipe_check <- shiny::renderUI({
       p <- problems()
       if (length(p)) return(shiny::tags$ul(class = "checklist bad", lapply(p, shiny::tags$li)))
-      shiny::tags$ul(class = "checklist ok",
-        shiny::tags$li(sprintf("Fine-tune %s on %d rows", basename(state$model$id), nrow(state$mapped$data))),
-        shiny::tags$li(sprintf("Sample %d prompts, judge, build pairs", input$pair_prompts %||% 60)),
-        shiny::tags$li("DPO on the pairs, starting from the fine-tuned run"),
-        shiny::tags$li(sprintf("Judge DPO against fine-tune on %d prompts", input$judge_n %||% 12)))
+      pl <- plan()
+      if (is.null(pl)) return(NULL)
+      shiny::div(class = "plan-view", shiny::tags$h6("The plan"), plan_ui(pl))
     })
 
     launched <- shiny::reactiveVal(NULL)
@@ -71,19 +89,14 @@ mod_pipeline_server <- function(id, state, runs_dir) {
         shiny::showNotification(paste(p, collapse = " "), type = "warning")
         return()
       }
-      judge <- if (identical(input$judge_kind, "local")) trimws(input$judge_model %||% "") else dragon_judge_anthropic(model = input$judge_model %||% "claude-sonnet-5")
-      steps <- list(
-        dragon_step_train(state$mapped),
-        dragon_step_synthesize_pairs(prompts = "train", n = input$pair_prompts %||% 60, judge = judge),
-        dragon_step_prefer(method = "dpo"),
-        dragon_step_judge(against = "base", judge = judge, n = input$judge_n %||% 12),
-        dragon_step_evaluate(metrics = c("token_f1", "length_ratio"))
-      )
+      steps <- recipe_steps()
+      pl <- plan()
       res <- tryCatch(
         suppressMessages(dragon_pipeline(state$model$id, steps, runs_dir = runs_dir, name = "recipe", background = TRUE)),
         error = function(e) { notify_error(e); NULL }
       )
       if (!is.null(res)) {
+        if (!is.null(pl)) plan_record_approval(paste("pipeline", res$id), pl, runs_dir)
         launched(res)
         shiny::showNotification(sprintf("Pipeline %s started.", res$id), type = "message")
       }

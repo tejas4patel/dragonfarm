@@ -428,3 +428,13 @@ pre.shiny-text-output:empty { min-height: 44px; }
 .df-cmp td:first-child { font-weight: 600; color: var(--df-ink); }
 .df-cmp tr:last-child td { border-bottom: 0; }
 .df-cmp-note { margin: 4px 0 0; font-size: 0.74rem; line-height: 1.45; color: var(--df-muted); }
+
+/* Plan view: what a multi-step task will do before it starts. */
+.plan-view h6 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; margin: 4px 0 6px; }
+ol.plan { padding-left: 1.2rem; margin-bottom: 6px; }
+ol.plan li { margin-bottom: 6px; }
+.plan-what { display: block; }
+.plan-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.plan-tag { font-size: 0.72rem; padding: 1px 8px; border-radius: 999px; background: rgba(127, 127, 127, 0.14); }
+.plan-tag.gpu { background: rgba(91, 208, 138, 0.18); }
+.plan-tag.out { background: rgba(255, 200, 87, 0.28); font-weight: 600; }
