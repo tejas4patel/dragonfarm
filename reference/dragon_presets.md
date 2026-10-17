@@ -34,26 +34,26 @@ minutes of training.
 
 ``` r
 dragon_presets()
-#>                                    id params       license gated rank
-#> 1 HuggingFaceTB/SmolLM2-135M-Instruct   135M    Apache 2.0 FALSE    8
-#> 2 HuggingFaceTB/SmolLM2-360M-Instruct   360M    Apache 2.0 FALSE    8
-#> 3          Qwen/Qwen2.5-0.5B-Instruct   0.5B    Apache 2.0 FALSE   16
-#> 4                google/gemma-3-1b-it     1B         Gemma  TRUE   16
-#> 5    meta-llama/Llama-3.2-1B-Instruct   1.2B     Llama 3.2  TRUE   16
-#> 6          Qwen/Qwen2.5-1.5B-Instruct   1.5B    Apache 2.0 FALSE   16
-#> 7 HuggingFaceTB/SmolLM2-1.7B-Instruct   1.7B    Apache 2.0 FALSE   16
-#> 8            Qwen/Qwen2.5-3B-Instruct     3B Qwen Research FALSE   16
-#> 9            Qwen/Qwen2.5-7B-Instruct     7B    Apache 2.0 FALSE   16
-#>   min_vram_gb load_in_4bit
-#> 1           2        FALSE
-#> 2           3        FALSE
-#> 3           3        FALSE
-#> 4           5        FALSE
-#> 5           5        FALSE
-#> 6           7        FALSE
-#> 7           8        FALSE
-#> 8           5         TRUE
-#> 9           8         TRUE
+#>                                    id                                 revision
+#> 1 HuggingFaceTB/SmolLM2-135M-Instruct 12fd25f77366fa6b3b4b768ec3050bf629380bac
+#> 2 HuggingFaceTB/SmolLM2-360M-Instruct a10cc1512eabd3dde888204e902eca88bddb4951
+#> 3          Qwen/Qwen2.5-0.5B-Instruct 7ae557604adf67be50417f59c2c2f167def9a775
+#> 4                google/gemma-3-1b-it dcc83ea841ab6100d6b47a070329e1ba4cf78752
+#> 5    meta-llama/Llama-3.2-1B-Instruct 9213176726f574b556790deb65791e0c5aa438b6
+#> 6          Qwen/Qwen2.5-1.5B-Instruct 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+#> 7 HuggingFaceTB/SmolLM2-1.7B-Instruct 31b70e2e869a7173562077fd711b654946d38674
+#> 8            Qwen/Qwen2.5-3B-Instruct aa8e72537993ba99e69dfaafa59ed015b17504d1
+#> 9            Qwen/Qwen2.5-7B-Instruct a09a35458c702b33eeacc393d103063234e8bc28
+#>   params       license gated rank min_vram_gb load_in_4bit
+#> 1   135M    Apache 2.0 FALSE    8           2        FALSE
+#> 2   360M    Apache 2.0 FALSE    8           3        FALSE
+#> 3   0.5B    Apache 2.0 FALSE   16           3        FALSE
+#> 4     1B         Gemma  TRUE   16           5        FALSE
+#> 5   1.2B     Llama 3.2  TRUE   16           5        FALSE
+#> 6   1.5B    Apache 2.0 FALSE   16           7        FALSE
+#> 7   1.7B    Apache 2.0 FALSE   16           8        FALSE
+#> 8     3B Qwen Research FALSE   16           5         TRUE
+#> 9     7B    Apache 2.0 FALSE   16           8         TRUE
 #>                                                                                                                  notes
 #> 1                                                      Fastest. Trains on a CPU in minutes. Used by the package tests.
 #> 2                                                                           Tiny. For trying the workflow on a laptop.

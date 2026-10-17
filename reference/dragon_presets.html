@@ -79,26 +79,26 @@ same score as larger models in a few minutes of training.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">dragon_presets</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                    id params       license gated rank</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 HuggingFaceTB/SmolLM2-135M-Instruct   135M    Apache 2.0 FALSE    8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 HuggingFaceTB/SmolLM2-360M-Instruct   360M    Apache 2.0 FALSE    8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          Qwen/Qwen2.5-0.5B-Instruct   0.5B    Apache 2.0 FALSE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                google/gemma-3-1b-it     1B         Gemma  TRUE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5    meta-llama/Llama-3.2-1B-Instruct   1.2B     Llama 3.2  TRUE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6          Qwen/Qwen2.5-1.5B-Instruct   1.5B    Apache 2.0 FALSE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7 HuggingFaceTB/SmolLM2-1.7B-Instruct   1.7B    Apache 2.0 FALSE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8            Qwen/Qwen2.5-3B-Instruct     3B Qwen Research FALSE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9            Qwen/Qwen2.5-7B-Instruct     7B    Apache 2.0 FALSE   16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   min_vram_gb load_in_4bit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1           2        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2           3        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3           3        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4           5        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5           5        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           7        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7           8        FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8           5         TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9           8         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                    id                                 revision</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 HuggingFaceTB/SmolLM2-135M-Instruct 12fd25f77366fa6b3b4b768ec3050bf629380bac</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 HuggingFaceTB/SmolLM2-360M-Instruct a10cc1512eabd3dde888204e902eca88bddb4951</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          Qwen/Qwen2.5-0.5B-Instruct 7ae557604adf67be50417f59c2c2f167def9a775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                google/gemma-3-1b-it dcc83ea841ab6100d6b47a070329e1ba4cf78752</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5    meta-llama/Llama-3.2-1B-Instruct 9213176726f574b556790deb65791e0c5aa438b6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          Qwen/Qwen2.5-1.5B-Instruct 989aa7980e4cf806f80c7fef2b1adb7bc71aa306</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7 HuggingFaceTB/SmolLM2-1.7B-Instruct 31b70e2e869a7173562077fd711b654946d38674</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8            Qwen/Qwen2.5-3B-Instruct aa8e72537993ba99e69dfaafa59ed015b17504d1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9            Qwen/Qwen2.5-7B-Instruct a09a35458c702b33eeacc393d103063234e8bc28</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   params       license gated rank min_vram_gb load_in_4bit</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   135M    Apache 2.0 FALSE    8           2        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   360M    Apache 2.0 FALSE    8           3        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   0.5B    Apache 2.0 FALSE   16           3        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4     1B         Gemma  TRUE   16           5        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   1.2B     Llama 3.2  TRUE   16           5        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   1.5B    Apache 2.0 FALSE   16           7        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   1.7B    Apache 2.0 FALSE   16           8        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8     3B Qwen Research FALSE   16           5         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9     7B    Apache 2.0 FALSE   16           8         TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                                  notes</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                                                      Fastest. Trains on a CPU in minutes. Used by the package tests.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                                                                           Tiny. For trying the workflow on a laptop.</span>
