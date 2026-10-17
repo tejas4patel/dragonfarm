@@ -88,3 +88,23 @@ warn_other_workers <- function(what = "Training") {
   }
   invisible(o)
 }
+
+# One heavy GPU job at a time: training, question writing, evaluation, and
+# merging each fill most of an 8 GB card, and two at once fail in ways that
+# look like bugs. Refuse to start one while another is running (in any R
+# session), unless options(dragonfarm.allow_parallel_gpu = TRUE).
+heavy_kinds <- c("trainer", "question generator", "evaluator", "merge")
+
+require_gpu_free <- function(what = "This job") {
+  if (isTRUE(getOption("dragonfarm.allow_parallel_gpu", FALSE))) return(invisible(TRUE))
+  o <- other_workers()
+  busy <- o[o$kind %in% heavy_kinds, , drop = FALSE]
+  if (nrow(busy) > 0) {
+    cli::cli_abort(c(
+      "{what} would share the GPU with {describe_workers(busy)}, which is still running.",
+      "i" = "Wait for it to finish, or stop it ({.fn dragon_cancel} for a training run).",
+      "i" = "To run both anyway, set {.code options(dragonfarm.allow_parallel_gpu = TRUE)}."
+    ), class = "dragonfarm_error", code = "GPU_BUSY")
+  }
+  invisible(TRUE)
+}

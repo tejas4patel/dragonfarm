@@ -173,6 +173,7 @@ launch_trainer <- function(run_dir, resume = FALSE) {
     cli::cli_alert_info("Stopping the local inference worker before training starts, to avoid two heavy processes racing for the GPU.")
     dragon_worker_stop()
   }
+  require_gpu_free("Training")
   warn_other_workers("Training")
   p <- processx::process$new(
     py, args,

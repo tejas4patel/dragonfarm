@@ -4,7 +4,7 @@
   "description": "Start fine-tuning a model (LoRA) on a reviewed question set, with each question paired with the excerpts search finds for it and some 'not covered' examples. Training runs in the background; this returns the run id at once. Large models load in 4-bit when the GPU needs it.",
   "side_effect": "writes",
   "cost": {"gpu": true, "typical_seconds": 2400},
-  "errors": ["FILE_NOT_FOUND", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "errors": ["GPU_BUSY", "FILE_NOT_FOUND", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
   "input": {
     "type": "object",
     "required": ["questions", "model"],

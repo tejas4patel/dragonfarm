@@ -72,3 +72,19 @@ test_that("the training warning names the processes and pluralises", {
   testthat::local_mocked_bindings(list_python_processes = function() fake_procs()[0, ])
   expect_length(cli::cli_fmt(dragonfarm:::warn_other_workers()), 0)
 })
+
+test_that("a heavy GPU job is refused while another one runs, unless allowed", {
+  busy <- data.frame(pid = 4242L, kind = "trainer", started = Sys.time())
+  testthat::local_mocked_bindings(other_workers = function() busy)
+  err <- tryCatch(dragonfarm:::require_gpu_free("Training"), error = function(e) e)
+  expect_s3_class(err, "dragonfarm_error")
+  expect_equal(err$code, "GPU_BUSY")
+  expect_match(conditionMessage(err), "trainer (pid 4242)", fixed = TRUE)
+  withr::local_options(dragonfarm.allow_parallel_gpu = TRUE)
+  expect_true(dragonfarm:::require_gpu_free("Training"))
+})
+
+test_that("another session's answering worker does not block a heavy job", {
+  testthat::local_mocked_bindings(other_workers = function() data.frame(pid = 7L, kind = "inference worker", started = Sys.time()))
+  expect_true(dragonfarm:::require_gpu_free("Training"))
+})

@@ -334,6 +334,12 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Fixes
 
+* Training, writing practice questions, evaluating, and merging now refuse
+  to start while another of them is running on the GPU (in any R session),
+  saying which job is in the way. Two at once on an 8 GB card fail in ways
+  that look like bugs. `options(dragonfarm.allow_parallel_gpu = TRUE)` turns
+  the check off.
+
 * Practice questions from models that wrap their labels in Markdown
   (`**Q1:**`) are no longer thrown away: a 1.5B wrote every label in bold
   and none of its 22 pairs were kept; now all 22 parse. Every earlier

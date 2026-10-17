@@ -4,7 +4,7 @@
   "description": "Have a model write question-and-answer pairs from each passage of a document set, mixing what/which, why/how and comparison questions, then filter them. Returns the file of pairs for review and training. Uses the GPU for minutes to an hour.",
   "side_effect": "writes",
   "cost": {"gpu": true, "typical_seconds": 900},
-  "errors": ["NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "errors": ["GPU_BUSY", "NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
   "input": {
     "type": "object",
     "required": ["set"],

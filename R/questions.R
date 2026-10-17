@@ -85,6 +85,7 @@ dragon_questions <- function(docs, generator = NULL, n_per_chunk = 3, mix = TRUE
   }
 
   model <- generator %||% default_answer_model()
+  require_gpu_free("Writing practice questions")
   if (worker_alive()) {
     cli::cli_alert_info("Stopping the local inference worker so the generator has the whole GPU.")
     dragon_worker_stop()

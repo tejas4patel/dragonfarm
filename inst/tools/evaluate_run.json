@@ -4,7 +4,7 @@
   "description": "Score a finished run on its held-out rows: loss and perplexity (or preference accuracy for preference runs), plus a few generated samples. Results are saved with the run.",
   "side_effect": "writes",
   "cost": {"gpu": true, "typical_seconds": 120},
-  "errors": ["NOT_A_RUN", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "errors": ["GPU_BUSY", "NOT_A_RUN", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
   "input": {
     "type": "object",
     "required": ["run"],

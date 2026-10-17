@@ -14,5 +14,6 @@
   "NOT_ALLOWED": "The policy does not let this agent call this tool.",
   "NEEDS_APPROVAL": "The policy says a person must approve this call first; a request was recorded.",
   "BUDGET_EXHAUSTED": "An agent used its whole step budget without finishing.",
+  "GPU_BUSY": "Another heavy GPU job (training, question writing, evaluation, merging) is still running.",
   "UNKNOWN": "Anything not named above."
 }
