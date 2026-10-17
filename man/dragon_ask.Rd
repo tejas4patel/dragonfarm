@@ -16,7 +16,8 @@ dragon_ask(
   top_p = 0.9,
   base = FALSE,
   on_stage = NULL,
-  on_token = NULL
+  on_token = NULL,
+  compare = FALSE
 )
 }
 \arguments{
@@ -50,6 +51,13 @@ take a minute for a 7B.}
 it is generated, for showing it as it is written (backends that stream:
 the local worker and servers). A reply that is asked again because it
 was only a citation is not streamed; the returned answer is final.}
+
+\item{compare}{Look for documents that disagree: adds two excerpts that
+say something different from the top \code{k}, and asks the model to give
+each document's version when they differ. On a test set of rules that
+one later document changes, a 7B named both versions in 13 of 24
+answers instead of 6; it still sometimes calls differing documents
+consistent, so check the sources.}
 }
 \value{
 A \code{dragon_answer}: \verb{$answer}, \verb{$sources} (a data frame of the

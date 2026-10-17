@@ -262,3 +262,37 @@ def test_hybrid_keeps_the_keyword_best_match_among_four_or_more_excerpts():
     # with k below 4 only the embedding's best is guaranteed
     top3 = [h["id"] for h in idx.search(q, k=3, queries=["How do I make a boxplot of the data?"])[0]]
     assert "0" in top3
+
+
+def test_extra_chunks_add_what_the_top_k_repeats_leave_out():
+    import numpy as np
+
+    class Vec:
+        def __init__(self, a):
+            self.a = np.asarray(a, dtype="float32")
+
+        def numpy(self):
+            return self.a
+
+    def unit(v):
+        v = np.asarray(v, dtype="float32")
+        return v / np.linalg.norm(v)
+
+    # Six near-copies of one rule, one document that states it differently,
+    # and one unrelated chunk.
+    vecs = [unit([1, 0.02 * i, 0]) for i in range(6)] + [unit([0.7, 0, 0.71]), unit([0, 1, 0])]
+    texts = ["The action level is 15 ppb."] * 6 + ["The trigger is lowered to 0.010 mg/L.", "Board meetings."]
+    idx = R.LoadedIndex.__new__(R.LoadedIndex)
+    idx.ids = [str(i) for i in range(len(texts))]
+    idx.chunks = [{"text": t} for t in texts]
+    idx.vectors = np.stack(vecs)
+    idx.weights = np.ones(len(texts), dtype="float32")
+    idx.bm25 = R.BM25(texts)
+    q = Vec([unit([1, 0, 0.3])])
+    plain = [h["id"] for h in idx.search(q, k=4, mode="dense")[0]]
+    five = [h["id"] for h in idx.search(q, k=5, mode="dense")[0]]
+    more = [h["id"] for h in idx.search(q, k=4, mode="dense", extra=1)[0]]
+    assert "6" not in plain and "6" not in five       # the copies crowd it out of the top 4 and 5
+    assert more[:4] == plain and more[4] == "6"        # the top 4 is unchanged; the different one is added
+    assert len(idx.search(q, k=4, mode="dense", extra=2)[0]) == 6
+    assert len(idx.search(q, k=4, mode="dense", extra=99)[0]) == len(texts)   # never more than there is

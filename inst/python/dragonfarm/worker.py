@@ -172,7 +172,7 @@ def main():
                     emit({"ok": True, "index": info})
                 else:
                     hits = retriever.retrieve(req["dir"], req["queries"], k=int(req.get("k", 4)),
-                                              mode=req.get("method") or "hybrid")
+                                              mode=req.get("method") or "hybrid", extra=int(req.get("extra") or 0))
                     emit({"ok": True, "hits": hits})
             elif op == "quit":
                 emit({"ok": True, "bye": True})

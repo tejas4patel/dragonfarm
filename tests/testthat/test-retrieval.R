@@ -47,7 +47,7 @@ test_that("dragon_ask retrieves, asks the backend with the excerpts, and marks c
   docs <- dragon_documents_load(f$dir)
   seen <- NULL
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(),
     default_answer_model = function() "Qwen/Qwen2.5-1.5B-Instruct",
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {
@@ -95,6 +95,26 @@ test_that("dragon_retrieve shapes worker hits into a data frame", {
   expect_equal(nrow(h2), 4L)
   expect_equal(unique(h2$query), c("a", "b"))
   expect_error(dragon_retrieve(docs, character()), "query")
+  expect_error(dragon_retrieve(docs, "q", extra = -1), "extra")
+})
+
+test_that("compare asks for two different extra excerpts and for each document's version", {
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  extras <- integer(); systems <- character()
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, query, k = 4, extra = 0) { extras <<- c(extras, extra); fake_hits() },
+    worker_start = function(backend = NULL) invisible(NULL),
+    worker_request = function(req, on_token = NULL, timeout = 3600) {
+      systems <<- c(systems, req$conversations[[1]][[1]]$content)
+      list(outputs = list("Thirty days [1]."))
+    }
+  )
+  dragon_ask(docs, "How long is the return window?", model = "Qwen/Qwen2.5-7B-Instruct")
+  dragon_ask(docs, "How long is the return window?", model = "Qwen/Qwen2.5-7B-Instruct", compare = TRUE)
+  expect_equal(extras, c(0L, 2L))
+  expect_false(grepl("disagree", systems[1]))
+  expect_match(systems[2], "If they disagree, say so")
 })
 
 test_that("a chat with documents sends excerpts to the model but keeps plain history", {
@@ -102,7 +122,7 @@ test_that("a chat with documents sends excerpts to the model but keeps plain his
   docs <- dragon_documents_load(f$dir)
   sent <- list()
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(2),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(2),
     default_answer_model = function() "Qwen/Qwen2.5-1.5B-Instruct",
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {
@@ -135,7 +155,7 @@ test_that("a short follow-up is also searched with the question before it", {
   docs <- dragon_documents_load(f$dir)
   queries <- character()
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) {
+    dragon_retrieve = function(docs, query, k = 4, ...) {
       queries <<- c(queries, query)
       h <- fake_hits(3)
       if (grepl("return window", query)) h$id <- c("abc-000", "abc-007", "abc-008")
@@ -193,7 +213,7 @@ test_that("a reply that is only a citation is asked again once", {
   replies <- list("[1]", "You can return it within 30 days [1].")
   seen <- list()
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(),
     default_answer_model = function() "Qwen/Qwen2.5-3B-Instruct",
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {
@@ -242,7 +262,7 @@ test_that("a chat with documents asks again once when the reply is only a citati
   replies <- list("[1]", "Thirty days [1].")
   sent <- list()
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(2),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(2),
     default_answer_model = function() "Qwen/Qwen2.5-3B-Instruct",
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {
@@ -275,7 +295,7 @@ test_that("untrained models under 3B get an explicit 'not covered' line; others 
   docs <- dragon_documents_load(f$dir)
   seen <- NULL
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(),
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {
       seen <<- req$conversations[[1]][[1]]$content
@@ -311,7 +331,7 @@ test_that("dragon_ask streams the answer to on_token as it is written", {
   f <- write_fake_set()
   docs <- dragon_documents_load(f$dir)
   testthat::local_mocked_bindings(
-    dragon_retrieve = function(docs, query, k = 4) fake_hits(),
+    dragon_retrieve = function(docs, query, k = 4, ...) fake_hits(),
     default_answer_model = function() "Qwen/Qwen2.5-7B-Instruct",
     worker_start = function(backend = NULL) invisible(NULL),
     worker_request = function(req, on_token = NULL, timeout = 3600) {

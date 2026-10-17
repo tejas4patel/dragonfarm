@@ -39,7 +39,7 @@ test_that("the training dataset puts retrieved excerpts in front of each kept qu
   f <- write_fake_set()
   qa <- dragon_questions_load(write_fake_questions(f$dir))
   asked <- NULL
-  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4, ...) {
     asked <<- list(query = query, k = k)
     do.call(rbind, lapply(query, function(q) data.frame(
       query = q, n = 1:2, id = c("abc-000", "abc-001"), source = "policy.pdf", section = c("Returns", "Warranty"),
@@ -65,7 +65,7 @@ test_that("the training dataset puts retrieved excerpts in front of each kept qu
 test_that("a pair whose source chunk was not retrieved gets that chunk as its last excerpt", {
   f <- write_fake_set()
   qa <- dragon_questions_load(write_fake_questions(f$dir))
-  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4, ...) {
     do.call(rbind, lapply(query, function(q) data.frame(
       query = q, n = 1:2, id = c("zzz-998", "zzz-999"), source = "other.pdf", section = "", text = c("Unrelated one.", "Unrelated two."),
       score = c(0.4, 0.3), similarity = c(0.4, 0.3), weight = 1, stringsAsFactors = FALSE)))
@@ -140,7 +140,7 @@ test_that("building a dataset warns when the set was re-read after the questions
   meta <- jsonlite::read_json(paste0(path, ".meta.json"))
   meta$chunks_md5 <- unname(tools::md5sum(file.path(f$dir, "chunks.jsonl")))
   jsonlite::write_json(meta, paste0(path, ".meta.json"), auto_unbox = TRUE)
-  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4, ...) {
     do.call(rbind, lapply(query, function(q) data.frame(
       query = q, n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns", page = NA_integer_,
       text = "Thirty days.", score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE)))
@@ -185,7 +185,7 @@ test_that("training sets include 'not covered' rows built from another section's
   path <- file.path(qdir, "20261015-120000.jsonl")
   dragonfarm:::write_jsonl(rows, path)
   qa <- dragon_questions_load(path)
-  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4) {
+  testthat::local_mocked_bindings(dragon_retrieve = function(docs, query, k = 4, ...) {
     do.call(rbind, lapply(query, function(q) {
       odd <- as.integer(gsub("[^0-9]", "", q)) %% 2 == 1
       data.frame(query = q, n = 1L, id = if (odd) "abc-000" else "abc-001", source = "policy.pdf",

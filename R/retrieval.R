@@ -33,20 +33,25 @@ dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) 
 #'   the embedding alone. On three document sets hybrid raised the share of
 #'   questions whose source chunk was among the top four from 90.6 to 93.0,
 #'   88 to 100, and 91 to 100 percent.
+#' @param extra Chunks to add after the top `k` that say something different
+#'   from those already chosen (relevant, but not near-copies). A rule that
+#'   several documents repeat and one later document words differently is
+#'   otherwise crowded out; the top `k` itself is unchanged.
 #' @return A data frame with one row per hit: `query` (when several), `n`
 #'   (rank), `id`, `source`, `section`, `page` (PDFs), `text`, `score` (cosine
 #'   similarity times the chunk's weight; rows are ordered by the combined
 #'   ranking, so it need not decrease), `similarity`, and `weight`.
 #' @export
-dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
+dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense"), extra = 0) {
   method <- match.arg(method)
   docs <- as_documents(docs)
   if (!is.character(query) || !length(query) || anyNA(query)) cli::cli_abort("{.arg query} must be a character vector.")
   check_number(k, "k", min = 1, integer = TRUE)
+  check_number(extra, "extra", min = 0, integer = TRUE)
   if (is.null(docs$manifest$index)) docs <- dragon_index(docs)
   worker_start()
   res <- worker_request(list(op = "retrieve", dir = docs$dir, queries = as.list(query), k = as.integer(k),
-                             method = method))
+                             method = method, extra = as.integer(extra)))
   chunks <- dragon_chunks(docs)
   rows <- list()
   for (qi in seq_along(res$hits)) {
@@ -97,6 +102,12 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
 #'   it is generated, for showing it as it is written (backends that stream:
 #'   the local worker and servers). A reply that is asked again because it
 #'   was only a citation is not streamed; the returned answer is final.
+#' @param compare Look for documents that disagree: adds two excerpts that
+#'   say something different from the top `k`, and asks the model to give
+#'   each document's version when they differ. On a test set of rules that
+#'   one later document changes, a 7B named both versions in 13 of 24
+#'   answers instead of 6; it still sometimes calls differing documents
+#'   consistent, so check the sources.
 #' @return A `dragon_answer`: `$answer`, `$sources` (a data frame of the
 #'   excerpts with `n`, `source`, `section`, `text`, `score`, and `cited`,
 #'   whether the answer refers to it), `$question`, and `$model`. `print()`
@@ -111,13 +122,13 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense")) {
 #' }
 dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backend = dragon_backend(),
                        max_new_tokens = 600, temperature = 0, top_p = 0.9, base = FALSE, on_stage = NULL,
-                       on_token = NULL) {
+                       on_token = NULL, compare = FALSE) {
   docs <- as_documents(docs)
   check_string(question, "question")
   if (!inherits(backend, "dragon_backend")) cli::cli_abort("{.arg backend} must be a {.cls dragon_backend}.")
   stage <- function(msg) if (is.function(on_stage)) on_stage(msg)
   stage("Finding the most relevant excerpts")
-  hits <- dragon_retrieve(docs, question, k = k)
+  hits <- dragon_retrieve(docs, question, k = k, extra = if (isTRUE(compare)) 2L else 0L)
   target <- NULL
   model_label <- backend$model %||% ""
   if (!is_server_backend(backend)) {
@@ -128,7 +139,8 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
     if (isTRUE(base)) model_label <- paste0(model_label, " (base)")
   }
   convo <- list(
-    list(role = "system", content = documents_system(system, small = decline_note_for(target), full = full_answers_for(target))),
+    list(role = "system", content = documents_system(system, small = decline_note_for(target), full = full_answers_for(target),
+                                                     compare = compare)),
     list(role = "user", content = documents_prompt(question, hits))
   )
   stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
@@ -245,7 +257,7 @@ full_answers_for <- function(target) {
   is.na(size) || size >= 3
 }
 
-documents_system <- function(extra = NULL, small = FALSE, full = TRUE) {
+documents_system <- function(extra = NULL, small = FALSE, full = TRUE, compare = FALSE) {
   rules <- if (isTRUE(full)) c(
     "Answer the question fully, in clear sentences: include the details the excerpts give, such as figures,",
     "dates, names, conditions, steps, or code, and explain them where that helps.",
@@ -257,12 +269,18 @@ documents_system <- function(extra = NULL, small = FALSE, full = TRUE) {
     "You answer questions about the user's documents using only the numbered excerpts provided.",
     rules,
     "If the excerpts do not contain the answer, say that the documents do not cover it; do not guess.",
+    if (isTRUE(compare)) compare_note,
     if (!isTRUE(full)) "Be concise."
   ), collapse = " ")
   out <- if (is.null(extra) || !nzchar(trimws(extra))) base else paste(base, trimws(extra))
   if (isTRUE(small)) out <- paste(out, decline_note)
   out
 }
+
+compare_note <- paste(
+  "The excerpts may come from different documents. If they disagree, say so: give each document's version",
+  "with its citation, and say which is newer when the excerpts show dates."
+)
 
 documents_prompt <- function(question, hits) {
   if (!nrow(hits)) return(paste0("No excerpts were found in the documents.\n\nQuestion: ", question))

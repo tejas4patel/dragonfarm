@@ -65,6 +65,7 @@ mod_documents_top_ui <- function(ns) {
         shiny::selectInput(ns("model"), label_with_info("Answered by", "answer"), choices = c("Recommended for this machine" = ""), width = "100%"),
         shiny::numericInput(ns("k"), "Excerpts", value = 4, min = 1, max = 12, step = 1)
       ),
+      shiny::checkboxInput(ns("compare"), "Look for documents that disagree", value = FALSE),
       shiny::div(class = "cloud-actions",
         shiny::actionButton(ns("ask"), "Ask", class = "btn-primary"),
         shiny::actionButton(ns("to_chat"), "Continue in Chat", class = "btn-outline-secondary")
@@ -248,7 +249,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       stream_msg(reset = TRUE)
       shiny::withProgress(message = "The dragon is reading", value = 0.1, {
         ans <- tryCatch(
-          dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4,
+          dragon_ask(docs, q, model = chosen_model(), k = input$k %||% 4, compare = isTRUE(input$compare),
                      on_stage = function(msg) shiny::incProgress(0.3, detail = msg),
                      on_token = function(piece) stream_msg(text = piece)),
           error = function(e) { notify_error(e); NULL })

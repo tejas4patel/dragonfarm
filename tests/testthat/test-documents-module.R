@@ -14,8 +14,8 @@ test_that("the documents module opens a saved set, asks, and switches routes", {
     dragon_documents = function(paths, name = NULL, runs_dir = NULL, ...) {
       expect_true(dir.exists(paths)); expect_equal(name, "example-policies"); dragon_documents_load(f$dir)
     },
-    dragon_ask = function(docs, question, model = NULL, k = 4, ...) {
-      asked <<- list(docs = docs$name, question = question, model = model, k = k)
+    dragon_ask = function(docs, question, model = NULL, k = 4, compare = FALSE, ...) {
+      asked <<- list(docs = docs$name, question = question, model = model, k = k, compare = compare)
       structure(list(question = question, answer = "Thirty days [1].", model = "test-model", documents = docs$name,
                      sources = data.frame(n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns",
                                           text = "Thirty days.", score = 0.9, similarity = 0.9, weight = 1, cited = TRUE,
@@ -50,10 +50,13 @@ test_that("the documents module opens a saved set, asks, and switches routes", {
     expect_equal(asked$question, "How long?")
     expect_equal(asked$docs, "kb")
     expect_null(asked$model)
+    expect_false(asked$compare)                 # off unless ticked
     html <- output$answer$html
     expect_match(html, "Thirty days \\[1\\]")
     expect_match(html, "policy.pdf")
     expect_match(html, "<strong>")   # the cited source is bold
+    session$setInputs(compare = TRUE, ask = 3)
+    expect_true(asked$compare)                  # "Look for documents that disagree" reaches dragon_ask()
 
     session$setInputs(example = 1)
     expect_equal(state$documents$name, "kb")
@@ -88,7 +91,7 @@ test_that("the Teach card reviews a question set and hands a dataset to Model", 
   visited <- character()
   testthat::local_mocked_bindings(
     worker_start = function(backend = NULL) invisible(NULL), dragon_index = function(docs, ...) docs, hardware_info = function() NULL,
-    dragon_retrieve = function(docs, query, k = 4) do.call(rbind, lapply(query, function(q) data.frame(
+    dragon_retrieve = function(docs, query, k = 4, ...) do.call(rbind, lapply(query, function(q) data.frame(
     query = q, n = 1L, id = "abc-000", source = "policy.pdf", section = "Returns", text = "Thirty days.",
     score = 0.9, similarity = 0.9, weight = 1, stringsAsFactors = FALSE))))
   shiny::testServer(dragonfarm:::mod_documents_server,
