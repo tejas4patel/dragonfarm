@@ -317,9 +317,10 @@ a spreadsheet.
 
 - Everything that sends data off the machine (the Claude API, fetching
   web pages as documents, publishing to Hugging Face, a model server
-  elsewhere) now passes one check and is recorded in the runs folder’s
-  catalogue with where it went and why. An admin can limit the hosts in
-  the policy, down to none at all.
+  elsewhere, free tiers, cloud GPUs, and checking a saved key) now
+  passes one check and is recorded in the runs folder’s catalogue with
+  where it went and why. An admin can limit the hosts in the policy,
+  down to none at all.
 
 - For servers and machines without the internet, the package ships a
   lock of its Python packages (`inst/python/requirements.lock`, pinned
