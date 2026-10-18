@@ -183,7 +183,9 @@ test_that("the agent mode is right on GPU, CPU-only and model-server setups", {
   expect_true(on$on); expect_true(on$server); expect_match(on$message, "14B.*model server")
   expect_false(dragonfarm:::agent_mode(gpu, small)$on)                 # the server's model is what counts
   expect_true(dragonfarm:::agent_mode(cpu, unknown)$on)                # unknown size: the user's choice
-  expect_true(dragonfarm:::agent_mode(NULL, NULL)$on %in% c(TRUE, FALSE))   # never errors without a hardware check
+  # Without a hardware check it never errors (and never starts Python here).
+  testthat::local_mocked_bindings(hardware_info = function() stop("no Python"))
+  expect_false(dragonfarm:::agent_mode(NULL, NULL)$on)                 # falls back to the 1.5B: fixed workflows
 })
 
 test_that("on a model server, the server's model must be big enough to drive an agent", {
