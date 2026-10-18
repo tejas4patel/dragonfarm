@@ -139,3 +139,14 @@ serving_check <- function(target, runs_dir = dragon_runs_dir()) {
                    "i" = "Propose it and have it signed off in Monitor, Model versions, or answer with an untrained model."),
                  class = "dragonfarm_error", code = "NOT_APPROVED")
 }
+
+# For run pickers in governed mode: " - not approved" after runs that are not
+# the run of an approved version, so a refusal is no surprise. Empty strings
+# when governed mode is off.
+approval_note <- function(run_ids, runs_dir = dragon_runs_dir()) {
+  policy <- tryCatch(policy_current(runs_dir), error = function(e) NULL)
+  if (!isTRUE(policy$registry$governed) || !length(run_ids)) return(rep("", length(run_ids)))
+  l <- tryCatch(registry_list(runs_dir = runs_dir), error = function(e) NULL)
+  ok <- run_ids %in% (l$run_id[l$status == "approved"] %||% character())
+  ifelse(ok, "", " - not approved")
+}

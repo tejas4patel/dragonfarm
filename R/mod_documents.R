@@ -286,7 +286,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       hw <- state$hardware
       rec <- if (!is.null(hw$tier)) sprintf("Recommended for this machine (%s)", hw$tier$model) else "Recommended for this machine"
       choices <- stats::setNames("", rec)
-      if (nrow(df)) choices <- c(choices, stats::setNames(paste0("run:", df$id), paste("Run", df$id)))
+      if (nrow(df)) choices <- c(choices, stats::setNames(paste0("run:", df$id), paste0("Run ", df$id, approval_note(df$id, runs_dir))))
       choices <- c(choices, stats::setNames(dragon_presets()$id, dragon_presets()$id))
       shiny::updateSelectInput(session, "model", choices = choices, selected = shiny::isolate(input$model) %||% "")
     })

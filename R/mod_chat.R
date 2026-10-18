@@ -106,7 +106,7 @@ mod_chat_server <- function(id, state, runs_dir) {
     )
     shiny::observe({
       df <- runs()
-      labels <- if (nrow(df)) sprintf("%s  [%s]", df$id, df$stage) else character()
+      labels <- if (nrow(df)) paste0(sprintf("%s  [%s]", df$id, df$stage), approval_note(df$id, runs_dir)) else character()
       for (suffix in c("run", "run_b")) {
         selected <- shiny::isolate(input[[suffix]])
         if (suffix == "run" && !is.null(state$run) && state$run$id %in% df$id && (is.null(selected) || !nzchar(selected))) selected <- state$run$id

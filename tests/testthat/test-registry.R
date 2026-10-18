@@ -134,3 +134,16 @@ test_that("Ask refuses an unapproved run in governed mode, before anything runs"
   r <- dragonfarm:::tool_call("answer_question", list(set = f$dir, question = "How long?", model = "run-x"))
   expect_equal(r$code, "NOT_APPROVED")
 })
+
+test_that("run pickers say which runs are not approved, only in governed mode", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  r1 <- fake_run(runs, "run-1"); fake_run(runs, "run-2")
+  expect_equal(dragonfarm:::approval_note(c("run-1", "run-2"), runs), c("", ""))      # off: no notes
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- TRUE
+  dragonfarm:::policy_set(pol, set_by = "admin", runs_dir = runs)
+  dragonfarm:::registry_propose(r1, "bot", runs_dir = runs)
+  dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "ok", runs_dir = runs)
+  expect_equal(dragonfarm:::approval_note(c("run-1", "run-2"), runs), c("", " - not approved"))
+})
