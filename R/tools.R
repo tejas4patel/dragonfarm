@@ -217,6 +217,9 @@ tool_impl <- list(
     list(run = run$id, eval_loss = e$eval_loss, perplexity = e$perplexity, pref_accuracy = e$pref_accuracy,
          n_samples = if (is.data.frame(e$samples)) nrow(e$samples) else 0L)
   },
+  promote_model = function(args) {
+    registry_propose(run_from(args$run), args$name)
+  },
   cancel_run = function(args) {
     run <- run_from(args$run)
     if (dragon_status(run)$state %in% c("queued", "running")) dragon_cancel(run)

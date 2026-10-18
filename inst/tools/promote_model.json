@@ -1,0 +1,54 @@
+{
+  "name": "promote_model",
+  "title": "Propose a run as a model version",
+  "description": "Propose a finished, evaluated run as the next version of a named model. The version starts as a candidate; only a person can approve it for use.",
+  "side_effect": "writes",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 2
+  },
+  "errors": [
+    "NOT_A_RUN",
+    "NOT_EVALUATED",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "run",
+      "name"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "run": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Run id or folder."
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Model name: letters, digits, dots, dashes, underscores."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "name",
+      "version",
+      "status"
+    ],
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "version": {
+        "type": "integer"
+      },
+      "status": {
+        "type": "string"
+      }
+    }
+  }
+}

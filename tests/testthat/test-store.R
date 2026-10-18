@@ -7,7 +7,7 @@ test_that("the catalog is created with its schema and events cannot be edited", 
   expect_true(file.exists(file.path(runs, "dragonfarm.sqlite")))
   expect_setequal(intersect(DBI::dbListTables(con), c("meta", "document_sets", "set_versions", "runs", "events")),
                   c("meta", "document_sets", "set_versions", "runs", "events"))
-  expect_equal(DBI::dbGetQuery(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value, "1")
+  expect_equal(DBI::dbGetQuery(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value, as.character(dragonfarm:::store_schema_version))
   expect_identical(dragonfarm:::store_open(runs), con)            # one connection per folder
 
   expect_true(dragonfarm:::store_record_event("tool", "search_documents", ok = TRUE, detail = list(args = list(query = "q")),

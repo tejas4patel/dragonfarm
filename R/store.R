@@ -7,7 +7,7 @@
 # Events are append-only: the database refuses updates and deletes, so the
 # record of what was asked, run, approved, or refused cannot be edited.
 
-store_schema_version <- 1L
+store_schema_version <- 2L
 
 store_ddl <- c(
   "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)",
@@ -23,7 +23,18 @@ store_ddl <- c(
   "CREATE TRIGGER IF NOT EXISTS policies_no_update BEFORE UPDATE ON policies BEGIN SELECT RAISE(ABORT, 'policy versions are append-only'); END",
   "CREATE TRIGGER IF NOT EXISTS policies_no_delete BEFORE DELETE ON policies BEGIN SELECT RAISE(ABORT, 'policy versions are append-only'); END",
   "CREATE TRIGGER IF NOT EXISTS events_no_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT, 'events are append-only'); END",
-  "CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'events are append-only'); END"
+  "CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'events are append-only'); END",
+  # Model registry (schema 2): versions and sign-offs, both append-only.
+  paste("CREATE TABLE IF NOT EXISTS model_versions (name TEXT NOT NULL, version INTEGER NOT NULL, run_id TEXT NOT NULL,",
+        "run_dir TEXT, base_model TEXT, revision TEXT, data_md5 TEXT, evaluation TEXT, proposed_by TEXT,",
+        "proposed_at TEXT NOT NULL, PRIMARY KEY (name, version))"),
+  paste("CREATE TABLE IF NOT EXISTS model_signoffs (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,",
+        "version INTEGER NOT NULL, decision TEXT NOT NULL CHECK (decision IN ('approved', 'rejected', 'retired')),",
+        "meaning TEXT NOT NULL, signer TEXT, signed_at TEXT NOT NULL)"),
+  "CREATE TRIGGER IF NOT EXISTS model_versions_no_update BEFORE UPDATE ON model_versions BEGIN SELECT RAISE(ABORT, 'model versions are append-only'); END",
+  "CREATE TRIGGER IF NOT EXISTS model_versions_no_delete BEFORE DELETE ON model_versions BEGIN SELECT RAISE(ABORT, 'model versions are append-only'); END",
+  "CREATE TRIGGER IF NOT EXISTS model_signoffs_no_update BEFORE UPDATE ON model_signoffs BEGIN SELECT RAISE(ABORT, 'sign-offs are append-only'); END",
+  "CREATE TRIGGER IF NOT EXISTS model_signoffs_no_delete BEFORE DELETE ON model_signoffs BEGIN SELECT RAISE(ABORT, 'sign-offs are append-only'); END"
 )
 
 # Open (or create) the catalog for a runs folder; one connection per folder
@@ -57,6 +68,9 @@ store_migrate <- function(con) {
     DBI::dbExecute(con, "INSERT INTO meta (key, value) VALUES ('schema_version', ?)", params = list(as.character(store_schema_version)))
   } else if (as.integer(v) > store_schema_version) {
     cli::cli_abort("This runs folder's catalog was written by a newer dragonfarm (schema {v}); update the package.")
+  } else if (as.integer(v) < store_schema_version) {
+    # The tables above were just created; record the new schema.
+    DBI::dbExecute(con, "UPDATE meta SET value = ? WHERE key = 'schema_version'", params = list(as.character(store_schema_version)))
   }
   invisible(con)
 }
