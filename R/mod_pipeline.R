@@ -51,7 +51,7 @@ mod_pipeline_server <- function(id, state, runs_dir) {
       if (is.null(m)) out <- c(out, "Map a prompt/response dataset first (steps 1 and 2).")
       else if (!identical(mapping_kind(m), "messages")) out <- c(out, "The recipe starts with fine-tuning, so the dataset must be mapped as prompt and response.")
       if (is.null(state$model$id) || !nzchar(state$model$id)) out <- c(out, "Choose a model (step 3).")
-      if (identical(input$judge_kind, "anthropic") && !nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) out <- c(out, "ANTHROPIC_API_KEY is not set in this R session; set it or pick a local judge.")
+      if (identical(input$judge_kind, "anthropic") && !nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) out <- c(out, "Add your Claude API key in Settings, or pick a local judge.")
       out
     })
     # The recipe's steps, built once for both the plan and the start button.

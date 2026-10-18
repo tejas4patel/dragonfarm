@@ -43,6 +43,7 @@ Suggests:
     arrow,
     ellmer,
     httr2,
+    keyring,
     knitr,
     mcptools,
     pkgload,

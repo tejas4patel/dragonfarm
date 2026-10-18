@@ -31,6 +31,9 @@ from a script file.
 * New suggested packages 'S7' and 'mcptools' for `dragon_ellmer_tools()` and
   `dragon_mcp_server()`, which hand the package's tools to other agents; the
   examples and tests that need them are skipped when they are absent.
+* New suggested package 'keyring': the app's Settings page keeps service
+  keys in the operating system's keychain. Nothing touches the keychain
+  during the check; tests use an in-memory stand-in.
 * New file `inst/python/requirements.lock` (about 100 KB): the 'Python'
   packages pinned with hashes, for administrators who install without the
   internet. Nothing reads it during the check.

@@ -64,7 +64,7 @@ mod_tryit_ui <- function(id) {
     ),
     bslib::card(
       bslib::card_header("Publish to the Hugging Face Hub"),
-      shiny::p(class = "hint", "Push this run's model to a repo on the Hub, ready for a hosted Inference Endpoint or any tool that loads a model by repo id. Creates the repo if it does not exist. Needs an HF_TOKEN with write access in this R session."),
+      shiny::p(class = "hint", "Push this run's model to a repo on the Hub, ready for a hosted Inference Endpoint or any tool that loads a model by repo id. Creates the repo if it does not exist. Needs a Hugging Face token with write access, added in Settings."),
       bslib::layout_columns(
         col_widths = c(6, 3, 3),
         shiny::textInput(ns("publish_repo"), "Repo", placeholder = "yourname/support-agent-0.5b", width = "100%"),
@@ -173,7 +173,7 @@ mod_tryit_server <- function(id, state, runs_dir) {
         trimws(input$judge_model %||% "")
       } else {
         if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-          shiny::showNotification("Set ANTHROPIC_API_KEY in the R session before using the Claude API as judge, or pick a local model.", type = "warning", duration = 10)
+          shiny::showNotification("Add your Claude API key in Settings to use Claude as the judge, or pick a local model.", type = "warning", duration = 10)
           return()
         }
         dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
@@ -236,7 +236,7 @@ mod_tryit_server <- function(id, state, runs_dir) {
         trimws(input$judge_model %||% "")
       } else {
         if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-          shiny::showNotification("Set ANTHROPIC_API_KEY in the R session before using the Claude API as judge, or pick a local model in the Judge card.", type = "warning", duration = 10)
+          shiny::showNotification("Add your Claude API key in Settings to use Claude as the judge, or pick a local model in the Judge card.", type = "warning", duration = 10)
           return()
         }
         dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
@@ -312,7 +312,7 @@ mod_tryit_server <- function(id, state, runs_dir) {
         return()
       }
       if (!hf_token_present()) {
-        shiny::showNotification("Set HF_TOKEN (a token with write access) in the R session before publishing.", type = "warning", duration = 10)
+        shiny::showNotification("Add a Hugging Face token with write access in Settings before publishing.", type = "warning", duration = 10)
         return()
       }
       r <- run()

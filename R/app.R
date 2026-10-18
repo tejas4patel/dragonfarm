@@ -29,6 +29,8 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
   dir.create(runs_dir, recursive = TRUE, showWarnings = FALSE)
   shiny::addResourcePath("dragonfarm", system.file("app", "www", package = "dragonfarm"))
   titles <- route_titles(route)
+  # Keys saved in Settings, from the keychain into this session.
+  secrets_load()
 
   ui <- bslib::page_navbar(
     title = shiny::tags$span(class = "df-brand", brand_mark(), shiny::tags$span("dragonfarm")),
@@ -63,6 +65,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
     bslib::nav_panel(titles[["tryit"]], value = "tryit", step_page("tryit", mod_tryit_ui("tryit"))),
     bslib::nav_panel(titles[["chat"]], value = "chat", step_page("chat", mod_chat_ui("chat"))),
     bslib::nav_panel(titles[["pipeline"]], value = "pipeline", step_page("pipeline", mod_pipeline_ui("pipeline"))),
+    bslib::nav_panel(titles[["settings"]], value = "settings", step_page("settings", mod_settings_ui("settings"))),
     bslib::nav_spacer(),
     bslib::nav_item(shiny::uiOutput("hw_badge", inline = TRUE)),
     bslib::nav_item(shiny::tags$span(class = "df-mode", bslib::input_dark_mode(id = "dark_mode", mode = "light")))
@@ -91,6 +94,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
     mod_tryit_server("tryit", state, runs_dir)
     mod_chat_server("chat", state, runs_dir)
     mod_pipeline_server("pipeline", state, runs_dir)
+    mod_settings_server("settings", runs_dir)
 
     output$hw_badge <- shiny::renderUI(hw_badge(state$hardware))
   }
@@ -144,7 +148,9 @@ step_intros <- list(
   chat = c("Talk", "Have a chat with it",
            "Multi-turn chat with context, answers from your documents, and thumbs up or down that become training data."),
   pipeline = c("Automate", "Run the whole training camp",
-               "Chain training, judging, and preference tuning into one recipe, and follow each run's family tree.")
+               "Chain training, judging, and preference tuning into one recipe, and follow each run's family tree."),
+  settings = c("Settings", "Keys to the stable",
+               "Connect outside services once. Keys stay in this computer's keychain, never in your files.")
 )
 
 step_page <- function(key, ui) {
@@ -169,7 +175,7 @@ route_titles <- function(route) {
   numbered <- stats::setNames(paste(seq_along(steps), steps), names(steps))
   # Hidden tabs keep a sensible title for when the other route shows them.
   other <- if (identical(route, "table")) c(documents = "Documents") else c(data = "Data", map = "Map")
-  c(numbered, other)
+  c(numbered, other, settings = "Settings")
 }
 
 # Cache-busting token for the stylesheet: the file's modification time, so a

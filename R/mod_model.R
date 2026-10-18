@@ -94,7 +94,7 @@ mod_model_server <- function(id, state, nav_to) {
       notes <- list()
       if (!is.null(p) && p$gated && !hf_token_present()) {
         notes <- c(notes, list(shiny::p(class = "text-danger small",
-          "This model is gated. Accept its license on huggingface.co and set HF_TOKEN in the R session before training.")))
+          "This model is gated. Accept its license on huggingface.co and add your Hugging Face token in Settings before training.")))
       }
       size <- model_size_b(id)
       if (identical(state$route, "documents") && !is.na(size) && size < 3) {
