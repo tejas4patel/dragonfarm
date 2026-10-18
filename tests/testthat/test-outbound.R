@@ -107,3 +107,17 @@ test_that("with outbound set to none, every path that sends data refuses before 
   ev <- dragonfarm:::store_events(100, kind = "outbound", runs_dir = runs)
   expect_true(nrow(ev) >= 11 && all(ev$code == "NOT_ALLOWED"))       # each refusal is in the record
 })
+
+test_that("the offline switch stops model downloads in every Python process; 'Nowhere' alone does not (D-13)", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  testthat::local_mocked_bindings(python_source_dir = function() "src")
+  no_outbound(runs)                                                    # data may go nowhere
+  expect_false("HF_HUB_OFFLINE" %in% names(dragonfarm:::python_env()))  # downloads still work
+  pol <- dragonfarm:::policy_current(runs); pol$version <- NULL; pol$outbound$offline <- TRUE
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "air-gapped", runs_dir = runs)
+  env <- dragonfarm:::python_env()
+  expect_equal(unname(env["HF_HUB_OFFLINE"]), "1"); expect_equal(unname(env["TRANSFORMERS_OFFLINE"]), "1")
+  expect_true(dragonfarm:::policy_from_inputs(pol, list(offline = TRUE, outbound = "any"))$outbound$offline)
+})

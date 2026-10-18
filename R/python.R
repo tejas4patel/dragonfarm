@@ -160,8 +160,13 @@ python_source_dir <- function() {
 }
 
 python_env <- function() {
+  # D-13: the policy's offline switch stops model downloads in every Python
+  # process (a model must already be on this machine); "Nowhere" for data
+  # leaves downloads alone, since they send none of the user's data.
+  offline <- isTRUE(tryCatch(policy_current()$outbound$offline, error = function(e) FALSE))
   c(
     "current",
+    if (offline) c(HF_HUB_OFFLINE = "1", TRANSFORMERS_OFFLINE = "1"),
     PYTHONPATH = python_source_dir(),
     DRAGONFARM_MANAGED = "1",
     PYTHONUNBUFFERED = "1",

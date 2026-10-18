@@ -50,6 +50,7 @@ policy_from_inputs <- function(current, input) {
   p$approvals$side_effects <- as.list(input$approve_effects %||% character())
   hosts <- trimws(unlist(strsplit(input$hosts %||% "", "[\r\n,]+")))
   p$outbound$allowed_hosts <- switch(input$outbound %||% "any", any = NULL, none = list(), only = as.list(hosts[nzchar(hosts)]))
+  if (!is.null(input$offline)) p$outbound$offline <- isTRUE(input$offline)
   p$registry$separate_signer <- isTRUE(input$separate_signer)
   p$registry$governed <- isTRUE(input$governed)
   if (!is.null(input$admins)) p$admins <- names_from_text(input$admins)
@@ -90,6 +91,8 @@ mod_policy_server <- function(id, runs_dir) {
                             choices = c("Any host (each call recorded)" = "any", "Nowhere" = "none", "Only these hosts" = "only")),
         shiny::textAreaInput(ns("hosts"), "Hosts, one per line (*.example.com allows subdomains)",
                              value = paste(unlist(hosts), collapse = "\n"), rows = 3, width = "100%"),
+        shiny::checkboxInput(ns("offline"), "Offline: never download models (they must already be on this machine)",
+                             value = isTRUE(p$outbound$offline)),
         shiny::tags$h6("Sign-off and budgets"),
         shiny::checkboxInput(ns("separate_signer"), "A model version must be signed by someone other than its proposer",
                              value = isTRUE(p$registry$separate_signer)),
