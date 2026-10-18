@@ -162,8 +162,48 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
                           temperature = temperature, top_p = top_p)
   }
   hits$cited <- hits$n %in% parse_citations(reply, nrow(hits))
-  structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name),
+  trace <- ask_trace(docs, question, model_label, target, convo, hits, reply,
+                     settings = list(k = k, compare = isTRUE(compare), temperature = temperature, top_p = top_p,
+                                     max_new_tokens = as.integer(max_new_tokens), base = isTRUE(base)))
+  structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name,
+                 trace = trace),
             class = "dragon_answer")
+}
+
+# Record what an answer came from, so it can be traced later: the exact
+# chunks (their checksum) and reader, the model and its pinned revision, the
+# settings, every excerpt shown to the model and whether it was cited, a hash
+# of the full prompt, and the answer. Returns the event id (NA if the
+# catalogue could not be written; answering never fails because of it).
+ask_trace <- function(docs, question, model_label, target, convo, hits, reply, settings) {
+  man <- tryCatch(read_json(file.path(docs$dir, "manifest.json")), error = function(e) list())
+  chunks <- file.path(docs$dir, "chunks.jsonl")
+  sources <- lapply(seq_len(nrow(hits)), function(i) {
+    h <- as.list(hits[i, intersect(c("n", "id", "source", "section", "page", "cited"), names(hits)), drop = FALSE])
+    lapply(h, function(v) if (length(v) && is.na(v)) NULL else v)
+  })
+  detail <- list(
+    question = question, set = docs$name,
+    chunks_md5 = if (file.exists(chunks)) unname(tools::md5sum(chunks)) else NULL,
+    reader = man$chunking$reader, model = model_label, revision = target$revision, adapter = target$adapter,
+    settings = settings, sources = sources, prompt_hash = result_hash(convo),
+    answer = reply, answer_hash = result_hash(reply)
+  )
+  tryCatch(store_record_event("ask", docs$name, ok = TRUE, detail = detail, runs_dir = trace_runs_dir(docs)),
+           error = function(e) NA_integer_)
+}
+
+# Where to find an answer's trace in the app.
+trace_note <- function(id) {
+  if (is.null(id) || is.na(id)) return(NULL)
+  shiny::p(class = "trace-note", sprintf("Recorded as #%s. Monitor, Activity shows what this answer came from.", id))
+}
+
+# A set lives in <runs>/documents/<name>; its answers are traced in that
+# runs folder's catalogue.
+trace_runs_dir <- function(docs) {
+  parent <- dirname(dirname(docs$dir))
+  if (identical(basename(dirname(docs$dir)), "documents")) parent else dragon_runs_dir()
 }
 
 # A reply with no words or figures once citation markers are removed: "[1]",

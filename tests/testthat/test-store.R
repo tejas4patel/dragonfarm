@@ -10,8 +10,9 @@ test_that("the catalog is created with its schema and events cannot be edited", 
   expect_equal(DBI::dbGetQuery(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value, as.character(dragonfarm:::store_schema_version))
   expect_identical(dragonfarm:::store_open(runs), con)            # one connection per folder
 
-  expect_true(dragonfarm:::store_record_event("tool", "search_documents", ok = TRUE, detail = list(args = list(query = "q")),
-                                              duration_ms = 12, runs_dir = runs))
+  id <- dragonfarm:::store_record_event("tool", "search_documents", ok = TRUE, detail = list(args = list(query = "q")),
+                                        duration_ms = 12, runs_dir = runs)
+  expect_equal(id, 1L)                                             # the new event's id
   ev <- dragonfarm:::store_events(runs_dir = runs)
   expect_equal(nrow(ev), 1L)
   expect_equal(ev$name, "search_documents")

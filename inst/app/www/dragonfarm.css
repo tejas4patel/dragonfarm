@@ -438,3 +438,4 @@ ol.plan li { margin-bottom: 6px; }
 .plan-tag { font-size: 0.72rem; padding: 1px 8px; border-radius: 999px; background: rgba(127, 127, 127, 0.14); }
 .plan-tag.gpu { background: rgba(91, 208, 138, 0.18); }
 .plan-tag.out { background: rgba(255, 200, 87, 0.28); font-weight: 600; }
+.trace-note { font-size: 0.72rem; opacity: 0.65; margin: 6px 0 0; }

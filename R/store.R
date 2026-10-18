@@ -87,10 +87,10 @@ store_record_event <- function(kind, name = NULL, ok = NA, code = NULL, detail =
                                  if (is.na(ok)) NA_integer_ else as.integer(ok), code %||% NA_character_,
                                  if (is.null(detail)) NA_character_ else as.character(jsonlite::toJSON(detail, auto_unbox = TRUE, null = "null")),
                                  if (is.null(duration_ms)) NA_integer_ else as.integer(duration_ms)))
-    TRUE
+    invisible(DBI::dbGetQuery(con, "SELECT last_insert_rowid() AS id")$id)
   }, error = function(e) {
     cli::cli_warn("Could not record an event in the catalog: {conditionMessage(e)}")
-    FALSE
+    invisible(NA_integer_)
   })
 }
 
