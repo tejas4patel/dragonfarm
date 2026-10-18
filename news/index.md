@@ -174,6 +174,13 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- A team can share one catalogue on Postgres: set `DRAGONFARM_CATALOG`
+  to a `postgresql://` address (or `options(dragonfarm.catalog =)` to a
+  function that returns a DBI connection) and every runs folder records
+  its events, approvals, policies and model versions there, append-only
+  as on a laptop. Without it, nothing changes: each runs folder keeps
+  its own SQLite file.
+
 - More of the record-keeping is in the app, not just in R: Monitor has a
   “Model versions” card (propose a finished, evaluated run as a version
   of a named model, then approve, reject or retire it with a stated

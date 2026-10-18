@@ -129,6 +129,19 @@ of torch; on Linux, PyPI’s torch already includes CUDA. For a Windows
 server with an NVIDIA card, add the CUDA build from the PyTorch package
 index when you download.</p>
 </div>
+<div class="section level2">
+<h2 id="one-catalogue-for-the-team">One catalogue for the team<a class="anchor" aria-label="anchor" href="#one-catalogue-for-the-team"></a>
+</h2>
+<p>Each runs folder keeps a small record of what happened: answers and
+where they came from, approvals, policies, model versions and sign-offs.
+On a laptop that is a file in the folder. For a team, point everyone at
+one Postgres database instead, for example in the server’s
+<code>.Renviron</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="va">DRAGONFARM_CATALOG</span><span class="op">=</span>postgresql://dragonfarm:PASSWORD@db.example.com:5432/dragonfarm</span></code></pre></div>
+<p>The tables are created on first use, and the record stays
+append-only: the database itself refuses to change or delete past
+entries. You need the RPostgres package installed.</p>
+</div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
