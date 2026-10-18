@@ -13,6 +13,17 @@ a spreadsheet.
 
 ### Documents
 
+- A document set that is mostly not in English is now indexed with a
+  multilingual model (`intfloat/multilingual-e5-small`) instead of the
+  English one, and the set’s summary says so. On German product
+  information for eight medicines (3,125 chunks, 58 questions), the
+  passage a question came from reached the top four for 55 percent of
+  questions, against 45 percent; six questions were found only by the
+  multilingual model, none only by the English one. English sets, and
+  tables with few words, keep the English model; naming a `model` in
+  [`dragon_index()`](https://dragonfarm.dev/reference/dragon_index.md)
+  still wins.
+
 - Numbered headings in PDFs (“6.4 Updating packages”) start their
   section even when the line before them was a long one that ended a
   sentence; they used to be glued on to the end of the previous
@@ -693,6 +704,12 @@ a spreadsheet.
   redirect.
 
 ### Fixes
+
+- A chat with a server or Ollama that refused the request (an unknown
+  model, a bad key) recorded an empty reply as the assistant’s turn,
+  which could then be rated and exported for training. A refused stream,
+  or an error in the middle of one, is now an error, as it already was
+  without streaming, and the unanswered turn is dropped.
 
 - [`dragon_serve_ollama()`](https://dragonfarm.dev/reference/dragon_serve_ollama.md)
   finds Ollama in its usual install folder when R was started before
