@@ -705,12 +705,6 @@ a spreadsheet.
 
 ### Fixes
 
-- A chat with a server or Ollama that refused the request (an unknown
-  model, a bad key) recorded an empty reply as the assistant’s turn,
-  which could then be rated and exported for training. A refused stream,
-  or an error in the middle of one, is now an error, as it already was
-  without streaming, and the unanswered turn is dropped.
-
 - [`dragon_serve_ollama()`](https://dragonfarm.dev/reference/dragon_serve_ollama.md)
   finds Ollama in its usual install folder when R was started before
   Ollama was installed, and checks that Ollama can actually answer with
