@@ -51,6 +51,29 @@ lock_pins <- function(path = lock_path()) {
 
 normalise_package <- function(x) gsub("[-_.]+", "-", tolower(x))
 
+# What the environment is built from (D-12): the locked set, every package
+# pinned exactly with its platform marker, so two machines get the same
+# versions and nothing drifts as new releases appear. The loose requirements
+# are used instead when the lock does not match them (its header records
+# their hash) or when DRAGONFARM_PYTHON_LOCKED=false or
+# options(dragonfarm.python_locked = FALSE) asks for the latest releases.
+locked_requirements <- function(path = lock_path(), reqs = dragon_python_requirements()) {
+  if (!nzchar(path) || !file.exists(path)) return(NULL)
+  lines <- readLines(path, warn = FALSE)
+  if (!any(lines == paste("# requirements:", requirements_hash(reqs)))) return(NULL)
+  m <- regmatches(lines, regexec("^([A-Za-z0-9._-]+==[^ ;\\\\]+)\\s*(;\\s*([^\\\\]+?))?\\s*\\\\?\\s*$", lines))
+  m <- Filter(length, m)
+  if (!length(m)) return(NULL)
+  vapply(m, function(x) if (nzchar(x[4])) paste0(x[2], " ; ", trimws(x[4])) else x[2], "")
+}
+
+python_env_requirements <- function() {
+  reqs <- dragon_python_requirements()
+  off <- isFALSE(getOption("dragonfarm.python_locked")) || tolower(Sys.getenv("DRAGONFARM_PYTHON_LOCKED")) %in% c("false", "0", "no")
+  pinned <- if (off) NULL else locked_requirements(reqs = reqs)
+  list(packages = pinned %||% reqs$packages, python_version = reqs$python_version, locked = !is.null(pinned))
+}
+
 # Installed packages in an interpreter, name -> version.
 python_packages <- function(py) {
   code <- "import json, importlib.metadata as m; print(json.dumps({d.metadata['Name']: d.version for d in m.distributions()}))"
@@ -101,7 +124,7 @@ dragon_python <- function(quiet = FALSE) {
 # on it for ever. The child declares the same requirements, so it resolves
 # the same cached environment.
 python_from_child <- function() {
-  reqs <- dragon_python_requirements()
+  reqs <- python_env_requirements()
   script <- tempfile(fileext = ".R")
   on.exit(unlink(script), add = TRUE)
   writeLines(c(

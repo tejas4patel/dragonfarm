@@ -1,6 +1,7 @@
 .onLoad <- function(libname, pkgname) {
-  reqs <- dragon_python_requirements()
-  # Declare Python dependencies. reticulate resolves them with uv into an
+  reqs <- python_env_requirements()
+  # Declare Python dependencies (the locked versions, see
+  # python_env_requirements()). reticulate resolves them with uv into an
   # ephemeral environment the first time Python is actually needed.
   reticulate::py_require(reqs$packages, python_version = reqs$python_version)
   # The CUDA wheel index is configured on first Python use, not here: CRAN
