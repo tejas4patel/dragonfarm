@@ -165,3 +165,27 @@ test_that("Write practice questions passes the mix checkbox to dragon_questions(
   })
   expect_equal(vapply(got, `[[`, NA, "mix"), c(TRUE, FALSE, TRUE))   # on by default
 })
+
+test_that("the Documents step checks a set re-reads the same and says so plainly", {
+  runs_dir <- tempfile("runs-")
+  f <- write_fake_set(root = runs_dir)
+  state <- shiny::reactiveValues(documents = dragon_documents_load(f$dir), route = "documents", hardware = NULL,
+                                 dataset = NULL, mapped = NULL)
+  verdict <- "identical"
+  testthat::local_mocked_bindings(
+    hardware_info = function() NULL,
+    documents_verify = function(docs, runs_dir) list(set = docs$name, verdict = verdict, files = 2L, missing = character(),
+                                                     changed = character(), not_checked = "https://example.com/faq")
+  )
+  shiny::testServer(dragonfarm:::mod_documents_server,
+    args = list(state = state, nav_to = function(p) NULL, runs_dir = runs_dir), {
+    session$flushReact()
+    expect_match(output$summary$html, "re-reads the same")
+    session$setInputs(verify = 1)
+    expect_match(output$verify_result$html, "Identical: all 2 files")
+    expect_match(output$verify_result$html, "Web pages are not fetched again")
+    verdict <<- "reader changed"
+    session$setInputs(verify = 2)
+    expect_match(output$verify_result$html, "reads the files differently")
+  })
+})

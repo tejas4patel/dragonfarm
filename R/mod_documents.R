@@ -211,8 +211,36 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
           shiny::tags$li(s$name, sprintf(" \u2014 %d chunks", as.integer(s$n_chunks)),
                          if (length(flags)) shiny::span(class = "text-muted small", paste0(" (", paste(flags, collapse = "; "), ")")))
         })),
-        shiny::div(class = "kv", shiny::span("Index"), shiny::strong(if (is.null(m$index)) "not built yet" else m$index$model))
+        shiny::div(class = "kv", shiny::span("Index"), shiny::strong(if (is.null(m$index)) "not built yet" else m$index$model)),
+        shiny::div(class = "btn-row",
+          shiny::actionButton(session$ns("verify"), "Check it re-reads the same", class = "btn-outline-secondary btn-sm"),
+          shiny::uiOutput(session$ns("verify_result"), inline = TRUE))
       )
+    })
+
+    # Read the set's files again and compare, without touching the set.
+    verified <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$verify, {
+      docs <- state$documents
+      if (is.null(docs)) return()
+      v <- shiny::withProgress(message = "Reading the files again...", value = 0.5,
+                               tryCatch(documents_verify(docs, runs_dir = runs_dir), error = function(e) list(verdict = "error", error = conditionMessage(e))))
+      verified(c(v, list(set = docs$name)))
+    })
+    output$verify_result <- shiny::renderUI({
+      v <- verified()
+      docs <- state$documents
+      if (is.null(v) || is.null(docs) || !identical(v$set, docs$name)) return(NULL)
+      msg <- switch(v$verdict,
+        identical = sprintf("Identical: all %d files re-read byte for byte.", v$files),
+        "sources changed" = paste0("Some files changed or are missing", if (length(v$missing)) paste0(" (missing: ", paste(basename(v$missing), collapse = ", "), ")") else "", ". Read the set again to update it."),
+        "reader changed" = "This version of dragonfarm reads the files differently. Read the set again to update it.",
+        differs = "The chunks differ although the files and reader are the same. Please report this.",
+        "nothing to check" = "None of the files can be found on this computer.",
+        error = paste("Could not check:", v$error),
+        v$verdict)
+      extra <- if (length(v$not_checked)) sprintf(" Web pages are not fetched again (%d).", length(v$not_checked)) else ""
+      shiny::span(class = paste("small", if (identical(v$verdict, "identical")) "text-success" else "text-warning"), paste0(msg, extra))
     })
 
     runs <- shiny::reactivePoll(4000, session,

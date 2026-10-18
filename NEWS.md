@@ -143,6 +143,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows.
 
+* More of the record-keeping is in the app, not just in R: Monitor has a
+  "Model versions" card (propose a finished, evaluated run as a version of a
+  named model, then approve, reject or retire it with a stated meaning), and
+  "Run it again and compare" on recorded calls in Activity. The Documents step
+  has "Check it re-reads the same", which reads a set's files again and says
+  whether they come back identical.
+
 * The app has a Settings page for the keys of outside services (Hugging
   Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a key
   once, and it is checked and kept in the computer's own keychain (through

@@ -112,3 +112,32 @@ test_that("the approvals card lists held calls and runs one when approved", {
   expect_equal(sum(ev$kind == "approval_decision"), 2)
   expect_equal(sum(ev$kind == "tool" & ev$ok == 1), 1)              # only the approved one ran
 })
+
+test_that("Monitor proposes a run as a model version, signs it off, and replays a recorded call", {
+  runs_dir <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs_dir)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  d <- file.path(runs_dir, "20261018-run1"); dir.create(file.path(d, "data"), recursive = TRUE)
+  jsonlite::write_json(list(stage = "sft", created_at = "2026-10-18T00:00:00Z", model = list(id = "Qwen/Qwen2.5-0.5B-Instruct"),
+                            data = list(train = "data/train.jsonl")), file.path(d, "config.json"), auto_unbox = TRUE)
+  jsonlite::write_json(list(state = "succeeded", eval_loss = 1.1), file.path(d, "status.json"), auto_unbox = TRUE)
+  writeLines("{}", file.path(d, "data", "train.jsonl"))
+  sets <- data.frame(name = "kb", sources = 1, chunks = 3, indexed = TRUE)
+  testthat::local_mocked_bindings(dragon_documents_list = function(...) sets)
+  tool_call("list_document_sets")
+  call_id <- dragonfarm:::store_events(1, kind = "tool", runs_dir = runs_dir)$id
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs_dir), {
+    session$setInputs(run = "20261018-run1", reg_name = "support-bot")
+    session$setInputs(reg_propose = 1)
+    expect_match(output$registry, "support-bot")
+    expect_match(output$registry, "candidate")
+    session$setInputs(reg_pick = "support-bot@1", reg_decision = "approved", reg_meaning = "Approved for support tickets")
+    session$setInputs(reg_sign = 1)
+    expect_match(output$registry, "approved")
+    expect_equal(dragonfarm:::registry_approved("support-bot", runs_dir = runs_dir)$version, 1L)
+    session$setInputs(activity_filter = "all", activity_pick = as.character(call_id))
+    session$setInputs(replay = 1)
+    expect_match(output$replay_ui$html, "Same result as before")
+  })
+})

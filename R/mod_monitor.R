@@ -82,7 +82,25 @@ mod_monitor_ui <- function(id) {
                           choices = c("Everything" = "all", "Refused or failed" = "failed", "Waiting for approval" = "approval")),
       shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
       shiny::selectInput(ns("activity_pick"), "Details of", choices = c("Pick an entry" = ""), width = "100%"),
-      shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE)
+      shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE),
+      shiny::uiOutput(ns("replay_ui"))
+    ),
+    bslib::card(
+      bslib::card_header("Model versions"),
+      shiny::p(class = "hint", "Turn a finished, evaluated run into a numbered version of a named model, then sign it off: approve it for a stated use, reject it, or retire it later. Only a person signs, and nothing here can be edited afterwards."),
+      bslib::layout_columns(
+        col_widths = c(6, 6),
+        shiny::textInput(ns("reg_name"), "Model name", placeholder = "support-bot", width = "100%"),
+        shiny::div(class = "btn-row", shiny::actionButton(ns("reg_propose"), "Propose the selected run", class = "btn-outline-primary"))
+      ),
+      shiny::div(class = "table-wrap", shiny::tableOutput(ns("registry"))),
+      bslib::layout_columns(
+        col_widths = c(4, 4, 4),
+        shiny::selectInput(ns("reg_pick"), "Version", choices = c("Pick a version" = ""), width = "100%"),
+        shiny::selectInput(ns("reg_decision"), "Decision", choices = c("Approve" = "approved", "Reject" = "rejected", "Retire" = "retired"), width = "100%"),
+        shiny::textInput(ns("reg_meaning"), "What it means", placeholder = "Approved for answering support tickets", width = "100%")
+      ),
+      shiny::actionButton(ns("reg_sign"), "Sign", class = "btn-primary")
     )
   )
 }
@@ -156,6 +174,69 @@ mod_monitor_server <- function(id, state, runs_dir) {
       choices <- if (is.null(ev) || !nrow(ev)) character() else stats::setNames(as.character(ev$id), sprintf("#%s %s %s", ev$id, ev$kind, ev$name %||% ""))
       shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices))
     })
+    # Replay a recorded read-only call or agent task and say whether it matches.
+    replay_result <- shiny::reactiveVal(NULL)
+    output$replay_ui <- shiny::renderUI({
+      id <- input$activity_pick
+      ev <- events()
+      if (is.null(id) || !nzchar(id) || is.null(ev)) return(NULL)
+      row <- ev[as.character(ev$id) == id, , drop = FALSE]
+      if (!nrow(row) || !row$kind %in% c("tool", "agent_run") || !identical(as.integer(row$ok), 1L)) return(NULL)
+      r <- replay_result()
+      shiny::div(class = "btn-row",
+        shiny::actionButton(session$ns("replay"), "Run it again and compare", class = "btn-outline-secondary btn-sm"),
+        if (!is.null(r) && identical(r$id, id)) shiny::span(class = paste("small", if (isTRUE(r$matches)) "text-success" else "text-danger"), r$message))
+    })
+    shiny::observeEvent(input$replay, {
+      id <- input$activity_pick
+      ev <- events()
+      row <- ev[as.character(ev$id) == id, , drop = FALSE]
+      res <- tryCatch(if (identical(row$kind, "agent_run")) agent_replay(as.integer(id), runs_dir) else tool_replay(as.integer(id), runs_dir),
+                      error = function(e) list(ok = FALSE, error = conditionMessage(e)))
+      msg <- if (!isTRUE(res$ok)) paste("Could not replay:", res$error)
+             else if (isTRUE(res$matches)) "Same result as before."
+             else paste0("Different result", if (length(res$changes)) paste0(": ", paste(res$changes, collapse = "; ")) else " on the same documents and model.")
+      replay_result(list(id = id, matches = isTRUE(res$matches), message = msg))
+    })
+
+    # Model versions: propose, list, sign off.
+    reg_tick <- shiny::reactiveVal(0)
+    registry_rows <- shiny::reactive({
+      reg_tick(); events()
+      tryCatch(registry_list(runs_dir = runs_dir), error = function(e) NULL)
+    })
+    output$registry <- shiny::renderTable({
+      l <- registry_rows()
+      if (is.null(l) || !nrow(l)) return(data.frame(Note = "No model versions yet."))
+      data.frame(Model = l$name, Version = l$version, Run = l$run_id, Status = l$status,
+                 `Signed by` = ifelse(is.na(l$signer), "", l$signer), Meaning = ifelse(is.na(l$meaning), "", l$meaning),
+                 check.names = FALSE)
+    })
+    shiny::observe({
+      l <- registry_rows()
+      choices <- if (is.null(l) || !nrow(l)) character() else stats::setNames(paste(l$name, l$version, sep = "@"), sprintf("%s v%d (%s)", l$name, l$version, l$status))
+      shiny::updateSelectInput(session, "reg_pick", choices = c("Pick a version" = "", choices))
+    })
+    shiny::observeEvent(input$reg_propose, {
+      r <- tryCatch(current_run(), error = function(e) NULL)
+      if (is.null(r)) { shiny::showNotification("Pick a run in the Runs card first.", type = "warning"); return() }
+      res <- tryCatch(registry_propose(r, trimws(input$reg_name %||% ""), runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
+      if (!is.null(res)) shiny::showNotification(sprintf("%s version %d proposed. A person signs it off below.", res$name, res$version), type = "message")
+      reg_tick(reg_tick() + 1)
+    })
+    shiny::observeEvent(input$reg_sign, {
+      pick <- input$reg_pick %||% ""
+      if (!nzchar(pick)) { shiny::showNotification("Pick a version first.", type = "warning"); return() }
+      parts <- strsplit(pick, "@", fixed = TRUE)[[1]]
+      ok <- tryCatch({ registry_sign_off(parts[1], as.integer(parts[2]), input$reg_decision, meaning = input$reg_meaning %||% "", runs_dir = runs_dir); TRUE },
+                     error = function(e) { notify_error(e); FALSE })
+      if (ok) {
+        shiny::showNotification(sprintf("%s version %s: %s.", parts[1], parts[2], input$reg_decision), type = "message")
+        shiny::updateTextInput(session, "reg_meaning", value = "")
+      }
+      reg_tick(reg_tick() + 1)
+    })
+
     output$activity_detail <- shiny::renderText({
       id <- input$activity_pick
       ev <- events()
