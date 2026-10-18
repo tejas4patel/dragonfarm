@@ -132,6 +132,15 @@ a spreadsheet.
   refused with what to save them as. Saved sets read identically (reader
   version 19).
 
+### Setup
+
+- The Python environment dragonfarm builds for itself now uses the exact
+  versions in its lock (every package, for each platform), so every
+  machine gets the same versions and none drift as new releases appear.
+  Built and checked on Windows with the CUDA build of torch: every
+  installed package matches the lock. `DRAGONFARM_PYTHON_LOCKED=false`
+  asks for the newest releases instead.
+
 ### Asking documents
 
 - Questions about a whole set (“which document is the oldest?”, “what is

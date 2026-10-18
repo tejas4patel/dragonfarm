@@ -7,6 +7,11 @@ Python package it needs, pinned to one version, with hashes, for
 Windows, macOS and Linux. This page is for the person who sets machines
 up.
 
+The environment a laptop builds for itself uses the same pinned
+versions, so it matches a server’s and does not change when new releases
+appear. Set `DRAGONFARM_PYTHON_LOCKED=false` for the newest releases
+instead.
+
 You need [uv](https://docs.astral.sh/uv/) and Python 3.12 or later on
 each machine. The lock comes with the package:
 

@@ -61,6 +61,10 @@
 <li><p>Encrypted PDFs that open without a password (common for official documents) are read; before, AES-encrypted ones failed with “cryptography is required”. A PDF that needs a password says so in plain words. Text, CSV, and HTML files saved in Windows-1252 or UTF-16 read cleanly instead of with replacement marks for every accented letter. Files in <code>.doc</code>, <code>.xls</code>, <code>.pptx</code> and similar formats are refused with what to save them as. Saved sets read identically (reader version 19).</p></li>
 </ul></div>
 <div class="section level3">
+<h3 id="setup-0-4-0">Setup<a class="anchor" aria-label="anchor" href="#setup-0-4-0"></a></h3>
+<ul><li>The Python environment dragonfarm builds for itself now uses the exact versions in its lock (every package, for each platform), so every machine gets the same versions and none drift as new releases appear. Built and checked on Windows with the CUDA build of torch: every installed package matches the lock. <code>DRAGONFARM_PYTHON_LOCKED=false</code> asks for the newest releases instead.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="asking-documents-0-4-0">Asking documents<a class="anchor" aria-label="anchor" href="#asking-documents-0-4-0"></a></h3>
 <ul><li><p>Questions about a whole set (“which document is the oldest?”, “what is in this set?”) get better answers: an untrained model now sees the set’s documents listed by name and length before the excerpts. On ten such questions over the four FDA guidances, a 7B went from 6 to 9 right. The same 7B still got all 24 known FDA questions right and declined all 8 others; a 1.5B and a 3B moved by one question each way. Model-written overviews of each document were tried too, and lost facts.</p></li>
 <li><p>Answers stream as they are written: <code>dragon_ask(on_token = )</code> and the Ask step in the app show the first words while the rest is still coming. With full answers from a 7B (often 150 words or more), the first words arrived after a median 0.8 seconds against 14 seconds for the whole answer.</p></li>
