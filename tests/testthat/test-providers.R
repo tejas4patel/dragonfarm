@@ -60,3 +60,23 @@ test_that("a chain falls back to the next backend and records it", {
   expect_error(dragonfarm:::backend_generate(dragonfarm:::backend_chain(fake("a", TRUE), fake("b", TRUE)), NULL, list(list())),
                "Every backend failed")
 })
+
+
+test_that("a free-tier judge checks the opt-in and key when it is called, not before", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  used <- NULL
+  testthat::local_mocked_bindings(dragon_generate = function(x, prompt, ..., backend) { used <<- backend; paste("reply to", prompt) })
+  j <- dragonfarm:::llm_provider("groq", "llama-3.3-70b-versatile", system = "Judge.", runs_dir = runs)
+  expect_equal(attr(j, "label"), "groq:llama-3.3-70b-versatile")
+  expect_error(j("Which is better?"), class = "dragonfarm_error")              # not opted in: nothing sent
+  expect_null(used)
+  dragonfarm:::provider_opt_in("groq", runs_dir = runs)
+  withr::local_envvar(GROQ_API_KEY = NA)
+  expect_error(j("Which is better?"), "key")
+  withr::local_envvar(GROQ_API_KEY = "gsk-test")
+  expect_equal(j(c("a", "b")), c("reply to a", "reply to b"))
+  expect_equal(used$provider, "groq")
+  expect_error(dragonfarm:::llm_provider("nope", "m"), class = "dragonfarm_error")
+})

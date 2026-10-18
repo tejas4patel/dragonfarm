@@ -187,7 +187,15 @@ dragon_llm_anthropic <- function(model = "claude-opus-5", system = NULL, api_key
                                  max_tokens = 1024, max_active = 4, temperature = NULL) {
   check_string(model, "model")
   rlang::check_installed("httr2", reason = "to call the Claude API.")
+  # Without an explicit key, look it up only when called: a judge or teacher
+  # saved for a background pipeline must never carry the key to disk.
+  from_env <- missing(api_key)
+  if (from_env) rm(api_key) else force(api_key)
+  # Evaluate every argument now: an unevaluated one keeps the caller's
+  # frame alive inside the function, and that frame would be saved with it.
+  force(system); force(max_tokens); force(max_active); force(temperature)
   fn <- function(prompts, schema = NULL) {
+    api_key <- if (from_env) Sys.getenv("ANTHROPIC_API_KEY") else api_key
     if (!nzchar(api_key)) {
       cli::cli_abort(c("No Anthropic API key.", "i" = "Set {.envvar ANTHROPIC_API_KEY} or pass {.arg api_key}."))
     }
@@ -209,6 +217,8 @@ dragon_llm_anthropic <- function(model = "claude-opus-5", system = NULL, api_key
 #' @export
 dragon_judge_anthropic <- function(model = "claude-opus-5", api_key = Sys.getenv("ANTHROPIC_API_KEY"),
                                    max_tokens = 1024, max_active = 4) {
+  if (missing(api_key)) return(dragon_llm_anthropic(model = model, system = judge_system_prompt(),
+                                                    max_tokens = max_tokens, max_active = max_active))
   dragon_llm_anthropic(model = model, system = judge_system_prompt(), api_key = api_key,
                        max_tokens = max_tokens, max_active = max_active)
 }

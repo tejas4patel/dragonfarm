@@ -108,3 +108,20 @@ backend_generate.dragon_backend_chain <- function(backend, target, conversations
   }
   cli::cli_abort(c("Every backend failed.", stats::setNames(errors, rep("x", length(errors)))))
 }
+
+# A free-tier model as a judge or teacher (a function from prompts to
+# replies, as as_llm() takes). The provider's backend is made only when the
+# function is called, so a judge saved for a background pipeline holds a
+# provider name and a model id, never a key; the opt-in, daily cap and
+# outbound check apply on every call.
+llm_provider <- function(name, model, system = NULL, max_new_tokens = 512, runs_dir = dragon_runs_dir()) {
+  provider_info(name)
+  check_string(model, "model")
+  force(system); force(max_new_tokens); force(runs_dir)
+  fn <- function(prompts, schema = NULL) {
+    b <- provider_backend(name, model, runs_dir = runs_dir)
+    dragon_generate(model, prompts, system = system, max_new_tokens = max_new_tokens, temperature = 0, backend = b)
+  }
+  attr(fn, "label") <- paste0(name, ":", model)
+  fn
+}

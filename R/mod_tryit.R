@@ -30,7 +30,7 @@ mod_tryit_ui <- function(id) {
       shiny::p(class = "hint", "Ask a stronger model to compare this run's replies with another model's on the held-out prompts. Each pair is judged twice with the order swapped, so a judge that favours the first answer cannot tip the result."),
       bslib::layout_columns(
         col_widths = c(4, 4, 2, 2),
-        shiny::selectInput(ns("judge_kind"), "Judge", choices = c("Claude API (ANTHROPIC_API_KEY)" = "anthropic", "Local model" = "local")),
+        shiny::selectInput(ns("judge_kind"), "Judge", choices = c("Claude API (ANTHROPIC_API_KEY)" = "anthropic", "Local model" = "local", "A free tier (OpenRouter, Groq)" = "provider")),
         shiny::uiOutput(ns("judge_model_ui")),
         shiny::selectInput(ns("against"), "Compare with", choices = c("What it started from" = "base", "Nothing: score 1-10" = "none")),
         shiny::numericInput(ns("judge_n"), "Prompts", value = 10, min = 1, max = 200, step = 1)
@@ -160,28 +160,43 @@ mod_tryit_server <- function(id, state, runs_dir) {
     output$judge_model_ui <- shiny::renderUI({
       if (identical(input$judge_kind, "local")) {
         shiny::textInput(session$ns("judge_model"), "Model id or directory", value = "Qwen/Qwen2.5-1.5B-Instruct")
+      } else if (identical(input$judge_kind, "provider")) {
+        shiny::tagList(
+          shiny::selectInput(session$ns("judge_provider"), "Provider", choices = c("OpenRouter" = "openrouter", "Groq" = "groq")),
+          shiny::textInput(session$ns("judge_model"), "Model id", placeholder = "meta-llama/llama-3.3-70b-instruct:free")
+        )
       } else {
         shiny::selectInput(session$ns("judge_model"), "Model",
                            choices = c("claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"))
       }
     })
 
+    # The judge picked in the Judge card, or NULL after saying what is missing.
+    # Claude and the free tiers need a key from Settings; a free tier also
+    # needs the opt-in there. Nothing is sent from here: the judge runs in
+    # the background and checks again before every request.
+    chosen_judge <- function() {
+      kind <- input$judge_kind %||% "anthropic"
+      model <- trimws(input$judge_model %||% "")
+      warn <- function(msg) { shiny::showNotification(msg, type = "warning", duration = 10); NULL }
+      if (identical(kind, "local")) return(if (nzchar(model)) model else warn("Name a local model to judge with."))
+      if (identical(kind, "provider")) {
+        name <- input$judge_provider %||% "openrouter"
+        p <- provider_info(name)
+        if (!nzchar(model)) return(warn(sprintf("Name a %s model to judge with.", p$title)))
+        if (!nzchar(Sys.getenv(p$key_env))) return(warn(sprintf("Add your %s key in Settings first.", p$title)))
+        if (!isTRUE(provider_status(name, runs_dir)$opted_in)) return(warn(sprintf("Turn on %s under Free tiers in Settings first.", p$title)))
+        return(llm_provider(name, model, system = judge_system_prompt(), runs_dir = runs_dir))
+      }
+      if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) return(warn("Add your Claude API key in Settings to use Claude as the judge, or pick another judge."))
+      dragon_judge_anthropic(model = if (nzchar(model)) model else "claude-opus-5")
+    }
+
     judgement <- shiny::reactiveVal(NULL)
     shiny::observeEvent(input$judge, {
       r <- run()
-      judge <- if (identical(input$judge_kind, "local")) {
-        trimws(input$judge_model %||% "")
-      } else {
-        if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-          shiny::showNotification("Add your Claude API key in Settings to use Claude as the judge, or pick a local model.", type = "warning", duration = 10)
-          return()
-        }
-        dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
-      }
-      if (is.character(judge) && !nzchar(judge)) {
-        shiny::showNotification("Name a local model to judge with.", type = "warning")
-        return()
-      }
+      judge <- chosen_judge()
+      if (is.null(judge)) return()
       rubric <- if (nzchar(trimws(input$rubric %||% ""))) input$rubric
       against <- if (identical(input$against, "none")) NULL else "base"
       h <- tryCatch(
@@ -232,19 +247,8 @@ mod_tryit_server <- function(id, state, runs_dir) {
     synth_result <- shiny::reactiveVal(NULL)
     shiny::observeEvent(input$synth, {
       r <- run()
-      judge <- if (identical(input$judge_kind, "local")) {
-        trimws(input$judge_model %||% "")
-      } else {
-        if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
-          shiny::showNotification("Add your Claude API key in Settings to use Claude as the judge, or pick a local model in the Judge card.", type = "warning", duration = 10)
-          return()
-        }
-        dragon_judge_anthropic(model = input$judge_model %||% "claude-opus-5")
-      }
-      if (is.character(judge) && !nzchar(judge)) {
-        shiny::showNotification("Name a local judge model in the Judge card.", type = "warning")
-        return()
-      }
+      judge <- chosen_judge()
+      if (is.null(judge)) return()
       prompts <- dragon_prompts(r, input$synth_split %||% "train", n = input$synth_n %||% 50)
       if (length(prompts) < 2) {
         shiny::showNotification("This run has too few prompts in that split.", type = "warning")

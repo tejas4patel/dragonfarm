@@ -200,3 +200,15 @@ test_that("judging falls back to training prompts when nothing was held out", {
   expect_length(ev$prompts, 2)
   expect_false(any(is.na(ev$references)))
 })
+
+
+test_that("a judge or teacher saved for a background pipeline never carries an API key", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "sk-ant-FAKE-DETECTME", OPENROUTER_API_KEY = "sk-or-FAKE-DETECTME")
+  leaks <- function(obj) length(grepRaw("DETECTME", serialize(obj, NULL), fixed = TRUE)) > 0
+  j <- dragon_judge_anthropic()
+  expect_false(leaks(j))
+  expect_false(leaks(dragonfarm:::strip_handles(list(dragon_step_judge(against = "base", judge = j)))))
+  expect_false(leaks(dragon_llm_anthropic(system = "x")))
+  expect_false(leaks(dragonfarm:::llm_provider("openrouter", "m:free")))
+  expect_true(leaks(dragon_llm_anthropic(api_key = "sk-ant-FAKE-DETECTME")))   # an explicit key is the caller's choice
+})

@@ -240,6 +240,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   turned on there too, with a daily cap. Messages that used to say "set
   HF_TOKEN in the R session" now point to Settings.
 
+* Try it's judge can be a free-tier model (OpenRouter or Groq) as well as
+  Claude or a local model, once its key and opt-in are set in Settings.
+  A judge running in the background looks its key up when it is called, so
+  the key is never saved with the job; a test checks that saved judges and
+  teachers contain no key.
+
 * Training on a free cloud GPU from the app takes fewer steps. One button
   packs the run, saves it to your Downloads folder and opens the notebook,
   which now asks Colab and Kaggle for a GPU by itself. In Colab you press

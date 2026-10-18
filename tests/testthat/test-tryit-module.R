@@ -110,3 +110,28 @@ test_that("Publish refuses without a repo name or an HF token", {
     expect_null(published())
   })
 })
+
+
+test_that("Judge can use a free tier once it has a key and an opt-in", {
+  runs_dir <- tryit_runs_dir()
+  run_id <- basename(list.dirs(runs_dir, recursive = FALSE)[1])
+  withr::local_envvar(OPENROUTER_API_KEY = NA)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  started <- NULL
+  testthat::local_mocked_bindings(app_task_start = function(run, step, runs_dir, name) { started <<- step; list(id = "t1") },
+                                  app_task_watch = function(...) NULL)
+  state <- shiny::reactiveValues()
+  shiny::testServer(dragonfarm:::mod_tryit_server, args = list(state = state, runs_dir = runs_dir), {
+    session$setInputs(run = run_id, judge_kind = "provider", judge_provider = "openrouter",
+                      judge_model = "meta-llama/llama-3.3-70b-instruct:free", against = "base", judge_n = 5, rubric = "")
+    session$setInputs(judge = 1)
+    expect_null(started)                                                  # no key yet
+    withr::local_envvar(OPENROUTER_API_KEY = "sk-or-test")
+    session$setInputs(judge = 2)
+    expect_null(started)                                                  # not opted in yet
+    dragonfarm:::provider_opt_in("openrouter", runs_dir = runs_dir)
+    session$setInputs(judge = 3)
+    expect_false(is.null(started))
+    expect_equal(attr(started$judge, "label"), "openrouter:meta-llama/llama-3.3-70b-instruct:free")
+  })
+})
