@@ -234,3 +234,34 @@ runs_space <- function(runs) {
 }
 
 fmt_bytes <- function(b) format(structure(b, class = "object_size"), units = "auto", standard = "SI")
+
+# Checkpoints of finished runs (G7, a cleanup proposal). A checkpoint is only
+# used to resume a run that stopped; a succeeded run keeps its trained
+# adapter in adapter/. On this laptop they were 14 of 18 GB of runs. Only
+# runs that succeeded and have their adapter on disk are listed.
+finished_checkpoints <- function(runs) {
+  empty <- data.frame(id = character(), dir = character(), bytes = numeric())
+  if (!nrow(runs)) return(empty)
+  rows <- lapply(seq_len(nrow(runs)), function(i) {
+    d <- runs$dir[i]
+    ck <- file.path(d, "checkpoints")
+    st <- tryCatch(read_json(file.path(d, "status.json")), error = function(e) list())
+    if (!identical(st$state, "succeeded") || !dir.exists(ck) || !file.exists(file.path(d, "adapter", "adapter_model.safetensors"))) return(NULL)
+    b <- dir_bytes(ck)
+    if (b > 0) data.frame(id = runs$id[i], dir = d, bytes = b) else NULL
+  })
+  out <- do.call(rbind, Filter(Negate(is.null), rows))
+  if (is.null(out)) empty else out[order(-out$bytes), , drop = FALSE]
+}
+
+# Remove those checkpoints, after a person asked to. Each run is checked
+# again at the moment of removal; the removal is recorded with its size.
+remove_finished_checkpoints <- function(ids, runs_dir = dragon_runs_dir()) {
+  runs <- dragon_runs(runs_dir)
+  fc <- finished_checkpoints(runs[runs$id %in% ids, , drop = FALSE])
+  for (d in fc$dir) unlink(file.path(d, "checkpoints"), recursive = TRUE)
+  freed <- sum(fc$bytes)
+  store_record_event("cleanup", "checkpoints", ok = TRUE, runs_dir = runs_dir,
+                     detail = list(runs = as.list(fc$id), bytes = freed, skipped = as.list(setdiff(ids, fc$id))))
+  invisible(list(removed = fc$id, bytes = freed))
+}

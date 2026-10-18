@@ -388,12 +388,39 @@ mod_monitor_server <- function(id, state, runs_dir) {
     )
 
     # How much room runs take, the largest first; archive or delete stays a person's call.
+    ck_tick <- shiny::reactiveVal(0)
     output$space <- shiny::renderUI({
+      ck_tick()
       sp <- tryCatch(runs_space(active_runs()), error = function(e) NULL)
       if (is.null(sp) || !nrow(sp)) return(NULL)
       top <- utils::head(sp, 3)
-      shiny::p(class = "hint small", sprintf("%s %s. Largest: %s.", if (nrow(sp) == 1) "1 run uses" else sprintf("All %d runs use", nrow(sp)), fmt_bytes(sum(sp$bytes)),
-                                             paste(sprintf("%s (%s)", top$id, vapply(top$bytes, fmt_bytes, "")), collapse = ", ")))
+      fc <- tryCatch(finished_checkpoints(active_runs()), error = function(e) NULL)
+      shiny::tagList(
+        shiny::p(class = "hint small", sprintf("%s %s. Largest: %s.", if (nrow(sp) == 1) "1 run uses" else sprintf("All %d runs use", nrow(sp)), fmt_bytes(sum(sp$bytes)),
+                                               paste(sprintf("%s (%s)", top$id, vapply(top$bytes, fmt_bytes, "")), collapse = ", "))),
+        # A proposal, never automatic: removing them is a person's click.
+        if (!is.null(fc) && nrow(fc)) shiny::p(class = "hint small",
+          sprintf("Checkpoints in %d finished run%s take %s. They are only used to resume a run that stopped; each run keeps its trained adapter. ",
+                  nrow(fc), if (nrow(fc) == 1) "" else "s", fmt_bytes(sum(fc$bytes))),
+          shiny::actionLink(ns("clean_ck"), "Remove them")))
+    })
+    shiny::observeEvent(input$clean_ck, {
+      fc <- finished_checkpoints(active_runs())
+      if (!nrow(fc)) return()
+      shiny::showModal(shiny::modalDialog(
+        title = "Remove the checkpoints of finished runs?",
+        shiny::p(sprintf("This frees %s. The runs, their adapters, samples, logs and evaluations stay; only the saved points to resume training from go. This cannot be undone.", fmt_bytes(sum(fc$bytes)))),
+        shiny::tags$ul(lapply(utils::head(seq_len(nrow(fc)), 12), function(i) shiny::tags$li(sprintf("%s (%s)", fc$id[i], fmt_bytes(fc$bytes[i]))))),
+        if (nrow(fc) > 12) shiny::p(class = "small", sprintf("and %d more.", nrow(fc) - 12)),
+        footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton(ns("clean_ck_confirm"), "Remove checkpoints", class = "btn-danger")),
+        easyClose = TRUE))
+    })
+    shiny::observeEvent(input$clean_ck_confirm, {
+      shiny::removeModal()
+      res <- tryCatch(remove_finished_checkpoints(finished_checkpoints(active_runs())$id, runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
+      ck_tick(ck_tick() + 1)
+      if (!is.null(res)) shiny::showNotification(sprintf("Removed checkpoints from %d run%s, freeing %s.", length(res$removed),
+                                                         if (length(res$removed) == 1) "" else "s", fmt_bytes(res$bytes)), type = "message")
     })
 
     output$facts <- shiny::renderUI({
