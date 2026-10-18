@@ -217,7 +217,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   record (CSV)" for an auditor (the export itself is recorded with a SHA-256
   of the file). Activity opens with a "Last 7 days" line: what happened,
   what was refused or failed, what left the machine and to where, and how
-  many approvals are waiting. The Documents step
+  many approvals are waiting. An agent task in Activity opens to its steps
+  (each tool call, its result and time, and the model's time), and the last
+  week can be downloaded as OpenTelemetry traces for a company's monitoring
+  tools, with no extra packages. The Documents step
   has "Check it re-reads the same", which reads a set's files again and says
   whether they come back identical.
 

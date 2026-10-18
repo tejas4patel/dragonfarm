@@ -104,7 +104,7 @@ with_defaults <- function(args, schema) {
 # recorded with the call.
 tool_call <- function(name, args = list(), agent = NULL, on_behalf_of = NULL) {
   refuse <- function(code, error, kind = "tool") {
-    store_record_event(kind, name, ok = FALSE, code = code, detail = list(agent = agent, args = args, error = error))
+    store_record_event(kind, name, ok = FALSE, code = code, detail = list(agent = agent, args = args, error = error, task = getOption("dragonfarm.task")))
     list(ok = FALSE, code = code, error = error)
   }
   args <- args %||% list()
@@ -134,7 +134,7 @@ tool_call <- function(name, args = list(), agent = NULL, on_behalf_of = NULL) {
   # Every call is recorded: which tool, with what, whether it worked, how long.
   # A successful call also records a fingerprint of its result and what it
   # depended on, so it can be replayed and compared (tool_replay()).
-  detail <- list(agent = agent, args = args)
+  detail <- list(agent = agent, args = args, task = getOption("dragonfarm.task"))
   if (!is.null(on_behalf_of)) detail$on_behalf_of <- on_behalf_of
   if (isTRUE(out$ok)) {
     detail$result_hash <- result_hash(out$result)

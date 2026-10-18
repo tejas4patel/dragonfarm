@@ -86,7 +86,8 @@ mod_monitor_ui <- function(id) {
       shiny::uiOutput(ns("activity_trace")),
       scroll_box(shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE), "Details of the selected entry"),
       shiny::uiOutput(ns("replay_ui")),
-      shiny::div(class = "btn-row", shiny::downloadButton(ns("export_record"), "Download the record (CSV)", class = "btn-outline-secondary btn-sm"))
+      shiny::div(class = "btn-row", shiny::downloadButton(ns("export_record"), "Download the record (CSV)", class = "btn-outline-secondary btn-sm"),
+                 shiny::downloadButton(ns("export_traces"), "Traces for your monitoring tools (7 days)", class = "btn-outline-secondary btn-sm"))
     ),
     bslib::card(
       bslib::card_header("Model versions"),
@@ -195,6 +196,14 @@ mod_monitor_server <- function(id, state, runs_dir) {
         if (sm$waiting) shiny::p(shiny::strong(sprintf("Waiting for you: %d", sm$waiting))))
     })
 
+    # The last week as OpenTelemetry traces (OTLP JSON), for a company's
+    # observability tools; the export is recorded.
+    output$export_traces <- shiny::downloadHandler(
+      filename = function() sprintf("dragonfarm-traces-%s.json", format(Sys.time(), "%Y%m%d-%H%M%S")),
+      content = function(file) store_export_otlp(file, days = 7, runs_dir = runs_dir),
+      contentType = "application/json"
+    )
+
     # The record as a file for an auditor; the export itself is recorded.
     output$export_record <- shiny::downloadHandler(
       filename = function() sprintf("dragonfarm-record-%s.csv", format(Sys.time(), "%Y%m%d-%H%M%S")),
@@ -272,8 +281,9 @@ mod_monitor_server <- function(id, state, runs_dir) {
       ev <- events()
       if (is.null(id) || !nzchar(id) || is.null(ev)) return(NULL)
       row <- ev[as.character(ev$id) == id, , drop = FALSE]
-      if (!nrow(row) || !identical(row$kind, "ask") || is.na(row$detail)) return(NULL)
-      tryCatch(trace_view(jsonlite::fromJSON(row$detail, simplifyVector = FALSE), runs_dir), error = function(e) NULL)
+      if (!nrow(row) || !row$kind %in% c("ask", "agent_run") || is.na(row$detail)) return(NULL)
+      d <- jsonlite::fromJSON(row$detail, simplifyVector = FALSE)
+      tryCatch(if (identical(row$kind, "ask")) trace_view(d, runs_dir) else agent_trace_view(d, runs_dir), error = function(e) NULL)
     })
 
     output$activity_detail <- shiny::renderText({

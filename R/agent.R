@@ -160,19 +160,23 @@ agent_loop <- function(task, target, backend, max_result_chars) {
     agent_checkpoint_save(task)
     store_record_event("agent_run", task$agent, ok = identical(stopped, "answered"), code = if (!identical(stopped, "answered")) stopped,
                        detail = list(goal = task$goal, model = task$model, max_steps = task$max_steps, steps = length(task$steps),
-                                     tools = vapply(task$steps, `[[`, "", "tool"), answer_hash = result_hash(answer), task = task$id),
+                                     tools = vapply(task$steps, `[[`, "", "tool"), answer_hash = result_hash(answer), task = task$id,
+                                     model_ms = task$model_ms %||% 0),
                        duration_ms = round(1000 * task$elapsed))
     list(answer = answer, steps = task$steps, stopped = stopped, task = task$id)
   }
   while (length(task$steps) < task$max_steps) {
+    tm <- Sys.time()
     out <- backend_generate(backend, target, list(task$convo), max_new_tokens = 600, temperature = 0, top_p = 1, tools = specs)[[1]]
+    model_ms <- round(1000 * as.numeric(difftime(Sys.time(), tm, units = "secs")))
+    task$model_ms <- (task$model_ms %||% 0) + model_ms
     call <- parse_tool_call(out)
     if (is.null(call)) return(finish(trimws(out), "answered"))
-    r <- tool_call(call$name, call$args, agent = task$agent)
+    r <- withr::with_options(list(dragonfarm.task = task$id), tool_call(call$name, call$args, agent = task$agent))
     payload <- if (isTRUE(r$ok)) r$result else list(error = r$error, code = r$code)
     text <- as.character(jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null"))
     if (nchar(text) > max_result_chars) text <- paste0(substr(text, 1, max_result_chars), " ...")
-    task$steps[[length(task$steps) + 1]] <- list(tool = call$name, args = call$args, ok = isTRUE(r$ok), code = r$code)
+    task$steps[[length(task$steps) + 1]] <- list(tool = call$name, args = call$args, ok = isTRUE(r$ok), code = r$code, model_ms = model_ms)
     task$convo <- c(task$convo, list(
       list(role = "assistant", content = "",
            tool_calls = list(list(type = "function", `function` = list(name = call$name, arguments = call$args)))),
