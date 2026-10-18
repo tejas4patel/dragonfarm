@@ -218,6 +218,17 @@ a spreadsheet.
   Documents step has “Check it re-reads the same”, which reads a set’s
   files again and says whether they come back identical.
 
+- Answers in the Documents step get a quick check that needs no model:
+  every figure in the answer (numbers, dates, percentages, versions)
+  must appear in its excerpts or the question, and every citation must
+  point at an excerpt. A plain line appears only when something is off
+  (“Check this: 4.0 is not in the excerpts.”). On 224 recorded answers
+  from 1.5B and 3B models it flagged one, a real wrong figure, with no
+  false alarms, and it caught 37 of 37 figures changed by hand. It
+  cannot catch a real figure used wrongly, or wrong words: 10 of 11
+  wrong answers there had no figure to check. ellmer chats and MCP
+  clients get it as the `check_answer` tool.
+
 - Chat counts your thumbs up, thumbs down and edits, and “Train on my
   feedback” turns the liked and edited replies (with the turns before
   them) into a training set, ready in Train. Before, this needed
