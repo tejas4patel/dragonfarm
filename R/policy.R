@@ -41,7 +41,7 @@ policy_problems <- function(policy) {
 }
 
 # Write a new policy version (an admin action; not a tool). Returns the version.
-policy_set <- function(policy, set_by = Sys.info()[["user"]], runs_dir = dragon_runs_dir()) {
+policy_set <- function(policy, set_by = Sys.info()[["user"]], note = NULL, runs_dir = dragon_runs_dir()) {
   policy$version <- NULL
   problems <- policy_problems(policy)
   if (length(problems)) cli::cli_abort(c("This policy has problems:", stats::setNames(problems, rep("x", length(problems)))))
@@ -50,8 +50,21 @@ policy_set <- function(policy, set_by = Sys.info()[["user"]], runs_dir = dragon_
   v <- current$version + 1L
   store_exec(con, "INSERT INTO policies (version, body, set_by, set_at) VALUES (?, ?, ?, ?)",
                  params = list(v, as.character(jsonlite::toJSON(policy, auto_unbox = TRUE, null = "null")), set_by, now_utc()))
-  store_record_event("policy_set", paste0("version ", v), ok = TRUE, detail = list(set_by = set_by), runs_dir = runs_dir)
+  store_record_event("policy_set", paste0("version ", v), ok = TRUE, detail = list(set_by = set_by, version = v, note = note),
+                     runs_dir = runs_dir)
   invisible(v)
+}
+
+# Every policy version, newest first, with the reason given when it was saved.
+policy_history <- function(runs_dir = dragon_runs_dir()) {
+  con <- store_open(runs_dir)
+  policy_current(runs_dir)   # makes sure version 1 exists
+  h <- store_get(con, "SELECT version, set_by, set_at FROM policies ORDER BY version DESC")
+  ev <- store_get(con, "SELECT detail FROM events WHERE kind = 'policy_set'")
+  notes <- lapply(ev$detail, function(d) jsonlite::fromJSON(d))
+  why <- stats::setNames(vapply(notes, function(n) n$note %||% NA_character_, ""), vapply(notes, function(n) as.character(n$version %||% NA), ""))
+  h$note <- unname(why[as.character(h$version)])
+  h
 }
 
 # NULL when the agent may make the call now, else "NOT_ALLOWED" or

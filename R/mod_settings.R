@@ -10,6 +10,7 @@ mod_settings_ui <- function(id) {
   shiny::tagList(
     shiny::uiOutput(ns("keychain_note")),
     do.call(bslib::layout_columns, c(list(col_widths = c(6, 6)), cards)),
+    mod_policy_ui(ns("policy")),
     bslib::card(
       bslib::card_header("Free tiers"),
       shiny::p(class = "hint", "When this machine is too small for a model, a free-tier provider can answer instead. Nothing is sent there until you opt in, and you can cap how many requests a day it gets."),
@@ -48,6 +49,7 @@ settings_pill <- function(st) {
 mod_settings_server <- function(id, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    mod_policy_server("policy", runs_dir)
     tick <- shiny::reactiveVal(0)     # bumped after every save or remove
     messages <- shiny::reactiveValues()
 
