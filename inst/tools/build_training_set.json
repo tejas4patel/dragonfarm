@@ -1,0 +1,60 @@
+{
+  "name": "build_training_set",
+  "title": "Build the training set from a question set",
+  "description": "Turn the kept questions of a question set into the training rows train_model would use: each question with the excerpts a search finds for it and the cited answer, plus a share of not-covered rows (a question with excerpts that do not hold its answer, answered 'The documents do not cover this.'). The rows are saved as JSONL next to the question set so a person can read them before approving training. Built the same way every time (fixed seed).",
+  "side_effect": "writes",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 30
+  },
+  "errors": [
+    "FILE_NOT_FOUND",
+    "NOT_A_SET",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "questions"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "questions": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Path of a question set from write_practice_questions."
+      },
+      "negatives": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 0.5,
+        "default": 0.15,
+        "description": "Not-covered rows as a share of the answered ones."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "file",
+      "rows",
+      "answered",
+      "not_covered"
+    ],
+    "properties": {
+      "file": {
+        "type": "string",
+        "description": "Path of the saved rows (JSONL: prompt, response, negative)."
+      },
+      "rows": {
+        "type": "integer"
+      },
+      "answered": {
+        "type": "integer"
+      },
+      "not_covered": {
+        "type": "integer"
+      }
+    }
+  }
+}

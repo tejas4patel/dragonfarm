@@ -212,6 +212,16 @@ tool_impl <- list(
     qa <- dragon_questions(docs, generator = args$model, n_per_chunk = as.integer(args$n_per_chunk), mix = isTRUE(args$mix), wait = TRUE)
     list(questions = attr(qa, "path"), n_pairs = nrow(qa), n_kept = sum(qa$keep))
   },
+  build_training_set = function(args) {
+    qa <- dragon_questions_load(args$questions)
+    ds <- dragon_questions_dataset(qa, negatives = as.numeric(args$negatives))
+    d <- ds$data
+    prompts <- render_template(ds$mapping$prompt, d)
+    file <- file.path(dirname(args$questions), sub("[.]jsonl$", "-training.jsonl", basename(args$questions)))
+    if (identical(file, args$questions)) file <- paste0(args$questions, "-training.jsonl")
+    write_jsonl(lapply(seq_len(nrow(d)), function(i) list(prompt = prompts[i], response = d$answer[i], negative = isTRUE(d$negative[i]))), file)
+    list(file = file, rows = nrow(d), answered = sum(!d$negative), not_covered = sum(d$negative))
+  },
   train_model = function(args) {
     qa <- dragon_questions_load(args$questions)
     ds <- dragon_questions_dataset(qa)

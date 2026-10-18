@@ -214,3 +214,29 @@ test_that("search_documents can search one document of a set", {
   expect_equal(bad$code, "INVALID_ARGUMENTS")
   expect_match(bad$error, "policy.pdf")
 })
+
+test_that("build_training_set saves the rows train_model would use, for a person to read", {
+  runs <- tempfile("runs-"); dir.create(runs)
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  qfile <- file.path(runs, "kb-questions.jsonl"); writeLines("{}", qfile)
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    dragon_questions_load = function(path) structure(list(), class = "dragon_questions"),
+    dragon_questions_dataset = function(qa, negatives = 0.15, ...) {
+      seen <<- negatives
+      d <- data.frame(question = c("How long?", "What colour?"), context = c("[1] Thirty days.", "[1] Two years."),
+                      answer = c("Thirty days [1].", "The documents do not cover this."), negative = c(FALSE, TRUE))
+      dragon_map(dragon_dataset(d), prompt = "Documentation excerpts:\n{context}\n\nQuestion: {question}", response = "answer")
+    }
+  )
+  r <- dragonfarm:::tool_call("build_training_set", list(questions = qfile, negatives = 0.2), agent = "trainer")
+  expect_true(r$ok)
+  expect_equal(seen, 0.2)
+  expect_equal(r$result[c("rows", "answered", "not_covered")], list(rows = 2L, answered = 1L, not_covered = 1L))
+  expect_equal(basename(r$result$file), "kb-questions-training.jsonl")
+  rows <- dragonfarm:::read_jsonl(r$result$file)
+  expect_match(rows[[1]]$prompt, "Thirty days[.]\n\nQuestion: How long[?]")
+  expect_true(rows[[2]]$negative)
+  expect_equal(dragonfarm:::tool_call("build_training_set", list(questions = qfile), agent = "answer")$code, "NOT_ALLOWED")
+})
