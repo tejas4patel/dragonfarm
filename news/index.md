@@ -200,8 +200,10 @@ a spreadsheet.
   “Model versions” card (propose a finished, evaluated run as a version
   of a named model, then approve, reject or retire it with a stated
   meaning), and “Run it again and compare” on recorded calls in
-  Activity. The Documents step has “Check it re-reads the same”, which
-  reads a set’s files again and says whether they come back identical.
+  Activity, and “Download the record (CSV)” for an auditor (the export
+  itself is recorded with a SHA-256 of the file). The Documents step has
+  “Check it re-reads the same”, which reads a set’s files again and says
+  whether they come back identical.
 
 - The app has a Settings page for the keys of outside services (Hugging
   Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a
