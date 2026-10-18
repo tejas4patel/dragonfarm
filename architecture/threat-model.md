@@ -33,7 +33,7 @@ the user chooses to call.
 | Malicious or swapped model weights | Presets pinned to exact Hub commits; safetensors only unless the user opts in to pickle files | Checked offline loading of pinned 0.5B and 7B |
 | Tampered Python packages | Lock file with hashes for offline and admin builds | Offline build from the lock identical to the online one |
 | The record is edited or deleted | Append-only tables: the database refuses UPDATE and DELETE (SQLite triggers; Postgres trigger function) | Tested on SQLite and Postgres 16. **Residual: a database administrator can drop the triggers or the file.** |
-| Keys leak through scripts or files | Keys kept in the OS keychain; never written to files or the record (names only) | Round trip tested with Windows Credential Manager |
+| Keys leak through scripts or files | Keys kept in the OS keychain; never written to files or the record (names only); judges and teachers saved for background jobs look keys up when called | Round trip tested with Windows Credential Manager; a test fails if a saved judge or teacher contains a key. **Residual (R API only): a server backend given a key directly stores it, and a background job using it would save it.** |
 | Personal data in training sets | Fixed-pattern scan with every hit listed; redaction function | Planted set: all found, no look-alikes flagged. **Residual: names, addresses, non-US IDs not detected; training is not blocked yet.** |
 | An untested model is put into use | Model versions need an evaluation to be proposed and a person's signed meaning to be approved; optional four-eyes rule | Unit-tested |
 | Runaway GPU jobs | One heavy GPU job at a time, enforced; agent step and GPU budgets in the policy | Enforced in code |
