@@ -74,13 +74,44 @@ parse_tool_call <- function(text) {
   list(name = x$name, args = args)
 }
 
+# Each task keeps a checkpoint (the conversation and the steps so far) in
+# <runs>/agent_tasks/<task>.rds, rewritten after every step. If R is killed
+# mid-task, agent_resume() carries on from the last finished step: tool
+# calls already made are not made again (they may have trained a model or
+# sent something out with a person's approval).
+agent_tasks_dir <- function(runs_dir = dragon_runs_dir()) file.path(runs_dir, "agent_tasks")
+
+agent_checkpoint_save <- function(task, runs_dir = dragon_runs_dir()) {
+  dir.create(agent_tasks_dir(runs_dir), recursive = TRUE, showWarnings = FALSE)
+  file <- file.path(agent_tasks_dir(runs_dir), paste0(task$id, ".rds"))
+  tmp <- paste0(file, ".tmp")
+  saveRDS(task, tmp)
+  file.rename(tmp, file)
+  invisible(file)
+}
+
+agent_checkpoint_load <- function(id, runs_dir = dragon_runs_dir()) {
+  file <- file.path(agent_tasks_dir(runs_dir), paste0(id, ".rds"))
+  if (!file.exists(file)) return(NULL)
+  readRDS(file)
+}
+
+# Tasks that started but never finished (R was killed or crashed).
+agent_tasks_unfinished <- function(runs_dir = dragon_runs_dir()) {
+  files <- list.files(agent_tasks_dir(runs_dir), pattern = "[.]rds$", full.names = TRUE)
+  tasks <- lapply(files, readRDS)
+  tasks <- Filter(function(t) identical(t$status, "running"), tasks)
+  data.frame(id = vapply(tasks, `[[`, "", "id"), agent = vapply(tasks, `[[`, "", "agent"),
+             goal = vapply(tasks, `[[`, "", "goal"), steps = vapply(tasks, function(t) length(t$steps), 0L),
+             started = vapply(tasks, `[[`, "", "started"))
+}
+
 agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, backend = dragon_backend(),
                       max_result_chars = 6000L) {
   check_string(goal, "goal")
   policy <- policy_current()
   if (is.null(policy$agents[[agent]])) cli::cli_abort("The policy has no agent called {.val {agent}}.")
   max_steps <- as.integer(max_steps %||% policy$budgets$max_steps %||% 10L)
-  specs <- agent_tool_specs(agent, policy)
   target <- resolve_target(model %||% default_answer_model())
   min_b <- agent_min_model_b(agent, policy)
   if (!agent_model_ok(target$model, min_b)) {
@@ -88,31 +119,56 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
                        detail = list(goal = goal, model = target$model, min_model_b = min_b))
     return(list(answer = NA_character_, steps = list(), stopped = "AGENT_MODEL_TOO_SMALL"))
   }
-  convo <- list(list(role = "system", content = agent_roles[[agent]] %||% "Use the tools to do what the user asks."),
-                list(role = "user", content = goal))
-  steps <- list()
+  task <- list(id = sprintf("%s-%s", format(Sys.time(), "%Y%m%d-%H%M%S"), paste(sample(c(letters, 0:9), 6, TRUE), collapse = "")),
+               goal = goal, agent = agent, model = target$model, max_steps = max_steps, status = "running",
+               started = now_utc(), elapsed = 0,
+               convo = list(list(role = "system", content = agent_roles[[agent]] %||% "Use the tools to do what the user asks."),
+                            list(role = "user", content = goal)),
+               steps = list())
+  agent_checkpoint_save(task)
+  agent_loop(task, target, backend, max_result_chars)
+}
+
+# Carry on with a task from its checkpoint. A finished task is not run again.
+agent_resume <- function(id, backend = dragon_backend(), max_result_chars = 6000L) {
+  task <- agent_checkpoint_load(id)
+  if (is.null(task)) return(list(answer = NA_character_, steps = list(), stopped = "NOT_FOUND"))
+  if (!identical(task$status, "running")) return(list(answer = task$answer %||% NA_character_, steps = task$steps, stopped = task$status, task = task$id))
+  store_record_event("agent_resume", task$agent, ok = TRUE, detail = list(task = task$id, from_step = length(task$steps) + 1L))
+  agent_loop(task, resolve_target(task$model), backend, max_result_chars)
+}
+
+agent_loop <- function(task, target, backend, max_result_chars) {
+  specs <- agent_tool_specs(task$agent)
   t0 <- Sys.time()
+  elapsed <- function() task$elapsed + as.numeric(difftime(Sys.time(), t0, units = "secs"))
   finish <- function(answer, stopped) {
-    store_record_event("agent_run", agent, ok = identical(stopped, "answered"), code = if (!identical(stopped, "answered")) stopped,
-                       detail = list(goal = goal, model = target$model, max_steps = max_steps, steps = length(steps),
-                                     tools = vapply(steps, `[[`, "", "tool"), answer_hash = result_hash(answer)),
-                       duration_ms = round(1000 * as.numeric(difftime(Sys.time(), t0, units = "secs"))))
-    list(answer = answer, steps = steps, stopped = stopped)
+    task$status <- stopped
+    task$answer <- answer
+    task$elapsed <- elapsed()
+    agent_checkpoint_save(task)
+    store_record_event("agent_run", task$agent, ok = identical(stopped, "answered"), code = if (!identical(stopped, "answered")) stopped,
+                       detail = list(goal = task$goal, model = task$model, max_steps = task$max_steps, steps = length(task$steps),
+                                     tools = vapply(task$steps, `[[`, "", "tool"), answer_hash = result_hash(answer), task = task$id),
+                       duration_ms = round(1000 * task$elapsed))
+    list(answer = answer, steps = task$steps, stopped = stopped, task = task$id)
   }
-  for (i in seq_len(max_steps)) {
-    out <- backend_generate(backend, target, list(convo), max_new_tokens = 600, temperature = 0, top_p = 1, tools = specs)[[1]]
+  while (length(task$steps) < task$max_steps) {
+    out <- backend_generate(backend, target, list(task$convo), max_new_tokens = 600, temperature = 0, top_p = 1, tools = specs)[[1]]
     call <- parse_tool_call(out)
     if (is.null(call)) return(finish(trimws(out), "answered"))
-    r <- tool_call(call$name, call$args, agent = agent)
+    r <- tool_call(call$name, call$args, agent = task$agent)
     payload <- if (isTRUE(r$ok)) r$result else list(error = r$error, code = r$code)
     text <- as.character(jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null"))
     if (nchar(text) > max_result_chars) text <- paste0(substr(text, 1, max_result_chars), " ...")
-    steps[[length(steps) + 1]] <- list(tool = call$name, args = call$args, ok = isTRUE(r$ok), code = r$code)
-    convo <- c(convo, list(
+    task$steps[[length(task$steps) + 1]] <- list(tool = call$name, args = call$args, ok = isTRUE(r$ok), code = r$code)
+    task$convo <- c(task$convo, list(
       list(role = "assistant", content = "",
            tool_calls = list(list(type = "function", `function` = list(name = call$name, arguments = call$args)))),
       list(role = "tool", name = call$name, content = text)
     ))
+    task$elapsed <- elapsed(); t0 <- Sys.time()
+    agent_checkpoint_save(task)
   }
   finish(NA_character_, "BUDGET_EXHAUSTED")
 }

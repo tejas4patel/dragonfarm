@@ -141,7 +141,9 @@ PDF and as Word, live web pages, and a spreadsheet.
 * `dragon_check()` now says whether agents are on for this machine. Agents
   need a model of 3B or larger: on 20 tool-use tasks, 3B and 7B models got
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
-  everything still works through the fixed workflows.
+  everything still works through the fixed workflows. An agent's task keeps
+  a checkpoint after every step; if R stops mid-task, it carries on from
+  there without repeating the tool calls it already made.
 
 * Settings can run a qualification report: checks that the installation
   matches what is specified (Python packages against the lock, models pinned

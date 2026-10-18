@@ -80,3 +80,41 @@ test_that("the policy sets the smallest model per agent: 7B for answer, 3B other
   bad <- pol; bad$agents$answer$min_model_b <- "big"
   expect_match(dragonfarm:::policy_problems(bad), "min_model_b for 'answer'")
 })
+
+test_that("a task killed mid-way resumes from its checkpoint without repeating tool calls", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  calls <- character()
+  replies <- list('<tool_call>{"name": "list_document_sets", "arguments": {}}</tool_call>', "CRASH",
+                  '<tool_call>{"name": "search_documents", "arguments": {"set": "kb", "query": "warranty"}}</tool_call>',
+                  "Two years [1].")
+  seen <- list()
+  testthat::local_mocked_bindings(
+    resolve_target = function(x) list(model = "Qwen/Qwen2.5-7B-Instruct"),
+    backend_generate = function(backend, target, conversations, ..., tools = NULL) {
+      seen[[length(seen) + 1]] <<- conversations[[1]]
+      out <- replies[[1]]; replies <<- replies[-1]
+      if (identical(out, "CRASH")) stop("R was killed")
+      list(out)
+    },
+    tool_call = function(name, args, agent = NULL, ...) { calls <<- c(calls, name); list(ok = TRUE, result = list(n = 0)) }
+  )
+  expect_error(dragonfarm:::agent_run("How long is the warranty?", agent = "answer", model = "Qwen/Qwen2.5-7B-Instruct"), "killed")
+  open <- dragonfarm:::agent_tasks_unfinished(runs)
+  expect_equal(nrow(open), 1)
+  expect_equal(open$steps, 1)
+  r <- dragonfarm:::agent_resume(open$id)
+  expect_equal(r$stopped, "answered")
+  expect_equal(r$answer, "Two years [1].")
+  expect_equal(calls, c("list_document_sets", "search_documents"))     # the first call was not made again
+  expect_equal(vapply(r$steps, `[[`, "", "tool"), c("list_document_sets", "search_documents"))
+  expect_equal(vapply(seen[[3]], `[[`, "", "role"), c("system", "user", "assistant", "tool"))   # resumed with the first result
+  expect_equal(nrow(dragonfarm:::agent_tasks_unfinished(runs)), 0)
+  again <- dragonfarm:::agent_resume(open$id)                          # a finished task is not run again
+  expect_equal(again$stopped, "answered")
+  expect_equal(calls, c("list_document_sets", "search_documents"))
+  ev <- dragonfarm:::store_events(runs_dir = runs)
+  expect_true(all(c("agent_resume", "agent_run") %in% ev$kind))
+  expect_equal(dragonfarm:::agent_resume("nope")$stopped, "NOT_FOUND")
+})
