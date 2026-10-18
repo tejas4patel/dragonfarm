@@ -179,7 +179,10 @@ a spreadsheet.
   notebook, which now asks Colab and Kaggle for a GPU by itself. In
   Colab you press Run all and pick the file; when the results land in
   Downloads, the app imports them. The steps the app shows no longer
-  include any code.
+  include any code. With a Kaggle key (kaggle.json), Kaggle needs no
+  clicks at all: the app uploads the run as a private dataset, starts
+  the notebook on a GPU, waits, and imports the results, showing where
+  it is as it goes.
 
 - Every answer from documents
   ([`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md), the
