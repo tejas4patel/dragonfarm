@@ -86,3 +86,43 @@ agent_replay <- function(id, runs_dir = dragon_runs_dir()) {
   store_record_event("replay", ev$name, ok = matches, detail = list(of = as.integer(id), kind = "agent_run"), runs_dir = runs_dir)
   list(ok = TRUE, matches = matches, tools_then = tools_then, tools_now = tools_now, answer = r$answer)
 }
+
+# Replay a recorded answer from dragon_ask(): the same question, set, model
+# and settings. Says whether the excerpts found, the prompt and the answer
+# are the same, and what changed when they are not (the set re-read, the
+# model's revision). Answers from a server backend are not replayed.
+ask_replay <- function(id, runs_dir = dragon_runs_dir()) {
+  ev <- store_event(id, runs_dir)
+  d <- ev$detail
+  not <- function(why) list(ok = FALSE, code = "NOT_REPLAYABLE", error = why)
+  if (!identical(ev$kind, "ask") || is.null(d$answer_hash) || is.null(d$question)) return(not(sprintf("Event %s is not a recorded answer.", id)))
+  label <- sub(" [(]base[)]$", "", d$model %||% "")
+  # Recorded since this was added; older answers: a run here or a Hub id
+  # ("org/name") ran locally, anything else came from a server.
+  server <- d$settings$server %||% !(dir.exists(file.path(runs_dir, label)) || grepl("/", label, fixed = TRUE))
+  if (!nzchar(label) || isTRUE(server)) return(not("The answer came from a model server, which this cannot run again."))
+  dir <- file.path(runs_dir, "documents", d$set %||% "")
+  if (!dir.exists(dir)) return(not(sprintf("The document set %s is no longer in this runs folder.", d$set %||% "?")))
+  docs <- dragon_documents_load(dir)
+  model <- if (dir.exists(file.path(runs_dir, label))) dragon_run(file.path(runs_dir, label)) else label
+  s <- d$settings %||% list()
+  a <- dragon_ask(docs, d$question, model = model, k = as.integer(s$k %||% 4L), compare = isTRUE(s$compare),
+                  temperature = s$temperature %||% 0, top_p = s$top_p %||% 0.9,
+                  max_new_tokens = as.integer(s$max_new_tokens %||% 600L), base = isTRUE(s$base))
+  now <- if (!is.na(a$trace %||% NA)) store_event(a$trace, runs_dir)$detail else list()
+  ids <- function(src) vapply(src %||% list(), function(x) as.character(x$id %||% ""), "")
+  same_excerpts <- identical(ids(d$sources), ids(now$sources))
+  same_prompt <- identical(d$prompt_hash, now$prompt_hash)
+  matches <- identical(d$answer_hash, now$answer_hash %||% result_hash(a$answer))
+  changes <- as.character(c(
+    if (!identical(d$chunks_md5, now$chunks_md5)) sprintf("document set %s was read again", d$set),
+    if (!identical(d$revision, now$revision)) sprintf("model revision %s, now %s", d$revision %||% "-", now$revision %||% "-"),
+    if (!same_excerpts) "different excerpts were found",
+    if (same_excerpts && !same_prompt) "the prompt changed (a newer dragonfarm words it differently)"
+  ))
+  store_record_event("replay", "ask", ok = matches, detail = list(of = as.integer(id), kind = "ask", changes = changes,
+                                                                  same_excerpts = same_excerpts, same_prompt = same_prompt),
+                     runs_dir = runs_dir)
+  list(ok = TRUE, matches = matches, same_excerpts = same_excerpts, same_prompt = same_prompt, changes = changes,
+       then = d$answer, now = a$answer)
+}

@@ -164,7 +164,8 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
   hits$cited <- hits$n %in% parse_citations(reply, nrow(hits))
   trace <- ask_trace(docs, question, model_label, target, convo, hits, reply,
                      settings = list(k = k, compare = isTRUE(compare), temperature = temperature, top_p = top_p,
-                                     max_new_tokens = as.integer(max_new_tokens), base = isTRUE(base)))
+                                     max_new_tokens = as.integer(max_new_tokens), base = isTRUE(base),
+                                     server = is_server_backend(backend)))
   structure(list(question = question, answer = reply, sources = hits, model = model_label, documents = docs$name,
                  trace = trace),
             class = "dragon_answer")

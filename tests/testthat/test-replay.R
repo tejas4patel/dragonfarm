@@ -68,3 +68,51 @@ test_that("every code the package raises is in the registry", {
   expect_gt(length(used), 5)
   expect_equal(setdiff(used, codes), character())
 })
+
+test_that("a recorded answer replays: same excerpts, prompt and answer, or what changed", {
+  f <- write_fake_set()
+  runs <- dirname(dirname(f$dir))
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  reply <- "Thirty days [1]."
+  ids <- c("abc-000", "abc-001")
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, question, k = 4, ...) data.frame(n = 1:2, id = ids, source = "policy.pdf",
+                                                                     section = "s", page = NA_integer_,
+                                                                     text = c("Thirty days.", "Two years."), similarity = c(0.9, 0.5)),
+    backend_generate = function(...) list(reply)
+  )
+  a <- dragon_ask(dragon_documents_load(f$dir), "How long is the return window?", model = "Qwen/Qwen2.5-7B-Instruct", k = 2)
+  r <- dragonfarm:::ask_replay(a$trace, runs)
+  expect_true(r$ok); expect_true(r$matches); expect_true(r$same_excerpts); expect_true(r$same_prompt)
+  expect_equal(r$changes, character())
+
+  reply <- "Thirty days."                                   # the model answers differently on the same context
+  r <- dragonfarm:::ask_replay(a$trace, runs)
+  expect_false(r$matches); expect_true(r$same_excerpts); expect_equal(r$changes, character())
+
+  ids <- c("abc-001", "abc-000")                            # retrieval ranks differently
+  r <- dragonfarm:::ask_replay(a$trace, runs)
+  expect_match(r$changes, "different excerpts", all = FALSE)
+
+  cat('{"id":"abc-002","source":"policy.pdf","section":"x","text":"New.","n_words":1}\n', file = file.path(f$dir, "chunks.jsonl"), append = TRUE)
+  r <- dragonfarm:::ask_replay(a$trace, runs)
+  expect_match(r$changes, "read again", all = FALSE)
+  ev <- dragonfarm:::store_events(runs_dir = runs)
+  expect_true(any(ev$kind == "replay" & ev$name == "ask"))
+})
+
+test_that("answers from a model server or other events are not replayed", {
+  f <- write_fake_set()
+  runs <- dirname(dirname(f$dir))
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  id <- dragonfarm:::store_record_event("ask", "kb", ok = TRUE, runs_dir = runs,
+    detail = list(question = "Q?", set = "kb", model = "llama3", answer_hash = "x", settings = list(k = 4, server = TRUE)))
+  expect_equal(dragonfarm:::ask_replay(id, runs)$code, "NOT_REPLAYABLE")
+  old <- dragonfarm:::store_record_event("ask", "kb", ok = TRUE, runs_dir = runs,
+    detail = list(question = "Q?", set = "kb", model = "llama3", answer_hash = "x", settings = list(k = 4)))
+  expect_match(dragonfarm:::ask_replay(old, runs)$error, "model server")      # older record: judged by the model name
+  other <- dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE, runs_dir = runs)
+  expect_equal(dragonfarm:::ask_replay(other, runs)$code, "NOT_REPLAYABLE")
+})

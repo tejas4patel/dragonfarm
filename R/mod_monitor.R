@@ -201,14 +201,14 @@ mod_monitor_server <- function(id, state, runs_dir) {
       contentType = "text/csv"
     )
 
-    # Replay a recorded read-only call or agent task and say whether it matches.
+    # Replay a recorded read-only call, answer or agent task and say whether it matches.
     replay_result <- shiny::reactiveVal(NULL)
     output$replay_ui <- shiny::renderUI({
       id <- input$activity_pick
       ev <- events()
       if (is.null(id) || !nzchar(id) || is.null(ev)) return(NULL)
       row <- ev[as.character(ev$id) == id, , drop = FALSE]
-      if (!nrow(row) || !row$kind %in% c("tool", "agent_run") || !identical(as.integer(row$ok), 1L)) return(NULL)
+      if (!nrow(row) || !row$kind %in% c("tool", "agent_run", "ask") || !identical(as.integer(row$ok), 1L)) return(NULL)
       r <- replay_result()
       shiny::div(class = "btn-row",
         shiny::actionButton(session$ns("replay"), "Run it again and compare", class = "btn-outline-secondary btn-sm"),
@@ -218,7 +218,8 @@ mod_monitor_server <- function(id, state, runs_dir) {
       id <- input$activity_pick
       ev <- events()
       row <- ev[as.character(ev$id) == id, , drop = FALSE]
-      res <- tryCatch(if (identical(row$kind, "agent_run")) agent_replay(as.integer(id), runs_dir) else tool_replay(as.integer(id), runs_dir),
+      replay <- switch(row$kind, agent_run = agent_replay, ask = ask_replay, tool_replay)
+      res <- tryCatch(replay(as.integer(id), runs_dir),
                       error = function(e) list(ok = FALSE, error = conditionMessage(e)))
       msg <- if (!isTRUE(res$ok)) paste("Could not replay:", res$error)
              else if (isTRUE(res$matches)) "Same result as before."
