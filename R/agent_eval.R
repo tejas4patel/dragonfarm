@@ -9,7 +9,7 @@ decline_pattern <- paste0(
   "(do(es)?( not|n't)|did not|cannot|can't) (directly |explicitly |specifically )?(cover|mention|contain|provide|include|address|specify|state|say|find|answer|determine|tell)",
   "|not (covered|mentioned|provided|specified|stated|included|available|found)",
   "|no (information|mention|details)",
-  "|none of the (provided )?(documents|excerpts|sources) (directly )?(mention|address|cover|contain|provide|say|state)"
+  "|none of the (provided |found |retrieved )?(documents|excerpts|sources|passages)( found| provided| retrieved)? (directly )?(mention|address|cover|contain|provide|say|state)"
 )
 
 # Read a suite: a bundled name ("policies") or a path to a JSON file.

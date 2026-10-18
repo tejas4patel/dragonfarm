@@ -20,6 +20,9 @@ test_that("grading is fixed code: patterns, declines, tools", {
   expect_false(g(list(all = list("30 days", "label")), "Within 30 days."))
   expect_true(g(list(declines = TRUE), "The documents do not mention a price."))
   expect_false(g(list(declines = TRUE), "It costs $99."))
+  # Declines a 3B wrote that the first pattern missed.
+  expect_true(g(list(declines = TRUE), "None of the passages found mention the cost of the Sentry doorbell."))
+  expect_true(g(list(declines = TRUE), "None of the found documents contain the specific information about the support phone number."))
   expect_false(g(list(all = list("x")), NA_character_))
   expect_true(g(list(all = list("policies"), tools = list("list_document_sets")), "You have: policies", tools = "list_document_sets"))
   expect_false(g(list(all = list("policies"), tools = list("list_document_sets")), "You have: policies", tools = character()))
