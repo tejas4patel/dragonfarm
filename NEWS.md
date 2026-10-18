@@ -185,6 +185,11 @@ PDF and as Word, live web pages, and a spreadsheet.
   has "Check it re-reads the same", which reads a set's files again and says
   whether they come back identical.
 
+* Chat counts your thumbs up, thumbs down and edits, and "Train on my
+  feedback" turns the liked and edited replies (with the turns before them)
+  into a training set, ready in Train. Before, this needed
+  `dragon_feedback()` in R.
+
 * The app passes an automated WCAG 2.1 A/AA check (axe-core 4.10.2) on
   every tab, in light and dark mode; before, it flagged 68 places under 5
   rules. The page declares its language, the hardware badge and dark-mode

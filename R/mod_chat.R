@@ -42,7 +42,7 @@ mod_chat_ui <- function(id) {
         shiny::numericInput(ns("context_window"), "Context window (tokens, optional)", value = NA, min = 64, step = 64),
         shiny::p(class = "hint", "Leave blank for no limit. When set, the oldest turns are dropped automatically to stay under it."),
         shiny::selectInput(ns("documents"), "Answer from documents", choices = c("No, plain conversation" = ""), width = "100%"),
-        shiny::p(class = "hint", "Document sets made with dragon_documents(). Each turn is answered from the most relevant excerpts, with sources under the reply."),
+        shiny::p(class = "hint", "Document sets read in the Documents step. Each turn is answered from the most relevant excerpts, with sources under the reply."),
         shiny::checkboxInput(ns("compare"), "Compare with a second backend", value = FALSE)
       ),
       shiny::conditionalPanel(condition = sprintf("input['%s']", ns("compare")), chat_backend_inputs(ns, "_b", "Second backend")),
@@ -53,6 +53,7 @@ mod_chat_ui <- function(id) {
       shiny::div(class = "cloud-actions", style = "margin-top: 8px;",
         shiny::downloadButton(ns("export_example"), "Export as training example", class = "btn-outline-secondary")
       ),
+      shiny::uiOutput(ns("feedback_card")),
       shiny::fileInput(ns("load"), "Load transcript", accept = ".json", width = "100%"),
       shiny::p(class = "hint", "The whole conversation is sent on every turn, so the model keeps context. The local worker keeps the model loaded between turns.")
     ),
@@ -287,6 +288,31 @@ mod_chat_server <- function(id, state, runs_dir) {
     # conversation; the second, comparison thread is read-only.
     verdicts <- shiny::reactiveVal(list())
 
+    # Ratings and edits become training data here, not in R: liked and
+    # edited replies (with their turns) as a conversations dataset, handed
+    # to the Train step.
+    fb_tick <- shiny::reactiveVal(0)
+    output$feedback_card <- shiny::renderUI({
+      fb_tick()
+      n <- feedback_counts(runs_dir)
+      if (!n$total) return(NULL)
+      shiny::div(class = "feedback-card", style = "margin-top: 10px;",
+        shiny::p(class = "small", sprintf("Your ratings so far: %d liked, %d disliked, %d edited.", n$liked, n$disliked, n$edited)),
+        if (n$liked + n$edited > 0) shiny::actionButton(ns("train_feedback"), "Train on my feedback", class = "btn-outline-primary")
+        else shiny::p(class = "hint", "Like or edit a reply to make training data from it.")
+      )
+    })
+    shiny::observeEvent(input$train_feedback, {
+      fb <- tryCatch(dragon_feedback(runs_dir), error = function(e) { notify_error(e); NULL })
+      if (is.null(fb$sft)) return(shiny::showNotification("No liked or edited replies yet.", type = "warning"))
+      state$dataset <- fb$sft
+      state$mapped <- fb$sft
+      pairs <- if (is.null(fb$pairs)) 0L else nrow(fb$pairs$data)
+      shiny::showNotification(sprintf("%d conversations from your ratings are ready in Train.%s", nrow(fb$sft$data),
+                                      if (pairs) sprintf(" %d liked-versus-disliked pairs were saved too.", pairs) else ""),
+                              type = "message", duration = 8)
+    })
+
     fb_button <- function(label, action, i, title) {
       shiny::tags$button(
         type = "button", class = "btn btn-sm btn-outline-secondary fb-btn", title = title,
@@ -356,12 +382,13 @@ mod_chat_server <- function(id, state, runs_dir) {
         up = , down = {
           record_feedback(runs_dir, label_now(), sys, context, h[[i]]$content, rating = if (ev$action == "up") 1 else -1, source = "app")
           v <- verdicts(); v[[as.character(i)]] <- ev$action; verdicts(v)
-          shiny::showNotification("Thanks, recorded. dragon_feedback() turns these into training data.", type = "message", duration = 4)
+          shiny::showNotification("Thanks, recorded. \"Train on my feedback\" turns these into training data.", type = "message", duration = 4)
+          fb_tick(fb_tick() + 1)
         },
         edit = {
           shiny::showModal(shiny::modalDialog(
             title = "Replace the model's reply",
-            shiny::textAreaInput(ns("edit_text"), NULL, value = h[[i]]$content, rows = 8, width = "100%"),
+            shiny::textAreaInput(ns("edit_text"), shiny::tags$span(class = "visually-hidden", "Better reply"), value = h[[i]]$content, rows = 8, width = "100%"),
             footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton(ns("edit_save"), "Save as the better reply", class = "btn-primary")),
             size = "l", easyClose = TRUE
           ))
@@ -396,6 +423,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       h[[i]]$content <- text
       history(h)
       v <- verdicts(); v[[as.character(i)]] <- "edited"; verdicts(v)
+      fb_tick(fb_tick() + 1)
       shiny::removeModal()
       shiny::showNotification("Saved. The edited reply is now part of this conversation and of the feedback data.", type = "message", duration = 5)
     })

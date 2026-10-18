@@ -69,7 +69,7 @@ mod_model_server <- function(id, state, nav_to) {
       shiny::withProgress(message = "Checking Python and hardware. First time builds the environment.", {
         hw <- tryCatch(hardware_info(), error = function(e) { notify_error(e); NULL })
         state$hardware <- hw
-        if (is.null(hw)) shiny::showNotification("Hardware check failed. See the R console.", type = "error")
+        if (is.null(hw)) shiny::showNotification("Hardware check failed; the message above says why.", type = "error")
       })
     })
 

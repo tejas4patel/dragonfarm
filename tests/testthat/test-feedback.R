@@ -85,3 +85,26 @@ test_that("the chat module records feedback from the thread", {
     expect_length(h, 0)   # the ollama backend is unreachable, so the turn was dropped
   })
 })
+
+test_that("Chat turns ratings into a Train-ready dataset without any R", {
+  runs <- tempfile("runs-")
+  dir.create(runs)
+  ctx <- list(list(role = "user", content = "How do I reset it?"))
+  expect_equal(dragonfarm:::feedback_counts(runs)$total, 0)
+  dragonfarm:::record_feedback(runs, "run-a", NULL, ctx, "Hold the button for 10 seconds.", rating = 1)
+  dragonfarm:::record_feedback(runs, "run-a", NULL, ctx, "I do not know.", rating = -1)
+  dragonfarm:::record_feedback(runs, "run-a", NULL, list(list(role = "user", content = "Which button?")), "The red one.",
+                               edited = "The small recessed one on the back.")
+  n <- dragonfarm:::feedback_counts(runs)
+  expect_equal(unlist(n), c(total = 3, liked = 1, disliked = 1, edited = 1))
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL, mapped = NULL)
+  shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
+    card <- output$feedback_card$html
+    expect_match(card, "1 liked, 1 disliked, 1 edited")
+    expect_match(card, "Train on my feedback")
+    session$setInputs(train_feedback = 1)
+    expect_s3_class(state$mapped, "dragon_dataset")
+    expect_equal(nrow(state$mapped$data), 2)          # the liked and the edited reply, each with its turns
+    expect_identical(state$dataset, state$mapped)
+  })
+})

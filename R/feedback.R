@@ -25,6 +25,15 @@ record_feedback <- function(runs_dir, label, system, context, reply, rating = NU
   invisible(rec)
 }
 
+# How many ratings and edits there are, without writing any datasets.
+feedback_counts <- function(runs_dir = dragon_runs_dir()) {
+  path <- file.path(runs_dir, "feedback", "feedback.jsonl")
+  recs <- if (file.exists(path)) read_jsonl(path) else list()
+  rating <- vapply(recs, function(r) if (is.null(r$rating)) 0 else as.numeric(r$rating), 0)
+  edited <- vapply(recs, function(r) !is.null(r$edited), TRUE)
+  list(total = length(recs), liked = sum(rating > 0 & !edited), disliked = sum(rating < 0), edited = sum(edited))
+}
+
 context_key <- function(system, context) {
   as.character(jsonlite::toJSON(list(system = system, context = context), auto_unbox = TRUE, null = "null"))
 }
