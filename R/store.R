@@ -232,3 +232,25 @@ digest_sha256 <- function(file) {
   }
   unname(tools::md5sum(file))   # without openssl: MD5, which still shows a copy is unchanged
 }
+
+# What happened recently, for an admin: events by kind, refusals and
+# failures by code, outbound calls by host, approvals still waiting. From the
+# record only; nothing is stored twice.
+store_summary <- function(days = 7, runs_dir = dragon_runs_dir()) {
+  con <- store_open(runs_dir)
+  since <- format(Sys.time() - days * 86400, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  ev <- store_get(con, "SELECT kind, name, ok, code, detail FROM events WHERE at >= ?", params = list(since))
+  bytes <- vapply(ev$detail[ev$kind == "outbound"], function(d) {
+    b <- tryCatch(jsonlite::fromJSON(d)$bytes, error = function(e) NULL)
+    if (is.numeric(b) && length(b) == 1 && !is.na(b)) b else 0
+  }, 0)
+  out <- ev[ev$kind == "outbound", , drop = FALSE]
+  list(
+    days = days,
+    kinds = sort(table(ev$kind), decreasing = TRUE),
+    problems = sort(table(ev$code[!is.na(ev$code) & nzchar(ev$code)]), decreasing = TRUE),
+    outbound = if (nrow(out)) stats::aggregate(list(calls = rep(1L, nrow(out)), bytes = unname(bytes)),
+                                               by = list(host = out$name), FUN = sum) else data.frame(host = character(), calls = integer(), bytes = numeric()),
+    waiting = nrow(approvals_pending(runs_dir))
+  )
+}

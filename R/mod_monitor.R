@@ -78,6 +78,7 @@ mod_monitor_ui <- function(id) {
     bslib::card(
       bslib::card_header("Activity"),
       shiny::p(class = "hint", "Everything the tools and agents did, newest first: each call, whether it worked, and why not. Calls an agent was refused and calls waiting for a person are kept too."),
+      shiny::uiOutput(ns("summary7")),
       shiny::radioButtons(ns("activity_filter"), NULL, inline = TRUE,
                           choices = c("Everything" = "all", "Refused or failed" = "failed", "Waiting for approval" = "approval")),
       shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
@@ -175,6 +176,21 @@ mod_monitor_server <- function(id, state, runs_dir) {
       choices <- if (is.null(ev) || !nrow(ev)) character() else stats::setNames(as.character(ev$id), sprintf("#%s %s %s", ev$id, ev$kind, ev$name %||% ""))
       shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices))
     })
+    # The last 7 days at a glance, from the record.
+    output$summary7 <- shiny::renderUI({
+      events()
+      sm <- tryCatch(store_summary(7, runs_dir), error = function(e) NULL)
+      if (is.null(sm) || !length(sm$kinds)) return(NULL)
+      line <- function(tab) paste(sprintf("%s %d", names(tab), as.integer(tab)), collapse = ", ")
+      shiny::div(class = "summary7 small",
+        shiny::p(shiny::strong("Last 7 days: "), line(sm$kinds)),
+        if (length(sm$problems)) shiny::p(shiny::strong("Refused or failed: "), line(sm$problems)),
+        if (nrow(sm$outbound)) shiny::p(shiny::strong("Left this machine: "),
+          paste(sprintf("%s (%d calls, %s)", sm$outbound$host, sm$outbound$calls,
+                        format(structure(sm$outbound$bytes, class = "object_size"), units = "auto")), collapse = "; ")),
+        if (sm$waiting) shiny::p(shiny::strong(sprintf("Waiting for you: %d", sm$waiting))))
+    })
+
     # The record as a file for an auditor; the export itself is recorded.
     output$export_record <- shiny::downloadHandler(
       filename = function() sprintf("dragonfarm-record-%s.csv", format(Sys.time(), "%Y%m%d-%H%M%S")),

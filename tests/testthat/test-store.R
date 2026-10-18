@@ -63,3 +63,18 @@ test_that("the record exports as CSV for an auditor, and the export is recorded 
   later <- dragonfarm:::store_export(f, since = "2999-01-01", runs_dir = runs)
   expect_equal(later$rows, 0L)
 })
+
+test_that("the 7-day summary counts kinds, problems, outbound hosts and waiting approvals", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  rec <- function(...) dragonfarm:::store_record_event(..., runs_dir = runs)
+  rec("tool", "search_documents", ok = TRUE); rec("tool", "list_runs", ok = FALSE, code = "NOT_ALLOWED")
+  rec("outbound", "api.anthropic.com", ok = TRUE, detail = list(purpose = "judge", bytes = 2048))
+  rec("outbound", "api.anthropic.com", ok = TRUE, detail = list(purpose = "judge", bytes = 1024))
+  rec("approval_request", "train_model", ok = FALSE, code = "NEEDS_APPROVAL", detail = list(agent = "trainer", args = list()))
+  sm <- dragonfarm:::store_summary(7, runs_dir = runs)
+  expect_equal(as.integer(sm$kinds[["outbound"]]), 2L); expect_equal(as.integer(sm$kinds[["tool"]]), 2L)
+  expect_equal(as.integer(sm$problems[["NOT_ALLOWED"]]), 1L)
+  expect_equal(sm$outbound$calls, 2L); expect_equal(sm$outbound$bytes, 3072)
+  expect_equal(sm$waiting, 1L)
+})
