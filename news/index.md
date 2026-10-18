@@ -305,6 +305,16 @@ a spreadsheet.
   [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
   in R.
 
+- The Map step can let a stronger model write the replies to your
+  prompts (“Let a stronger model write the replies”): by default the
+  best model for this machine, or Claude, OpenRouter or Groq when you
+  pick one (the choice is recorded, and every request passes the
+  outbound check). It runs in the background, and the new
+  prompt-and-reply set loads for review and training. Before, this
+  needed
+  [`dragon_synthesize()`](https://dragonfarm.dev/reference/dragon_synthesize.md)
+  in R.
+
 - The Data step loads chat-format JSONL (a `messages` list per row, the
   format Chat exports) as whole conversations, ready to train without a
   Map step. Before, multi-turn training needed
