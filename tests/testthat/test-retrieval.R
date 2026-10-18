@@ -175,6 +175,11 @@ test_that("a short follow-up is also searched with the question before it", {
   expect_equal(ch$sources()$n, 1:3)
   ch$say("Which device has the longest warranty of all the ones you sell?")
   expect_length(queries, 4)          # a full question is searched on its own
+  # each answer is traced, with its turn
+  tr <- dragonfarm:::store_event(ch$last_trace, runs_dir = dirname(dirname(docs$dir)))
+  expect_equal(tr$kind, "ask"); expect_equal(tr$detail$settings$mode, "chat"); expect_equal(tr$detail$settings$turn, 3)
+  expect_match(tr$detail$question, "longest warranty")
+  dragonfarm:::store_close_all()
 })
 
 test_that("documents are indexed and asked for real", {

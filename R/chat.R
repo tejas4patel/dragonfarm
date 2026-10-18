@@ -165,6 +165,14 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
     if (!is.null(self$documents) && !is.null(self$last_sources) && nrow(self$last_sources)) {
       self$last_sources$cited <- self$last_sources$n %in% parse_citations(reply, nrow(self$last_sources))
     }
+    if (!is.null(self$documents)) {
+      # Answers from documents are traced as in dragon_ask().
+      self$last_trace <- ask_trace(self$documents, text, self$target$model %||% self$backend$model %||% "", self$target, convo,
+                                   self$last_sources, reply,
+                                   settings = list(mode = "chat", turn = length(turn) %/% 2 + 1L, k = self$k,
+                                                   temperature = self$settings$temperature, top_p = self$settings$top_p,
+                                                   max_new_tokens = self$settings$max_new_tokens))
+    }
     self$messages <- c(turn, list(list(role = "assistant", content = reply)))
     invisible(reply)
   }

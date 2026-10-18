@@ -143,7 +143,7 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows.
 
-* Every answer from `dragon_ask()` and the app's Ask step is recorded in the
+* Every answer from documents (`dragon_ask()`, the Ask step, and chats with documents) is recorded in the
   runs folder's catalogue with what it came from: the exact chunks
   (checksum) and reader, the model and its pinned revision, the settings,
   every excerpt shown to the model and whether it was cited, and the answer.
