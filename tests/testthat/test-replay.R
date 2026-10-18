@@ -116,3 +116,35 @@ test_that("answers from a model server or other events are not replayed", {
   other <- dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE, runs_dir = runs)
   expect_equal(dragonfarm:::ask_replay(other, runs)$code, "NOT_REPLAYABLE")
 })
+
+test_that("an answer opens to a readable trace in Activity", {
+  f <- write_fake_set()
+  runs <- dirname(dirname(f$dir))
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(docs, question, k = 4, ...) data.frame(n = 1:2, id = c("abc-000", "abc-001"), source = "policy.pdf",
+                                                                     section = c("Returns", "Warranty"), page = c(3L, NA),
+                                                                     text = c("Thirty days.", "Two years."), similarity = c(0.9, 0.5)),
+    backend_generate = function(...) list("Thirty days [1].")
+  )
+  a <- dragon_ask(dragon_documents_load(f$dir), "How long is the return window?", model = "Qwen/Qwen2.5-7B-Instruct", k = 2)
+  d <- dragonfarm:::store_event(a$trace, runs)$detail
+  html <- as.character(dragonfarm:::trace_view(d, runs))
+  expect_match(html, "How long is the return window?", fixed = TRUE)
+  expect_match(html, "policy.pdf, p. 3")
+  expect_match(html, "cited")
+  expect_match(html, "Thirty days.", fixed = TRUE)                     # excerpt text, set unchanged
+  expect_match(html, "unchanged since this answer")
+
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs), {
+    session$setInputs(activity_filter = "all", activity_pick = as.character(a$trace))
+    expect_match(output$activity_trace$html, "How long is the return window?", fixed = TRUE)
+  })
+
+  cat('{"id":"abc-002","source":"policy.pdf","section":"x","text":"New.","n_words":1}\n', file = file.path(f$dir, "chunks.jsonl"), append = TRUE)
+  html <- as.character(dragonfarm:::trace_view(d, runs))
+  expect_match(html, "read again")
+  expect_no_match(html, "Two years.", fixed = TRUE)                    # no text from a re-read set
+})

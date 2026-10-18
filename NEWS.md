@@ -249,7 +249,9 @@ PDF and as Word, live web pages, and a spreadsheet.
   from: the exact chunks (checksum) and reader, the model and its pinned
   revision, the settings, every excerpt shown to the model and whether it
   was cited, and the answer. The answer's `$trace` holds the record's
-  number; the Monitor tab's Activity card shows it.
+  number; in the Monitor tab's Activity card it opens as a readable trace:
+  the question, the answer, the model, the set's version, and the excerpts
+  behind it with their text (while the set is unchanged).
 
 * Everything that sends data off the machine (the Claude API, fetching web
   pages as documents, publishing to Hugging Face, a model server elsewhere)

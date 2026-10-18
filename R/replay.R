@@ -126,3 +126,35 @@ ask_replay <- function(id, runs_dir = dragon_runs_dir()) {
   list(ok = TRUE, matches = matches, same_excerpts = same_excerpts, same_prompt = same_prompt, changes = changes,
        then = d$answer, now = a$answer)
 }
+
+# A recorded answer, readable: what was asked, what came back, from which
+# model and which version of the set, and the excerpts behind it. Excerpt
+# text is shown only while the set is unchanged since the answer.
+trace_view <- function(d, runs_dir = dragon_runs_dir()) {
+  dir <- file.path(runs_dir, "documents", d$set %||% "")
+  chunks_file <- file.path(dir, "chunks.jsonl")
+  same_set <- file.exists(chunks_file) && identical(unname(tools::md5sum(chunks_file)), d$chunks_md5)
+  text <- if (same_set) {
+    ch <- tryCatch(dragon_chunks(dragon_documents_load(dir)), error = function(e) NULL)
+    function(id) if (is.null(ch)) "" else ch$text[match(id, ch$id)] %||% ""
+  } else function(id) ""
+  kv <- function(k, v) if (length(v) && !is.na(v[1]) && nzchar(v[1])) shiny::div(class = "kv", shiny::span(k), shiny::strong(v))
+  src <- d$sources %||% list()
+  shiny::div(class = "trace-view",
+    kv("Question", d$question),
+    shiny::div(class = "bubble assistant", shiny::span(class = "role", d$model %||% "model"), shiny::div(class = "content md", md_html(d$answer %||% ""))),
+    kv("Model revision", d$revision), kv("Adapter", d$adapter),
+    kv("Document set", sprintf("%s (reader %s)", d$set %||% "?", d$reader %||% "?")),
+    shiny::p(class = "small", if (same_set) "The set is unchanged since this answer; the excerpts below are the ones it saw."
+                              else "The set has been read again (or moved) since this answer, so excerpt text is not shown; the record keeps which excerpts were used."),
+    shiny::tags$ol(class = "trace-excerpts", lapply(src, function(s) {
+      shiny::tags$li(
+        shiny::strong(source_label(s$source %||% "?", s$section %||% "", s$page %||% NA_integer_)),
+        if (isTRUE(s$cited)) shiny::span(class = "pill succeeded", "cited"),
+        if (same_set) shiny::div(class = "small", text(s$id))
+      )
+    })),
+    kv("Settings", paste(sprintf("%s = %s", names(d$settings %||% list()), vapply(d$settings %||% list(), function(x) paste(format(x), collapse = ","), "")), collapse = ", ")),
+    kv("Prompt fingerprint", d$prompt_hash)
+  )
+}

@@ -83,6 +83,7 @@ mod_monitor_ui <- function(id) {
                           choices = c("Everything" = "all", "Refused or failed" = "failed", "Waiting for approval" = "approval")),
       shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
       shiny::selectInput(ns("activity_pick"), "Details of", choices = c("Pick an entry" = ""), width = "100%"),
+      shiny::uiOutput(ns("activity_trace")),
       shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE),
       shiny::uiOutput(ns("replay_ui")),
       shiny::div(class = "btn-row", shiny::downloadButton(ns("export_record"), "Download the record (CSV)", class = "btn-outline-secondary btn-sm"))
@@ -263,6 +264,16 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::updateTextInput(session, "reg_meaning", value = "")
       }
       reg_tick(reg_tick() + 1)
+    })
+
+    # An answer opens to a readable trace; the full record stays below it.
+    output$activity_trace <- shiny::renderUI({
+      id <- input$activity_pick
+      ev <- events()
+      if (is.null(id) || !nzchar(id) || is.null(ev)) return(NULL)
+      row <- ev[as.character(ev$id) == id, , drop = FALSE]
+      if (!nrow(row) || !identical(row$kind, "ask") || is.na(row$detail)) return(NULL)
+      tryCatch(trace_view(jsonlite::fromJSON(row$detail, simplifyVector = FALSE), runs_dir), error = function(e) NULL)
     })
 
     output$activity_detail <- shiny::renderText({
