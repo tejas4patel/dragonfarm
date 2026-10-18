@@ -29,7 +29,7 @@ reticulate objects cross the boundary except strings and JSON.
 
 | What | Command | Needs |
 |---|---|---|
-| R unit tests (about 1,000 expectations) | `devtools::test()` | R only, a few minutes |
+| R unit tests (about 2,300 expectations) | `devtools::test()` | R only, a few minutes |
 | Python unit tests | see below | the Python environment |
 | Integration tests (real training) | `Sys.setenv(DRAGONFARM_INTEGRATION = "true"); devtools::test(filter = "integration")` | a GPU helps; downloads small models |
 
@@ -41,7 +41,9 @@ system2(py, "inst/python/tests/run.py", env = "PYTHONPATH=inst/python")
 ```
 
 Continuous integration runs the first two on every push and the integration
-suite on a CPU runner, so a change that passes locally should pass there.
+suite on a CPU runner, so a change that passes locally should pass there. It
+also runs `lintr::lint_package()` with the correctness checks in `.lintr`
+(static analysis, not style); run it before sending a change.
 
 ## Before you send a change
 
