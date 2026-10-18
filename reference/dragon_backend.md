@@ -17,7 +17,13 @@ dragon_backend_local(
   load_in_4bit = "auto"
 )
 
-dragon_backend_server(url, model, api_key = NULL, headers = NULL)
+dragon_backend_server(
+  url,
+  model,
+  api_key = NULL,
+  headers = NULL,
+  api_key_env = NULL
+)
 
 dragon_backend_ollama(model, url = "http://localhost:11434")
 
@@ -54,12 +60,20 @@ dragon_backend()
 
 - api_key:
 
-  Bearer token, if the server needs one. Defaults to
-  `DRAGONFARM_API_KEY`, then `OPENAI_API_KEY`.
+  Bearer token, if the server needs one. Prefer `api_key_env`: a key
+  given here is kept inside the backend object, so it travels wherever
+  the object is saved (a background job, for example), and a warning
+  says so once per session.
 
 - headers:
 
   Extra HTTP headers as a named character vector.
+
+- api_key_env:
+
+  Name of the environment variable that holds the key, read each time a
+  request is sent, so the key is never stored. Defaults to
+  `DRAGONFARM_API_KEY` when it is set, else `OPENAI_API_KEY`.
 
 ## Value
 

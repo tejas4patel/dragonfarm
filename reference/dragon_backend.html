@@ -62,7 +62,13 @@ for a session.</p>
 <span>  load_in_4bit <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">dragon_backend_server</span><span class="op">(</span><span class="va">url</span>, <span class="va">model</span>, api_key <span class="op">=</span> <span class="cn">NULL</span>, headers <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">dragon_backend_server</span><span class="op">(</span></span>
+<span>  <span class="va">url</span>,</span>
+<span>  <span class="va">model</span>,</span>
+<span>  api_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  headers <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  api_key_env <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">dragon_backend_ollama</span><span class="op">(</span><span class="va">model</span>, url <span class="op">=</span> <span class="st">"http://localhost:11434"</span><span class="op">)</span></span>
 <span></span>
@@ -100,12 +106,20 @@ are downloaded in full (about 15 GB for a 7B) and quantized at load.</p></dd>
 
 
 <dt id="arg-api-key">api_key<a class="anchor" aria-label="anchor" href="#arg-api-key"></a></dt>
-<dd><p>Bearer token, if the server needs one. Defaults to
-<code>DRAGONFARM_API_KEY</code>, then <code>OPENAI_API_KEY</code>.</p></dd>
+<dd><p>Bearer token, if the server needs one. Prefer
+<code>api_key_env</code>: a key given here is kept inside the backend object, so it
+travels wherever the object is saved (a background job, for example),
+and a warning says so once per session.</p></dd>
 
 
 <dt id="arg-headers">headers<a class="anchor" aria-label="anchor" href="#arg-headers"></a></dt>
 <dd><p>Extra HTTP headers as a named character vector.</p></dd>
+
+
+<dt id="arg-api-key-env">api_key_env<a class="anchor" aria-label="anchor" href="#arg-api-key-env"></a></dt>
+<dd><p>Name of the environment variable that holds the key,
+read each time a request is sent, so the key is never stored. Defaults to
+<code>DRAGONFARM_API_KEY</code> when it is set, else <code>OPENAI_API_KEY</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
