@@ -174,6 +174,13 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- Training on a free cloud GPU from the app takes fewer steps. One
+  button packs the run, saves it to your Downloads folder and opens the
+  notebook, which now asks Colab and Kaggle for a GPU by itself. In
+  Colab you press Run all and pick the file; when the results land in
+  Downloads, the app imports them. The steps the app shows no longer
+  include any code.
+
 - Every answer from documents
   ([`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md), the
   Ask step, and chats with documents) is recorded in the runs folder’s
