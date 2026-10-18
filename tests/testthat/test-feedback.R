@@ -77,7 +77,8 @@ test_that("the chat module records feedback from the thread", {
   withr::local_options(dragonfarm.backend = fb_backend())
   state <- shiny::reactiveValues(run = NULL)
   shiny::testServer(dragonfarm:::mod_chat_server, args = list(state = state, runs_dir = runs), {
-    session$setInputs(source = "ollama", ollama_model = "m", ollama_url = "http://localhost:11434",
+    # A port where nothing listens (a real Ollama may run on 11434).
+    session$setInputs(source = "ollama", ollama_model = "m", ollama_url = "http://127.0.0.1:9",
                       system = "", temperature = 0.5, max_new_tokens = 64, text = "hello")
     # force the fake backend regardless of the selector
     session$setInputs(send = 1)

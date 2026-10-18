@@ -353,12 +353,22 @@ chat_completion <- function(backend, messages, max_new_tokens = 256, temperature
   }
   con <- httr2::req_perform_connection(req)
   on.exit(close(con), add = TRUE)
+  # A refused stream (unknown model, bad key) must be an error, as without
+  # streaming; it used to come back as an empty reply that joined the history.
+  if (httr2::resp_status(con) >= 400) {
+    body <- tryCatch(jsonlite::fromJSON(httr2::resp_body_string(con), simplifyVector = FALSE), error = function(e) NULL)
+    cli::cli_abort(c("The server at {.url {backend$url}} answered HTTP {httr2::resp_status(con)}.",
+                     "x" = "{body$error$message %||% body$error %||% 'no detail'}"))
+  }
   pieces <- character()
   repeat {
     ev <- httr2::resp_stream_sse(con)
     if (is.null(ev)) break
     if (identical(trimws(ev$data), "[DONE]")) break
     d <- tryCatch(jsonlite::fromJSON(ev$data, simplifyVector = FALSE), error = function(e) NULL)
+    if (!is.null(d$error)) {
+      cli::cli_abort(c("The server at {.url {backend$url}} stopped with an error.", "x" = "{d$error$message %||% d$error}"))
+    }
     piece <- d$choices[[1]]$delta$content
     if (!is.null(piece) && nzchar(piece)) {
       pieces <- c(pieces, piece)

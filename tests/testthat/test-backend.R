@@ -350,3 +350,25 @@ test_that("an MLX import refusal points at the GGUF route", {
   expect_match(conditionMessage(err), "Qwen2ForCausalLM")
   expect_match(conditionMessage(err), "dragon_export_gguf")
 })
+
+test_that("a refused stream is an error, never an empty reply", {
+  skip_if_not_installed("httr2")
+  b <- dragon_backend_server("http://localhost:11434/v1", "m", api_key_env = "")
+  local_mocked_bindings(req_perform_connection = function(req, ...) {
+    httr2::response(status_code = 404, headers = list(`content-type` = "application/json"),
+                    body = charToRaw('{"error":{"message":"model \'m\' not found"}}'))
+  }, .package = "httr2")
+  expect_error(dragonfarm:::chat_completion(b, list(list(role = "user", content = "hi")), on_token = function(p) NULL),
+               "model 'm' not found")
+})
+
+test_that("an error event in the middle of a stream stops it", {
+  skip_if_not_installed("httr2")
+  b <- dragon_backend_server("http://localhost:11434/v1", "m", api_key_env = "")
+  events <- list(list(data = '{"choices":[{"delta":{"content":"Hel"}}]}'), list(data = '{"error":{"message":"out of memory"}}'))
+  local_mocked_bindings(req_perform_connection = function(req, ...) httr2::response(status_code = 200),
+                        resp_stream_sse = function(con, ...) { e <- events[[1]]; events <<- events[-1]; e }, .package = "httr2")
+  local_mocked_bindings(close = function(con, ...) invisible(NULL), .package = "base")
+  expect_error(dragonfarm:::chat_completion(b, list(list(role = "user", content = "hi")), on_token = function(p) NULL),
+               "out of memory")
+})
