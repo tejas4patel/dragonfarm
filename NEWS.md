@@ -137,7 +137,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   and 5 with it, and answered the FDA test questions exactly as before. It
   made smaller models worse, so it is off for them;
   `options(dragonfarm.datamark = TRUE)` or `FALSE` forces it. Planted
-  instructions can still get through; check the sources.
+  instructions can still get through; check the sources. The two test sets
+  ship with the package, so the rate can be measured again for any model and
+  is recorded in the catalogue (rerun on the 7B: 4 of 12 and 1 of 12 steered,
+  as first measured).
 
 * `dragon_check()` now says whether agents are on for this machine. Agents
   need a model of 3B or larger: on 20 tool-use tasks, 3B and 7B models got
