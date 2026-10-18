@@ -24,3 +24,4 @@
 ^tests/testthat/_problems$
 ^tests/testthat/testthat-problems\.rds$
 ^SECURITY\.md$
+^SUPPORT\.md$
