@@ -124,10 +124,15 @@ registry_approved <- function(name, runs_dir = dragon_runs_dir()) {
 # and neither are Try it and evaluation, where a candidate is checked before
 # anyone approves it.
 serving_check <- function(target, runs_dir = dragon_runs_dir()) {
-  if (is.null(target) || is.null(target$adapter)) return(invisible(TRUE))
+  if (is.null(target)) return(invisible(TRUE))
+  # A run's adapter (<run>/adapter) or its merged copy in the default place
+  # (<run>/merged). A merged copy saved elsewhere cannot be traced to its run.
+  merged <- is.null(target$adapter) && is.character(target$model) && dir.exists(target$model) &&
+    identical(basename(target$model), "merged") && file.exists(file.path(dirname(target$model), "config.json"))
+  if (is.null(target$adapter) && !merged) return(invisible(TRUE))
   policy <- tryCatch(policy_current(runs_dir), error = function(e) NULL)
   if (!isTRUE(policy$registry$governed)) return(invisible(TRUE))
-  run_id <- basename(dirname(target$adapter))
+  run_id <- basename(dirname(if (merged) target$model else target$adapter))
   l <- tryCatch(registry_list(runs_dir = runs_dir), error = function(e) NULL)
   if (!is.null(l) && any(l$run_id == run_id & l$status == "approved")) return(invisible(TRUE))
   cli::cli_abort(c("{.val {run_id}} is not an approved model version, and only approved versions answer in governed mode.",

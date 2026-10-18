@@ -105,6 +105,11 @@ test_that("in governed mode only an approved version's run answers people", {
   expect_error(dragonfarm:::serving_check(target, runs), class = "dragonfarm_error")                       # a candidate is not enough
   dragonfarm:::registry_sign_off("support-bot", 1, "approved", meaning = "For support tickets.", runs_dir = runs)
   expect_true(dragonfarm:::serving_check(target, runs))
+  dir.create(file.path(r1, "merged"))
+  merged <- list(model = file.path(r1, "merged"), adapter = NULL)                  # its merged copy, in the default place
+  expect_true(dragonfarm:::serving_check(merged, runs))
+  r2 <- fake_run(runs, "run-2"); dir.create(file.path(r2, "merged"))
+  expect_error(dragonfarm:::serving_check(list(model = file.path(r2, "merged"), adapter = NULL), runs), class = "dragonfarm_error")
   dragonfarm:::registry_sign_off("support-bot", 1, "retired", meaning = "Replaced.", runs_dir = runs)
   expect_error(dragonfarm:::serving_check(target, runs), class = "dragonfarm_error")                       # retired: no longer
   pol$registry$governed <- "yes"
