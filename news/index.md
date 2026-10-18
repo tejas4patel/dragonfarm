@@ -174,6 +174,13 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- The policy can be changed in the app: Settings has a Policy card for
+  the tools each agent may use, what waits for a person, where data may
+  go, the four-eyes rule for model sign-off, and agent budgets. Each
+  save is a new version with who changed it and why; older versions stay
+  listed. With `options(dragonfarm.admin = FALSE)` the card is
+  read-only.
+
 - A team can share one catalogue on Postgres: set `DRAGONFARM_CATALOG`
   to a `postgresql://` address (or `options(dragonfarm.catalog =)` to a
   function that returns a DBI connection) and every runs folder records
