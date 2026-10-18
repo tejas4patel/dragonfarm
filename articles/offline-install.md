@@ -72,5 +72,5 @@ the lock and names any package that differs.
 
 The lock is resolved from PyPI. On Windows that gives the CPU build of
 torch; on Linux, PyPI’s torch already includes CUDA. For a Windows
-server with an NVIDIA card, add the CUDA build from PyTorch’s own
-package index when you download.
+server with an NVIDIA card, add the CUDA build from the PyTorch package
+index when you download.
