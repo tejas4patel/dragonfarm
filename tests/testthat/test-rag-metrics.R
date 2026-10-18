@@ -31,3 +31,11 @@ test_that("faithfulness, precision and recall come from yes/no verdicts and a pa
   expect_equal(dragonfarm:::rag_metrics(answer, backend = dragon_backend_local())$context_precision, 1 / 3)
   expect_false(dragonfarm:::rag_context_recall(hits[2, ], "30 days"))
 })
+
+test_that("declines worded with an adverb or 'cannot determine' are not graded as claims", {
+  s <- dragonfarm:::answer_sentences(paste(
+    "The documents do not directly provide information about the founding year of the FDA.",
+    "Therefore, we cannot determine how many patients were enrolled based on the given excerpts.",
+    "The guidance recommends prespecifying the analysis."))
+  expect_equal(s, "The guidance recommends prespecifying the analysis.")
+})
