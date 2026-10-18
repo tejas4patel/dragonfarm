@@ -215,13 +215,16 @@ a spreadsheet.
 - More of the record-keeping is in the app, not just in R: Monitor has a
   “Model versions” card (propose a finished, evaluated run as a version
   of a named model, then approve, reject or retire it with a stated
-  meaning), and “Run it again and compare” on recorded calls in
-  Activity, and “Download the record (CSV)” for an auditor (the export
-  itself is recorded with a SHA-256 of the file). Activity opens with a
-  “Last 7 days” line: what happened, what was refused or failed, what
-  left the machine and to where, and how many approvals are waiting. The
-  Documents step has “Check it re-reads the same”, which reads a set’s
-  files again and says whether they come back identical.
+  meaning), and “Run it again and compare” on recorded calls and answers
+  in Activity (8 answers a 3B gave on the FDA guidance replayed
+  identically: the same excerpts, prompt and answer; when they differ it
+  says whether the set was re-read, the model changed, or other excerpts
+  were found), and “Download the record (CSV)” for an auditor (the
+  export itself is recorded with a SHA-256 of the file). Activity opens
+  with a “Last 7 days” line: what happened, what was refused or failed,
+  what left the machine and to where, and how many approvals are
+  waiting. The Documents step has “Check it re-reads the same”, which
+  reads a set’s files again and says whether they come back identical.
 
 - Answers in the Documents step get a quick check that needs no model:
   every figure in the answer (numbers, dates, percentages, versions)
