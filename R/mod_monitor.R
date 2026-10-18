@@ -287,13 +287,17 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::tags$h6("Before you sign"),
         shiny::tags$ul(class = "list-unstyled", lapply(seq_len(nrow(fx)), function(i) shiny::tags$li(
           class = if (fx$status[i] == "look") "text-warning",
-          shiny::tags$span(`aria-hidden` = "true", mark[[fx$status[i]]]), " ", fx$note[i]))))
+          shiny::tags$span(`aria-hidden` = "true", mark[[fx$status[i]]]), " ", fx$note[i],
+          if (fx$blocks[i]) shiny::strong(" Holds approval until reviewed.")))),
+        # D-17: these two hold an approval until the signer says they reviewed them.
+        if (any(fx$blocks)) shiny::checkboxInput(ns("reg_reviewed"), "I have reviewed the findings that hold approval; approve anyway", value = FALSE))
     })
     shiny::observeEvent(input$reg_sign, {
       pick <- input$reg_pick %||% ""
       if (!nzchar(pick)) { shiny::showNotification("Pick a version first.", type = "warning"); return() }
       parts <- strsplit(pick, "@", fixed = TRUE)[[1]]
-      ok <- tryCatch({ registry_sign_off(parts[1], as.integer(parts[2]), input$reg_decision, meaning = input$reg_meaning %||% "", runs_dir = runs_dir); TRUE },
+      ok <- tryCatch({ registry_sign_off(parts[1], as.integer(parts[2]), input$reg_decision, meaning = input$reg_meaning %||% "", runs_dir = runs_dir,
+                                         reviewed = isTRUE(input$reg_reviewed)); TRUE },
                      error = function(e) { notify_error(e); FALSE })
       if (ok) {
         shiny::showNotification(sprintf("%s version %s: %s.", parts[1], parts[2], input$reg_decision), type = "message")

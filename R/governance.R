@@ -199,21 +199,23 @@ impact_note <- function(x) {
 
 # What a person should know before signing a model version off (G6, as a
 # fixed check rather than an agent). Each finding is "ok", "look" (worth
-# reading before signing) or "unknown" (not recorded). Nothing here blocks:
-# the findings are shown next to the sign-off and stored with it.
+# reading before signing) or "unknown" (not recorded). Two "look" findings
+# block an approval unless the signer says they reviewed them (D-17): a
+# document set re-read since training, and personal data with no recorded
+# approval. The findings are shown next to the sign-off and stored with it.
 governance_findings <- function(run, runs_dir = dragon_runs_dir()) {
   p <- provenance_report(run, runs_dir = runs_dir)
-  f <- function(check, status, note) data.frame(check = check, status = status, note = note, stringsAsFactors = FALSE)
+  f <- function(check, status, note, blocks = FALSE) data.frame(check = check, status = status, note = note, blocks = blocks, stringsAsFactors = FALSE)
   out <- list(
     f("licence", if (identical(p$licence$kind, "permissive")) "ok" else if (identical(p$licence$kind, "check_terms")) "look" else "unknown",
       p$licence$note),
     if (!is.null(p[["personal_data"]])) f("personal_data", "look", sprintf("Trained on %s rows with likely personal data, approved by %s.",
                                                                      p[["personal_data"]]$rows %||% "some", p[["personal_data"]]$approved_by %||% "someone"))
-    else if (isTRUE(p$personal_data_rows > 0)) f("personal_data", "look", sprintf("Trained on %d rows with likely personal data; no approval recorded (started from R code).", as.integer(p$personal_data_rows)))
+    else if (isTRUE(p$personal_data_rows > 0)) f("personal_data", "look", sprintf("Trained on %d rows with likely personal data; no approval recorded (started from R code).", as.integer(p$personal_data_rows)), blocks = TRUE)
     else if (identical(as.integer(p$personal_data_rows), 0L)) f("personal_data", "ok", "No personal data was found in the training rows.")
     else f("personal_data", "unknown", "Not recorded: the run predates this check."),
     if (!is.null(p$documents)) {
-      if (isFALSE(p$documents$current)) f("documents", "look", sprintf("The document set %s has been re-read since training; answers may cite text that has changed.", p$documents$set))
+      if (isFALSE(p$documents$current)) f("documents", "look", sprintf("The document set %s has been re-read since training; answers may cite text that has changed.", p$documents$set), blocks = TRUE)
       else if (isTRUE(p$documents$current)) f("documents", "ok", sprintf("Trained on the current version of the document set %s.", p$documents$set))
       else f("documents", "unknown", sprintf("The version of the document set %s it was trained on is not known.", p$documents$set))
     },

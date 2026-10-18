@@ -218,6 +218,7 @@ test_that("before signing: each planted concern is a finding, a clean run has no
   f2 <- dragonfarm:::governance_findings("run-risky", runs_dir = runs)
   look <- f2$check[f2$status == "look"]
   expect_setequal(look, c("licence", "personal_data", "documents", "remote_code", "evaluation"))
+  expect_setequal(f2$check[f2$blocks], c("personal_data", "documents"))   # D-17: only these two hold an approval
   expect_match(f2$note[f2$check == "personal_data"], "4 rows .* no approval recorded")
   expect_match(f2$note[f2$check == "documents"], "re-read since")      # the set no longer holds what it was trained on
 
@@ -246,9 +247,14 @@ test_that("a run records how many rows held personal data, and a sign-off keeps 
   expect_equal(f$status[f$check == "personal_data"], "look")
 
   dragonfarm:::registry_propose(dragon_run(prep$run_dir), "bot", proposed_by = "someone.else", runs_dir = runs)
-  dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "Approved for testing.", signer = "qa", runs_dir = runs)
+  # D-17: personal data with no recorded approval holds the approval until the signer ticks "reviewed".
+  expect_error(dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "Approved for testing.", signer = "qa", runs_dir = runs),
+               class = "dragonfarm_error", regexp = "reviewed")
+  expect_equal(dragonfarm:::registry_status("bot", 1, runs), "candidate")
+  dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "Approved for testing.", signer = "qa", runs_dir = runs, reviewed = TRUE)
   det <- jsonlite::fromJSON(dragonfarm:::store_events(1, kind = "model_signoff", runs_dir = runs)$detail, simplifyVector = FALSE)
   expect_equal(vapply(det$findings, `[[`, "", "check"), "personal_data")   # only what was not ok is kept
+  expect_true(det$reviewed)
 })
 
 test_that("Monitor shows the findings before a version is signed", {
@@ -263,4 +269,32 @@ test_that("Monitor shows the findings before a version is signed", {
     html <- output$reg_findings$html
     expect_match(html, "Before you sign"); expect_match(html, "qwen-research"); expect_match(html, "text-warning")
   })
+})
+
+test_that("D-17: a re-read set holds approval; rejecting needs no tick; Monitor shows the tick", {
+  fake <- write_fake_set()
+  runs <- fake$root
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  dragonfarm:::store_sync(runs)
+  d <- gov_run(runs, "20261018-kb", documents = list(set = "kb", chunks_md5 = "an-older-version"))
+  dragonfarm:::store_record_event("run_created", "20261018-kb", ok = TRUE, detail = list(personal_data_rows = 0L), runs_dir = runs)
+  dragonfarm:::registry_propose(dragon_run(d), "kb-bot", proposed_by = "tejas", runs_dir = runs)
+  e <- tryCatch(dragonfarm:::registry_sign_off("kb-bot", 1, "approved", meaning = "For kb.", signer = "qa", runs_dir = runs), error = function(e) e)
+  expect_equal(e$code, "NEEDS_REVIEW"); expect_match(conditionMessage(e), "re-read since training")
+  expect_true("NEEDS_REVIEW" %in% dragonfarm:::tool_error_codes())
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs), {
+    session$setInputs(reg_pick = "kb-bot@1")
+    expect_match(output$reg_findings$html, "Holds approval until reviewed")
+    expect_match(output$reg_findings$html, "reg_reviewed")
+    session$setInputs(reg_decision = "approved", reg_meaning = "For kb answers", reg_sign = 1)
+    expect_equal(dragonfarm:::registry_status("kb-bot", 1, runs_dir), "candidate")      # held without the tick
+    session$setInputs(reg_reviewed = TRUE, reg_sign = 2)
+    expect_equal(dragonfarm:::registry_status("kb-bot", 1, runs_dir), "approved")
+  })
+  d2 <- gov_run(runs, "20261018-kb2", documents = list(set = "kb", chunks_md5 = "an-older-version"))
+  dragonfarm:::registry_propose(dragon_run(d2), "kb-bot", proposed_by = "tejas", runs_dir = runs)
+  dragonfarm:::registry_sign_off("kb-bot", 2, "rejected", meaning = "Stale documents.", signer = "qa", runs_dir = runs)   # no tick needed
+  expect_equal(dragonfarm:::registry_status("kb-bot", 2, runs), "rejected")
 })

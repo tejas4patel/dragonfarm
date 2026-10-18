@@ -22,5 +22,6 @@
   "QUOTA_REACHED": "The daily cap set for this provider has been reached; the local model is used instead.",
   "NOT_APPROVED": "In governed mode, a trained run that is not an approved model version.",
   "PERSONAL_DATA": "Training rows that hold likely personal data, not yet reviewed by a person.",
+  "NEEDS_REVIEW": "Approving a model version whose record shows a re-read document set or unapproved personal data, without the signer's reviewed tick.",
   "UNKNOWN": "Anything not named above."
 }
