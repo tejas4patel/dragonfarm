@@ -88,3 +88,44 @@ test_that("a schema-1 catalogue gains the registry tables when opened", {
   expect_equal(DBI::dbGetQuery(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value, "2")
   expect_true(all(c("model_versions", "model_signoffs", "events") %in% DBI::dbListTables(con)))
 })
+
+test_that("in governed mode only an approved version's run answers people", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  r1 <- fake_run(runs, "run-1")
+  target <- list(model = "Qwen/Qwen2.5-0.5B-Instruct", adapter = file.path(r1, "adapter"))
+  expect_true(dragonfarm:::serving_check(target, runs))                     # governed mode is off by default
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- TRUE
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "governed", runs_dir = runs)
+  err <- tryCatch(dragonfarm:::serving_check(target, runs), dragonfarm_error = function(e) e)
+  expect_equal(err$code, "NOT_APPROVED")
+  expect_true(dragonfarm:::serving_check(list(model = "Qwen/Qwen2.5-7B-Instruct", adapter = NULL), runs))   # untrained: fine
+  dragonfarm:::registry_propose(r1, "support-bot", runs_dir = runs)
+  expect_error(dragonfarm:::serving_check(target, runs), class = "dragonfarm_error")                       # a candidate is not enough
+  dragonfarm:::registry_sign_off("support-bot", 1, "approved", meaning = "For support tickets.", runs_dir = runs)
+  expect_true(dragonfarm:::serving_check(target, runs))
+  dragonfarm:::registry_sign_off("support-bot", 1, "retired", meaning = "Replaced.", runs_dir = runs)
+  expect_error(dragonfarm:::serving_check(target, runs), class = "dragonfarm_error")                       # retired: no longer
+  pol$registry$governed <- "yes"
+  expect_match(dragonfarm:::policy_problems(pol), "governed")
+})
+
+test_that("Ask refuses an unapproved run in governed mode, before anything runs", {
+  f <- write_fake_set()
+  runs <- dirname(dirname(f$dir))
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- TRUE
+  dragonfarm:::policy_set(pol, set_by = "admin", runs_dir = runs)
+  called <- FALSE
+  testthat::local_mocked_bindings(
+    dragon_retrieve = function(...) data.frame(n = 1, id = "abc-000", source = "policy.pdf", section = "s", page = NA, text = "Thirty days.", similarity = 1),
+    resolve_target = function(x) list(model = "Qwen/Qwen2.5-0.5B-Instruct", adapter = file.path(runs, "run-x", "adapter")),
+    backend_generate = function(...) { called <<- TRUE; list("Thirty days [1].") }
+  )
+  expect_error(dragon_ask(dragon_documents_load(f$dir), "How long?", model = "run-x"), class = "dragonfarm_error")
+  expect_false(called)
+  r <- dragonfarm:::tool_call("answer_question", list(set = f$dir, question = "How long?", model = "run-x"))
+  expect_equal(r$code, "NOT_APPROVED")
+})

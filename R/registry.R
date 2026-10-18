@@ -117,3 +117,20 @@ registry_approved <- function(name, runs_dir = dragon_runs_dir()) {
   if (!nrow(l)) return(NULL)
   l[which.max(l$version), , drop = FALSE]
 }
+
+# Governed mode (registry.governed in the policy): a trained run answers
+# people (Ask, Chat, the answer tool) only when it is the run behind an
+# approved, not retired, model version. Untrained models are not affected,
+# and neither are Try it and evaluation, where a candidate is checked before
+# anyone approves it.
+serving_check <- function(target, runs_dir = dragon_runs_dir()) {
+  if (is.null(target) || is.null(target$adapter)) return(invisible(TRUE))
+  policy <- tryCatch(policy_current(runs_dir), error = function(e) NULL)
+  if (!isTRUE(policy$registry$governed)) return(invisible(TRUE))
+  run_id <- basename(dirname(target$adapter))
+  l <- tryCatch(registry_list(runs_dir = runs_dir), error = function(e) NULL)
+  if (!is.null(l) && any(l$run_id == run_id & l$status == "approved")) return(invisible(TRUE))
+  cli::cli_abort(c("{.val {run_id}} is not an approved model version, and only approved versions answer in governed mode.",
+                   "i" = "Propose it and have it signed off in Monitor, Model versions, or answer with an untrained model."),
+                 class = "dragonfarm_error", code = "NOT_APPROVED")
+}

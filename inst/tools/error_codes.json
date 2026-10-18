@@ -20,5 +20,6 @@
   "NOT_EVALUATED": "The run has no evaluation (held-out loss, metrics or a judge), so it cannot be proposed as a model version.",
   "NOT_OPTED_IN": "Nothing is sent to this provider until a person opts in to it.",
   "QUOTA_REACHED": "The daily cap set for this provider has been reached; the local model is used instead.",
+  "NOT_APPROVED": "In governed mode, a trained run that is not an approved model version.",
   "UNKNOWN": "Anything not named above."
 }

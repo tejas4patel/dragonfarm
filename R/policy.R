@@ -39,6 +39,10 @@ policy_problems <- function(policy) {
     m <- policy$agents[[a]]$model
     if (!is.null(m) && !(is.character(m) && length(m) == 1 && nzchar(m))) p <- c(p, sprintf("model for '%s' must be a model id or run id", a))
   }
+  if (!is.null(policy$registry$governed) && !(is.logical(policy$registry$governed) && length(policy$registry$governed) == 1 &&
+                                               !is.na(policy$registry$governed))) {
+    p <- c(p, "registry governed must be true or false")
+  }
   bad <- setdiff(unlist(policy$approvals$side_effects), tool_side_effects)
   if (length(bad)) p <- c(p, sprintf("unknown side effect '%s'", bad))
   p

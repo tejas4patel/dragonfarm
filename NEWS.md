@@ -192,6 +192,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   approvals, policies and model versions there, append-only as on a laptop.
   Without it, nothing changes: each runs folder keeps its own SQLite file.
 
+* Governed mode: an admin can tick "Only approved model versions answer
+  questions" in Settings. Then a trained run answers in Ask, Chat and the
+  answer tool only once a person has approved it as a model version in
+  Monitor; until then it is refused with NOT_APPROVED before anything runs.
+  Untrained models, Try it and evaluation are not affected, so a candidate
+  can still be checked before it is approved.
+
 * More of the record-keeping is in the app, not just in R: Monitor has a
   "Model versions" card (propose a finished, evaluated run as a version of a
   named model, then approve, reject or retire it with a stated meaning), and

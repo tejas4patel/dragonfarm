@@ -28,6 +28,7 @@ policy_from_inputs <- function(current, input) {
   hosts <- trimws(unlist(strsplit(input$hosts %||% "", "[\r\n,]+")))
   p$outbound$allowed_hosts <- switch(input$outbound %||% "any", any = NULL, none = list(), only = as.list(hosts[nzchar(hosts)]))
   p$registry$separate_signer <- isTRUE(input$separate_signer)
+  p$registry$governed <- isTRUE(input$governed)
   p$budgets$max_steps <- as.integer(input$max_steps %||% p$budgets$max_steps)
   p$budgets$max_gpu_minutes <- as.integer(input$max_gpu_minutes %||% p$budgets$max_gpu_minutes)
   p
@@ -66,6 +67,8 @@ mod_policy_server <- function(id, runs_dir) {
         shiny::tags$h6("Sign-off and budgets"),
         shiny::checkboxInput(ns("separate_signer"), "A model version must be signed by someone other than its proposer",
                              value = isTRUE(p$registry$separate_signer)),
+        shiny::checkboxInput(ns("governed"), "Only approved model versions answer questions (trained runs need a sign-off first)",
+                             value = isTRUE(p$registry$governed)),
         bslib::layout_columns(col_widths = c(6, 6),
           shiny::numericInput(ns("max_steps"), "Steps per agent task", value = p$budgets$max_steps %||% 30, min = 1),
           shiny::numericInput(ns("max_gpu_minutes"), "GPU minutes per agent task", value = p$budgets$max_gpu_minutes %||% 120, min = 1)),

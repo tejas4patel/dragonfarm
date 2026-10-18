@@ -4,7 +4,7 @@
   "description": "Search a document set, then have a model answer using only those excerpts, citing them like [1]. Declines when the excerpts do not hold the answer. With compare, adds excerpts that differ and asks for each document's version.",
   "side_effect": "read_only",
   "cost": {"gpu": true, "typical_seconds": 15},
-  "errors": ["NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS"],
+  "errors": ["NOT_A_SET", "MODEL_NOT_FOUND", "OUT_OF_MEMORY", "INVALID_ARGUMENTS", "NOT_APPROVED"],
   "input": {
     "type": "object",
     "required": ["set", "question"],

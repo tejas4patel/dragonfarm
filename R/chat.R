@@ -58,6 +58,7 @@ dragon_chat <- function(x = NULL, system = NULL, backend = dragon_backend(), max
     if (is.null(x)) cli::cli_abort("Say what should answer: a run, adapter, model directory, or model id.")
     t <- resolve_target(x)
     if (isTRUE(base)) t$adapter <- NULL
+    serving_check(t, runs_dir)
     t
   }
   self <- new.env(parent = emptyenv())

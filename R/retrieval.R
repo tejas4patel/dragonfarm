@@ -135,6 +135,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
     model <- model %||% default_answer_model()
     target <- resolve_target(model)
     if (isTRUE(base)) target$adapter <- NULL
+    serving_check(target)
     model_label <- if (inherits(model, "dragon_run")) model$id else if (is.character(model)) model else target$model
     if (isTRUE(base)) model_label <- paste0(model_label, " (base)")
   }
