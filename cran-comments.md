@@ -43,6 +43,14 @@ and so started 'Python', now mocks it).
 * New file `inst/python/requirements.lock` (about 100 KB): the 'Python'
   packages pinned with hashes, for administrators who install without the
   internet. Nothing reads it during the check.
+* New suggested packages 'htmltools', used only by a test that checks
+  every input in the app has a label (it is always installed, as 'shiny'
+  depends on it), and 'openssl', used to fingerprint exported records
+  (without it the fingerprint falls back to MD5).
+* New evaluation files under `inst/evals/` (about 30 KB): a question suite
+  and two small sets of policy documents with planted instructions, used to
+  measure how often a model follows text inside a document. They are read
+  only when a user runs that measurement, never during the check.
 
 * New 'Python' requirements for the document readers ('pypdf',
   'cryptography' for encrypted PDFs, 'python-docx', 'openpyxl') and for
