@@ -86,3 +86,29 @@ test_that("the Activity card lists events, filters them, and shows details", {
     expect_match(output$activity_detail, "warranty")
   })
 })
+
+test_that("the approvals card lists held calls and runs one when approved", {
+  runs_dir <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs_dir)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_default()
+  pol$approvals$tools <- c(unlist(pol$approvals$tools), "list_runs")
+  dragonfarm:::policy_set(pol, set_by = "admin", runs_dir = runs_dir)
+  tool_call("list_runs", list(limit = 3), agent = "ops")
+  tool_call("list_runs", list(limit = 9), agent = "ops")
+  ids <- dragonfarm:::approvals_pending(runs_dir)$id
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs_dir), {
+    html <- output$approvals
+    expect_match(html, "list_runs"); expect_match(html, "limit = 3"); expect_match(html, "limit = 9")
+    session$setInputs(approval_pick = as.character(ids[1]), approval_note = "ok")
+    session$setInputs(approve = 1)
+    expect_equal(dragonfarm:::approvals_pending(runs_dir)$id, ids[2])
+    session$setInputs(approval_pick = as.character(ids[2]))
+    session$setInputs(decline = 1)
+    expect_equal(nrow(dragonfarm:::approvals_pending(runs_dir)), 0)
+  })
+  ev <- dragonfarm:::store_events(10, runs_dir = runs_dir)
+  expect_equal(sum(ev$kind == "approval_decision"), 2)
+  expect_equal(sum(ev$kind == "tool" & ev$ok == 1), 1)              # only the approved one ran
+})

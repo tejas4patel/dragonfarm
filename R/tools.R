@@ -99,8 +99,10 @@ with_defaults <- function(args, schema) {
 # `agent` names the agent making the call; NULL means a person acting
 # directly, which needs no approval. An agent's call is checked against the
 # current policy: refused (NOT_ALLOWED), or held for a person (NEEDS_APPROVAL,
-# recorded as an approval request).
-tool_call <- function(name, args = list(), agent = NULL) {
+# recorded as an approval request). `on_behalf_of` is set when a person runs
+# a call an agent asked for, after approving it (approval_decide()); it is
+# recorded with the call.
+tool_call <- function(name, args = list(), agent = NULL, on_behalf_of = NULL) {
   refuse <- function(code, error, kind = "tool") {
     store_record_event(kind, name, ok = FALSE, code = code, detail = list(agent = agent, args = args, error = error))
     list(ok = FALSE, code = code, error = error)
@@ -133,6 +135,7 @@ tool_call <- function(name, args = list(), agent = NULL) {
   # A successful call also records a fingerprint of its result and what it
   # depended on, so it can be replayed and compared (tool_replay()).
   detail <- list(agent = agent, args = args)
+  if (!is.null(on_behalf_of)) detail$on_behalf_of <- on_behalf_of
   if (isTRUE(out$ok)) {
     detail$result_hash <- result_hash(out$result)
     detail$result_preview <- result_preview(out$result)

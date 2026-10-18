@@ -63,6 +63,19 @@ mod_monitor_ui <- function(id) {
       )
     ),
     bslib::card(
+      bslib::card_header("Waiting for you"),
+      shiny::p(class = "hint", "Things an agent asked to do that need a person first: training, and anything that deletes or leaves this machine. Approve one and it runs now, in your name; decline it and it never runs."),
+      shiny::div(class = "table-wrap", shiny::tableOutput(ns("approvals"))),
+      bslib::layout_columns(
+        col_widths = c(4, 8),
+        shiny::selectInput(ns("approval_pick"), "Request", choices = c("Pick a request" = ""), width = "100%"),
+        shiny::textInput(ns("approval_note"), "Note (optional)", width = "100%")
+      ),
+      shiny::div(class = "btn-row",
+        shiny::actionButton(ns("approve"), "Approve and run", class = "btn-primary"),
+        shiny::actionButton(ns("decline"), "Decline", class = "btn-outline-secondary"))
+    ),
+    bslib::card(
       bslib::card_header("Activity"),
       shiny::p(class = "hint", "Everything the tools and agents did, newest first: each call, whether it worked, and why not. Calls an agent was refused and calls waiting for a person are kept too."),
       shiny::radioButtons(ns("activity_filter"), NULL, inline = TRUE,
@@ -100,6 +113,37 @@ mod_monitor_server <- function(id, state, runs_dir) {
              approval = ev[ev$kind == "approval_request", , drop = FALSE],
              ev)
     })
+    # The approvals inbox, refreshed with the event log.
+    pending <- shiny::reactive({
+      events()
+      tryCatch(approvals_pending(runs_dir), error = function(e) NULL)
+    })
+    output$approvals <- shiny::renderTable({
+      p <- pending()
+      if (is.null(p)) return(data.frame(Note = "The catalogue could not be read."))
+      approvals_table(p)
+    })
+    shiny::observe({
+      p <- pending()
+      choices <- if (is.null(p) || !nrow(p)) character() else stats::setNames(as.character(p$id), sprintf("#%s %s", p$id, p$name))
+      shiny::updateSelectInput(session, "approval_pick", choices = c("Pick a request" = "", choices))
+    })
+    decide <- function(approve) {
+      id <- input$approval_pick
+      if (is.null(id) || !nzchar(id)) { shiny::showNotification("Pick a request first.", type = "warning"); return() }
+      note <- trimws(input$approval_note %||% "")
+      res <- tryCatch(approval_decide(as.integer(id), approve, note = if (nzchar(note)) note, runs_dir = runs_dir),
+                      error = function(e) { notify_error(e); NULL })
+      if (is.null(res)) return()
+      msg <- if (!approve) sprintf("Request #%s declined.", id)
+             else if (isTRUE(res$ok)) sprintf("Request #%s approved and run.", id)
+             else sprintf("Request #%s approved, but the call failed: %s", id, error_message(res$error, res$code))
+      shiny::showNotification(msg, type = if (approve && !isTRUE(res$ok)) "error" else "message")
+      shiny::updateTextInput(session, "approval_note", value = "")
+    }
+    shiny::observeEvent(input$approve, decide(TRUE))
+    shiny::observeEvent(input$decline, decide(FALSE))
+
     output$activity <- shiny::renderTable({
       ev <- shown_events()
       if (is.null(ev) || !nrow(ev)) return(data.frame(Note = "Nothing recorded yet."))
