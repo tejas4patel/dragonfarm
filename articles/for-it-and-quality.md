@@ -67,10 +67,13 @@ person signs it off, with what the approval means (“approved for
 answering questions on our SOPs”). The policy can require that the
 signer is not the person who proposed it.
 
-An admin can also switch on governed mode. Then a trained model answers
-people only once it is an approved version; until then it is refused
-before it runs. Untrained models are not affected, and a candidate can
-still be tried and evaluated before anyone signs it off.
+In governed mode, a trained model answers people only once it is an
+approved version; until then it is refused before it runs. On a server
+(Posit Connect, or a shared Postgres catalogue) governed mode and the
+four-eyes sign-off are on unless an admin turns them off; on a single
+laptop they are off unless switched on. Untrained models are not
+affected, and a candidate can still be tried and evaluated before anyone
+signs it off.
 
 ## What the record shows
 
