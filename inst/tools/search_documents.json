@@ -1,35 +1,105 @@
 {
   "name": "search_documents",
   "title": "Search a document set",
-  "description": "Find the excerpts of a document set most relevant to a query, ranked by meaning and keywords together. Optionally add excerpts that say something different from the top ones (for questions where documents may disagree).",
+  "description": "Find the excerpts of a document set most relevant to a query, ranked by meaning and keywords together. Optionally add excerpts that say something different from the top ones (for questions where documents may disagree). With source, searches one document of the set only (its file name, as in the results' source).",
   "side_effect": "read_only",
-  "cost": {"gpu": false, "typical_seconds": 1},
-  "errors": ["NOT_A_SET", "INVALID_ARGUMENTS"],
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "NOT_A_SET",
+    "INVALID_ARGUMENTS"
+  ],
   "input": {
     "type": "object",
-    "required": ["set", "query"],
+    "required": [
+      "set",
+      "query"
+    ],
     "additionalProperties": false,
     "properties": {
-      "set": {"type": "string", "minLength": 1, "description": "Document set name (as listed by list_document_sets) or its folder."},
-      "query": {"type": "string", "minLength": 1, "description": "What to search for, usually the user's question."},
-      "k": {"type": "integer", "minimum": 1, "maximum": 50, "default": 4, "description": "How many top excerpts."},
-      "extra": {"type": "integer", "minimum": 0, "maximum": 10, "default": 0, "description": "Excerpts to add after the top k that differ from them."},
-      "method": {"type": "string", "enum": ["hybrid", "dense"], "default": "hybrid", "description": "hybrid: meaning plus keywords; dense: meaning only."}
+      "set": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Document set name (as listed by list_document_sets) or its folder."
+      },
+      "query": {
+        "type": "string",
+        "minLength": 1,
+        "description": "What to search for, usually the user's question."
+      },
+      "k": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 4,
+        "description": "How many top excerpts."
+      },
+      "extra": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10,
+        "default": 0,
+        "description": "Excerpts to add after the top k that differ from them."
+      },
+      "method": {
+        "type": "string",
+        "enum": [
+          "hybrid",
+          "dense"
+        ],
+        "default": "hybrid",
+        "description": "hybrid: meaning plus keywords; dense: meaning only."
+      },
+      "source": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null,
+        "description": "Search only this document of the set: its file name, e.g. policy.pdf."
+      }
     }
   },
   "output": {
     "type": "array",
     "items": {
       "type": "object",
-      "required": ["n", "id", "source", "text"],
+      "required": [
+        "n",
+        "id",
+        "source",
+        "text"
+      ],
       "properties": {
-        "n": {"type": "integer"},
-        "id": {"type": "string"},
-        "source": {"type": "string"},
-        "section": {"type": ["string", "null"]},
-        "page": {"type": ["integer", "null"]},
-        "text": {"type": "string"},
-        "similarity": {"type": "number"}
+        "n": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "similarity": {
+          "type": "number"
+        }
       }
     }
   }

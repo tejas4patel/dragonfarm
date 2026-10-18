@@ -187,3 +187,30 @@ test_that("a missing question file is FILE_NOT_FOUND", {
   on.exit(dragonfarm:::store_close_all(), add = TRUE)
   expect_equal(dragonfarm:::tool_call("train_model", list(questions = "nope.jsonl", model = "m"))$code, "FILE_NOT_FOUND")
 })
+
+test_that("search_documents can search one document of a set", {
+  f <- write_fake_set()
+  withr::local_options(dragonfarm.runs_dir = f$root)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  docs <- dragon_documents_load(f$dir)
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    dragon_documents_load = function(dir, ...) docs,
+    dragon_retrieve = function(docs, query, k = 4, method = "hybrid", extra = 0) {
+      seen <<- k
+      # the whole set ranked: NEWS.md first, then the two policy.pdf excerpts
+      data.frame(n = 1:3, id = c("def-000", "abc-001", "abc-000"), source = c("NEWS.md", "policy.pdf", "policy.pdf"),
+                 section = "s", text = c("Changed.", "Two years.", "Thirty days."), score = 1, similarity = c(0.9, 0.8, 0.7),
+                 weight = 1, stringsAsFactors = FALSE)
+    }
+  )
+  s <- dragonfarm:::tool_call("search_documents", list(set = "kb", query = "warranty", k = 1, source = "Policy.PDF"))
+  expect_true(s$ok)
+  expect_equal(seen, 3L)                                        # the whole set is ranked
+  expect_length(s$result, 1)
+  expect_equal(s$result[[1]]$id, "abc-001")                     # that document's best excerpt, renumbered
+  expect_equal(s$result[[1]]$n, 1L)
+  bad <- dragonfarm:::tool_call("search_documents", list(set = "kb", query = "warranty", source = "other.pdf"))
+  expect_equal(bad$code, "INVALID_ARGUMENTS")
+  expect_match(bad$error, "policy.pdf")
+})

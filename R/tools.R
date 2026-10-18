@@ -171,7 +171,20 @@ tool_impl <- list(
   },
   search_documents = function(args) {
     docs <- dragon_documents_load(args$set)
-    hits <- dragon_retrieve(docs, args$query, k = as.integer(args$k), method = args$method, extra = as.integer(args$extra))
+    if (!is.null(args$source)) {
+      # One document: rank the whole set, keep that document's top k.
+      ch <- dragon_chunks(docs)
+      want <- unique(ch$source[tolower(ch$source) == tolower(args$source)])
+      if (!length(want)) {
+        cli::cli_abort(c("No document called {.val {args$source}} in this set.", i = "It has: {.val {sort(unique(ch$source))}}."),
+                       class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
+      }
+      hits <- dragon_retrieve(docs, args$query, k = nrow(ch), method = args$method)
+      hits <- utils::head(hits[hits$source == want, , drop = FALSE], as.integer(args$k))
+      hits$n <- seq_len(nrow(hits))
+    } else {
+      hits <- dragon_retrieve(docs, args$query, k = as.integer(args$k), method = args$method, extra = as.integer(args$extra))
+    }
     rows_as_list(hits, c("n", "id", "source", "section", "page", "text", "similarity"))
   },
   answer_question = function(args) {

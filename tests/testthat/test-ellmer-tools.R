@@ -13,7 +13,7 @@ test_that("every contract becomes an ellmer tool that goes through tool_call()",
   expect_equal(S7::prop(s, "name"), "search_documents")
   expect_true(isTRUE(S7::prop(s, "annotations")$read_only_hint))
   expect_false(isTRUE(S7::prop(tools$read_documents, "annotations")$read_only_hint))
-  expect_equal(names(formals(s)), c("set", "query", "k", "extra", "method"))
+  expect_equal(names(formals(s)), c("set", "query", "k", "extra", "method", "source"))
 
   # calling it runs the contract checks and returns a typed error, not a crash
   out <- jsonlite::fromJSON(s(set = "missing", query = "q"))       # JSON text, for MCP clients and models
