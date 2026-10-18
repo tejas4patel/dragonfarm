@@ -326,6 +326,12 @@ a spreadsheet.
   Free tiers are turned on there too, with a daily cap. Messages that
   used to say “set HF_TOKEN in the R session” now point to Settings.
 
+- An offline switch in the Settings policy card stops every model
+  download: models must already be on the machine, and a missing one
+  fails at once instead of downloading. It is separate from “where data
+  may go: nowhere”, which leaves downloads alone because they send none
+  of your data.
+
 - [`dragon_backend_server()`](https://dragonfarm.dev/reference/dragon_backend.md)
   gains `api_key_env`, the name of the environment variable that holds
   the key; the key is read each time a request is sent and never stored

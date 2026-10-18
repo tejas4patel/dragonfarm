@@ -48,8 +48,9 @@ Every one of these goes through one check first. It is written to the
 record (where, why, how much), and an admin can limit the hosts it may
 reach, down to none at all. With none, a test tries every one of them
 and each is refused before anything is sent. Downloading the open models
-themselves is separate: it sends no data of yours, and an offline
-install needs no downloads at all.
+themselves is separate, because it sends no data of yours; a second
+switch, Offline, stops downloads too, for machines that must not reach
+the internet at all.
 
 ## Who decides
 
