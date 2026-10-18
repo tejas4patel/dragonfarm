@@ -531,7 +531,7 @@ print.dragon_pipeline <- function(x, ...) {
     print(dragon_pipeline_status(x))
     return(invisible(x))
   }
-  cli::cli_text("{.cls dragon_pipeline} {.strong {x$id}}: {x$status}, {length(x$runs)} run{?s}")
+  cli::cli_text("{.cls dragon_pipeline} {.strong {x$id}}: {x$status}, {length(x[['runs']])} run{?s}")
   for (i in seq_along(x$steps)) {
     s <- x$steps[[i]]
     cli::cli_text("  {i}. {s$type}: {s$state}{if (!is.null(s$run)) paste0(' \u2192 ', s$run) else ''}")
@@ -541,7 +541,9 @@ print.dragon_pipeline <- function(x, ...) {
 
 # dragon_compare() accepts a finished pipeline: compare its runs.
 as_pipeline_runs <- function(x) {
-  if (!is.null(x$runs)) return(x$runs)
+  # [[ ]], not $: a background pipeline has runs_dir and no runs, and $runs
+  # would partially match runs_dir.
+  if (!is.null(x[["runs"]])) return(x[["runs"]])
   rec <- dragon_pipeline_status(x)
   ids <- Filter(Negate(is.null), lapply(rec$steps, function(s) s$run))
   lapply(ids, function(id) dragon_run(file.path(rec$runs_dir, id)))

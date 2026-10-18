@@ -185,7 +185,7 @@ deletion_impact <- function(run = NULL, set = NULL, runs_dir = dragon_runs_dir()
 }
 
 impact_note <- function(x) {
-  n_runs <- length(x$runs)
+  n_runs <- length(x[["runs"]])
   parts <- c(
     if (x$question_files) sprintf("%d question file%s", x$question_files, if (x$question_files == 1) "" else "s"),
     if (n_runs) sprintf("%d run%s %s", n_runs, if (n_runs == 1) "" else "s", if (identical(x$kind, "run")) "continuing from it" else "trained from it"),

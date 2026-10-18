@@ -271,3 +271,24 @@ test_that("synthesized pairs reload from their file", {
   expect_equal(ds$mapping$system, "{`system`}")
   expect_equal(attr(ds, "synthesis")$kind, "pairs")
 })
+
+test_that("dragon_compare() takes a background pipeline (its runs, not its runs_dir)", {
+  runs <- withr::local_tempdir()
+  mk <- function(id) {
+    d <- file.path(runs, id); dir.create(d)
+    jsonlite::write_json(list(model = list(id = "m"), stage = "sft"), file.path(d, "config.json"), auto_unbox = TRUE)
+    jsonlite::write_json(list(state = "succeeded", eval_loss = 1.5), file.path(d, "status.json"), auto_unbox = TRUE)
+  }
+  mk("run-a"); mk("run-b")
+  dir.create(file.path(runs, "pipelines"))
+  path <- file.path(runs, "pipelines", "p1.json")
+  jsonlite::write_json(list(id = "p1", status = "succeeded", runs_dir = runs,
+                            steps = list(list(type = "train", state = "succeeded", run = "run-a"),
+                                         list(type = "prefer", state = "succeeded", run = "run-b"))),
+                       path, auto_unbox = TRUE)
+  # What dragon_pipeline(background = TRUE) returns: runs_dir and no runs.
+  p <- structure(list(id = "p1", path = path, log = "", process = NULL, runs_dir = runs), class = "dragon_pipeline")
+  cmp <- dragon_compare(p)
+  expect_equal(cmp$id, c("run-a", "run-b"))
+  expect_match(paste(cli::cli_fmt(print(p)), collapse = " "), "0 runs")   # not the length of runs_dir
+})
