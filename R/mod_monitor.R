@@ -120,7 +120,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
 
     # The catalogue's event log, re-read only when a new event lands.
     events <- shiny::reactivePoll(3000, session,
-      checkFunc = function() tryCatch(DBI::dbGetQuery(store_open(runs_dir), "SELECT MAX(id) AS m FROM events")$m, error = function(e) NA),
+      checkFunc = function() tryCatch(store_get(store_open(runs_dir), "SELECT MAX(id) AS m FROM events")$m, error = function(e) NA),
       valueFunc = function() tryCatch(store_events(200L, runs_dir = runs_dir), error = function(e) NULL)
     )
     shown_events <- shiny::reactive({

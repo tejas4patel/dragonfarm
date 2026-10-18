@@ -189,7 +189,7 @@ tool_impl <- list(
   read_documents = function(args) {
     docs <- suppressWarnings(dragon_documents(unlist(args$paths), name = args$name, index = TRUE))
     con <- store_open()
-    version <- DBI::dbGetQuery(con, "SELECT MAX(version) v FROM set_versions WHERE set_name = ?", params = list(docs$name))$v
+    version <- store_get(con, "SELECT MAX(version) v FROM set_versions WHERE set_name = ?", params = list(docs$name))$v
     failed <- Filter(function(src) !is.null(src$error), docs$manifest$sources)
     list(name = docs$name, n_sources = length(docs$manifest$sources), n_chunks = as.integer(docs$manifest$n_chunks %||% 0L),
          version = as.integer(version), failed = lapply(failed, function(src) list(name = src$name, error = src$error)))

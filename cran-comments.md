@@ -31,6 +31,10 @@ from a script file.
 * New suggested packages 'S7' and 'mcptools' for `dragon_ellmer_tools()` and
   `dragon_mcp_server()`, which hand the package's tools to other agents; the
   examples and tests that need them are skipped when they are absent.
+* New suggested package 'RPostgres', for an optional shared catalog on
+  Postgres; its tests run only when a test server address is given, and are
+  skipped otherwise. 'RSQLite' now needs version 2.3.0 or later (SQLite with
+  RETURNING).
 * New suggested package 'keyring': the app's Settings page keeps service
   keys in the operating system's keychain. Nothing touches the keychain
   during the check; tests use an in-memory stand-in.

@@ -31,7 +31,7 @@ Imports:
     ps,
     reticulate (>= 1.41.0),
     rlang,
-    RSQLite,
+    RSQLite (>= 2.3.0),
     shiny (>= 1.8.0),
     sortable,
     stats,
@@ -48,6 +48,7 @@ Suggests:
     mcptools,
     pkgload,
     rmarkdown,
+    RPostgres,
     S7,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr

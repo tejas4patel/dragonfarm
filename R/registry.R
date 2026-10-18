@@ -48,9 +48,9 @@ registry_propose <- function(run, name, proposed_by = NULL, runs_dir = dragon_ru
   }
   cfg <- tryCatch(read_json(run_path(run, "config.json")), error = function(e) list())
   con <- store_open(runs_dir)
-  v <- DBI::dbGetQuery(con, "SELECT COALESCE(MAX(version), 0) AS v FROM model_versions WHERE name = ?", params = list(name))$v + 1L
+  v <- store_get(con, "SELECT COALESCE(MAX(version), 0) AS v FROM model_versions WHERE name = ?", params = list(name))$v + 1L
   proposed_by <- proposed_by %||% Sys.info()[["user"]] %||% NA_character_
-  DBI::dbExecute(con, paste("INSERT INTO model_versions (name, version, run_id, run_dir, base_model, revision, data_md5,",
+  store_exec(con, paste("INSERT INTO model_versions (name, version, run_id, run_dir, base_model, revision, data_md5,",
                             "evaluation, proposed_by, proposed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"),
                  params = list(name, v, run$id, run$dir, cfg$model$id %||% NA_character_, cfg$model$revision %||% NA_character_,
                                run_data_md5(run), as.character(jsonlite::toJSON(evaluation, auto_unbox = TRUE, null = "null")),
@@ -70,7 +70,7 @@ registry_sign_off <- function(name, version, decision = c("approved", "rejected"
     cli::cli_abort("Say what the sign-off means.", class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
   con <- store_open(runs_dir)
-  row <- DBI::dbGetQuery(con, "SELECT * FROM model_versions WHERE name = ? AND version = ?", params = list(name, as.integer(version)))
+  row <- store_get(con, "SELECT * FROM model_versions WHERE name = ? AND version = ?", params = list(name, as.integer(version)))
   if (!nrow(row)) {
     cli::cli_abort("There is no version {version} of {.val {name}}.", class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
@@ -85,7 +85,7 @@ registry_sign_off <- function(name, version, decision = c("approved", "rejected"
     cli::cli_abort("The policy needs someone other than the proposer ({row$proposed_by}) to sign off.",
                    class = "dragonfarm_error", code = "NOT_ALLOWED")
   }
-  DBI::dbExecute(con, "INSERT INTO model_signoffs (name, version, decision, meaning, signer, signed_at) VALUES (?, ?, ?, ?, ?, ?)",
+  store_exec(con, "INSERT INTO model_signoffs (name, version, decision, meaning, signer, signed_at) VALUES (?, ?, ?, ?, ?, ?)",
                  params = list(name, as.integer(version), decision, meaning, signer, now_utc()))
   store_record_event("model_signoff", sprintf("%s v%d", name, as.integer(version)), ok = TRUE,
                      detail = list(decision = decision, meaning = meaning, signer = signer), runs_dir = runs_dir)
@@ -93,7 +93,7 @@ registry_sign_off <- function(name, version, decision = c("approved", "rejected"
 }
 
 registry_status <- function(name, version, runs_dir = dragon_runs_dir()) {
-  d <- DBI::dbGetQuery(store_open(runs_dir), "SELECT decision FROM model_signoffs WHERE name = ? AND version = ? ORDER BY id DESC LIMIT 1",
+  d <- store_get(store_open(runs_dir), "SELECT decision FROM model_signoffs WHERE name = ? AND version = ? ORDER BY id DESC LIMIT 1",
                        params = list(name, as.integer(version)))$decision
   if (length(d)) d else "candidate"
 }
@@ -105,7 +105,7 @@ registry_list <- function(name = NULL, runs_dir = dragon_runs_dir()) {
                "s.decision, s.meaning, s.signer, s.signed_at FROM model_versions v LEFT JOIN model_signoffs s",
                "ON s.id = (SELECT MAX(id) FROM model_signoffs WHERE name = v.name AND version = v.version)",
                if (!is.null(name)) "WHERE v.name = ?", "ORDER BY v.name, v.version")
-  out <- DBI::dbGetQuery(con, sql, params = if (!is.null(name)) list(name) else NULL)
+  out <- store_get(con, sql, params = if (!is.null(name)) list(name) else NULL)
   out$status <- ifelse(is.na(out$decision), "candidate", out$decision)
   out
 }

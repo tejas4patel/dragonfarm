@@ -5,14 +5,14 @@
 # behalf. A declined call never runs, and a request is decided once.
 
 approval_decisions <- function(runs_dir = dragon_runs_dir()) {
-  ev <- DBI::dbGetQuery(store_open(runs_dir), "SELECT id, ok, actor, at, detail FROM events WHERE kind = 'approval_decision'")
+  ev <- store_get(store_open(runs_dir), "SELECT id, ok, actor, at, detail FROM events WHERE kind = 'approval_decision'")
   ev$of <- vapply(ev$detail, function(d) as.integer(jsonlite::fromJSON(d)$of %||% NA_integer_), 1L)
   ev
 }
 
 # Requests still waiting for a person, oldest first.
 approvals_pending <- function(runs_dir = dragon_runs_dir()) {
-  req <- DBI::dbGetQuery(store_open(runs_dir), "SELECT * FROM events WHERE kind = 'approval_request' ORDER BY id")
+  req <- store_get(store_open(runs_dir), "SELECT * FROM events WHERE kind = 'approval_request' ORDER BY id")
   req[!req$id %in% approval_decisions(runs_dir)$of, , drop = FALSE]
 }
 

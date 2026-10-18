@@ -12,7 +12,7 @@ tool_context <- function(args, result = NULL, runs_dir = dragon_runs_dir()) {
   ctx <- list()
   if (is.character(args$set) && length(args$set) == 1) {
     name <- basename(args$set)
-    v <- tryCatch(DBI::dbGetQuery(store_open(runs_dir),
+    v <- tryCatch(store_get(store_open(runs_dir),
                                   "SELECT version, chunks_md5 FROM set_versions WHERE set_name = ? ORDER BY version DESC LIMIT 1",
                                   params = list(name)), error = function(e) NULL)
     if (!is.null(v) && nrow(v)) ctx$set <- list(name = name, version = v$version, chunks_md5 = v$chunks_md5)
@@ -23,7 +23,7 @@ tool_context <- function(args, result = NULL, runs_dir = dragon_runs_dir()) {
 }
 
 store_event <- function(id, runs_dir = dragon_runs_dir()) {
-  ev <- DBI::dbGetQuery(store_open(runs_dir), "SELECT * FROM events WHERE id = ?", params = list(as.integer(id)))
+  ev <- store_get(store_open(runs_dir), "SELECT * FROM events WHERE id = ?", params = list(as.integer(id)))
   if (!nrow(ev)) cli::cli_abort("There is no event {id} in the catalogue.", class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   ev <- as.list(ev[1, ])
   ev$detail <- if (is.na(ev$detail)) list() else jsonlite::fromJSON(ev$detail, simplifyVector = FALSE)

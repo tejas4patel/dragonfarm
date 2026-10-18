@@ -35,13 +35,13 @@ provider_opt_out <- function(name, runs_dir = dragon_runs_dir()) {
 # list(opted_in, daily_cap, used_today) for a provider.
 provider_status <- function(name, runs_dir = dragon_runs_dir()) {
   con <- store_open(runs_dir)
-  last <- DBI::dbGetQuery(con, paste("SELECT kind, detail FROM events WHERE name = ? AND kind IN",
+  last <- store_get(con, paste("SELECT kind, detail FROM events WHERE name = ? AND kind IN",
                                      "('provider_opt_in', 'provider_opt_out') ORDER BY id DESC LIMIT 1"), params = list(name))
   opted <- nrow(last) == 1 && identical(last$kind, "provider_opt_in")
   cap <- if (opted && !is.na(last$detail)) jsonlite::fromJSON(last$detail)$daily_cap else NULL
   host <- outbound_host(provider_info(name)$base_url)
   today <- format(Sys.time(), "%Y-%m-%d", tz = "UTC")
-  used <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM events WHERE kind = 'outbound' AND name = ? AND ok = 1 AND substr(at, 1, 10) = ?",
+  used <- store_get(con, "SELECT COUNT(*) AS n FROM events WHERE kind = 'outbound' AND name = ? AND ok = 1 AND substr(at, 1, 10) = ?",
                           params = list(host, today))$n
   list(opted_in = opted, daily_cap = cap, used_today = as.integer(used))
 }

@@ -76,3 +76,18 @@ The lock is resolved from PyPI. On Windows that gives the CPU build of
 torch; on Linux, PyPI's torch already includes CUDA. For a Windows server
 with an NVIDIA card, add the CUDA build from the PyTorch package index
 when you download.
+
+## One catalogue for the team
+
+Each runs folder keeps a small record of what happened: answers and where
+they came from, approvals, policies, model versions and sign-offs. On a
+laptop that is a file in the folder. For a team, point everyone at one
+Postgres database instead, for example in the server's `.Renviron`:
+
+```sh
+DRAGONFARM_CATALOG=postgresql://dragonfarm:PASSWORD@db.example.com:5432/dragonfarm
+```
+
+The tables are created on first use, and the record stays append-only:
+the database itself refuses to change or delete past entries. You need the
+RPostgres package installed.
