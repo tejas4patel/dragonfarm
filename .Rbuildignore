@@ -25,3 +25,4 @@
 ^tests/testthat/testthat-problems\.rds$
 ^SECURITY\.md$
 ^SUPPORT\.md$
+^\.lintr$

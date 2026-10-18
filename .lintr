@@ -1,0 +1,11 @@
+linters: local({
+    # Correctness checks only (static analysis, not style). Usage and
+    # namespace checks are left to R CMD check, which sees the package as
+    # built; cli message vectors repeat names such as "i" by design.
+    l <- lintr::linters_with_tags("correctness")
+    l$object_usage_linter <- NULL
+    l$namespace_linter <- NULL
+    l$duplicate_argument_linter <- lintr::duplicate_argument_linter(except = c("c", "mutate", "transmute"))
+    l
+  })
+encoding: "UTF-8"
