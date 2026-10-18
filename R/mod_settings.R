@@ -12,6 +12,11 @@ mod_settings_ui <- function(id) {
     do.call(bslib::layout_columns, c(list(col_widths = c(6, 6)), cards)),
     mod_policy_ui(ns("policy")),
     bslib::card(
+      bslib::card_header("Qualification report"),
+      shiny::p(class = "hint", "Checks that dragonfarm is installed as specified and that its controls work (the record refuses edits, agents stay within the policy, blocked data stays put, and more), on throwaway data. You get a dated report with every check and its evidence; its fingerprint goes into the record."),
+      shiny::downloadButton(ns("qualify"), "Run the checks and download the report", class = "btn-outline-primary")
+    ),
+    bslib::card(
       bslib::card_header("Free tiers"),
       shiny::p(class = "hint", "When this machine is too small for a model, a free-tier provider can answer instead. Nothing is sent there until you opt in, and you can cap how many requests a day it gets."),
       shiny::uiOutput(ns("free_tiers"))
@@ -50,6 +55,15 @@ mod_settings_server <- function(id, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     mod_policy_server("policy", runs_dir)
+    output$qualify <- shiny::downloadHandler(
+      filename = function() sprintf("dragonfarm-qualification-%s.md", format(Sys.time(), "%Y%m%d-%H%M%S")),
+      content = function(file) {
+        r <- qualification_report(file, runs_dir = runs_dir)
+        shiny::showNotification(sprintf("Checks done: %d passed, %d failed.", r$passed, r$failed),
+                                type = if (r$failed) "warning" else "message")
+      },
+      contentType = "text/markdown"
+    )
     tick <- shiny::reactiveVal(0)     # bumped after every save or remove
     messages <- shiny::reactiveValues()
 
