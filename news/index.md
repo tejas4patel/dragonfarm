@@ -174,6 +174,15 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- Settings can run a qualification report: checks that the installation
+  matches what is specified (Python packages against the lock, models
+  pinned to exact versions, safetensors only, the catalogue schema) and
+  that the controls work on throwaway data (the record refuses edits,
+  agents stay within the policy, training waits for a person, blocked
+  data stays put, the personal-data patterns). You download a dated
+  report with each check and its evidence; its SHA-256 goes into the
+  record. It is evidence for a validation, not a validation.
+
 - “Check for personal data” in the Documents step lists email addresses,
   phone numbers, US social security numbers, card numbers, and labelled
   dates of birth and patient or record ids found in a set, each with

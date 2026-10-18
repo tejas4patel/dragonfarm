@@ -104,9 +104,10 @@ precedence.
 - **Identity.** The record names the operating system user. There is no
   link to single sign-on yet, so a sign-off is not an electronic
   signature in the sense of 21 CFR Part 11.
-- **Validation.** There is no validation pack. The building blocks
-  (pinned models and packages, re-read checks, replay, an append-only
-  record) are what such a pack would rest on.
+- **Validation.** There is no validation pack yet. Settings can run a
+  qualification report (installation and the controls above, on
+  throwaway data, with evidence for each check), which a validation can
+  build on.
 - **Personal data.** Names, street addresses and non-US national
   identifiers are not detected.
 - **Planted instructions.** Text inside a document can still steer an
