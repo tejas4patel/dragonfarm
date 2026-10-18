@@ -6,6 +6,30 @@
 # everyone who is not an admin.
 
 
+# Admins, admin groups and access rules as plain text in the card: names
+# separated by commas, and one access rule per line, "set | documents | groups".
+names_from_text <- function(x) {
+  v <- trimws(unlist(strsplit(x %||% "", ",")))
+  as.list(v[nzchar(v)])
+}
+
+access_to_text <- function(rules) {
+  paste(vapply(rules %||% list(), function(r) sprintf("%s | %s | %s", r$set %||% "*", r$documents %||% "*",
+                                                      paste(c(unlist(r$groups), unlist(r$users)), collapse = ", ")), ""),
+        collapse = "\n")
+}
+
+access_from_text <- function(x) {
+  lines <- trimws(unlist(strsplit(x %||% "", "[\r\n]+")))
+  lapply(lines[nzchar(lines)], function(l) {
+    parts <- trimws(strsplit(l, "|", fixed = TRUE)[[1]])
+    if (length(parts) != 3) cli::cli_abort("Each access rule needs three parts: set | documents | groups. Not: {.val {l}}.")
+    rule <- list(documents = parts[2], groups = names_from_text(parts[3]))
+    if (!identical(parts[1], "*")) rule$set <- parts[1]
+    rule
+  })
+}
+
 mod_policy_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::card(
@@ -28,6 +52,9 @@ policy_from_inputs <- function(current, input) {
   p$outbound$allowed_hosts <- switch(input$outbound %||% "any", any = NULL, none = list(), only = as.list(hosts[nzchar(hosts)]))
   p$registry$separate_signer <- isTRUE(input$separate_signer)
   p$registry$governed <- isTRUE(input$governed)
+  if (!is.null(input$admins)) p$admins <- names_from_text(input$admins)
+  if (!is.null(input$admin_groups)) p$admin_groups <- names_from_text(input$admin_groups)
+  if (!is.null(input$access)) p$access <- access_from_text(input$access)
   p$budgets$max_steps <- as.integer(input$max_steps %||% p$budgets$max_steps)
   p$budgets$max_gpu_minutes <- as.integer(input$max_gpu_minutes %||% p$budgets$max_gpu_minutes)
   p
@@ -68,6 +95,13 @@ mod_policy_server <- function(id, runs_dir) {
                              value = isTRUE(p$registry$separate_signer)),
         shiny::checkboxInput(ns("governed"), "Only approved model versions answer questions (trained runs need a sign-off first)",
                              value = isTRUE(p$registry$governed)),
+        shiny::tags$h6("People and documents"),
+        bslib::layout_columns(col_widths = c(6, 6),
+          shiny::textInput(ns("admins"), "Admins (names, comma-separated)", value = paste(unlist(p$admins), collapse = ", "), width = "100%"),
+          shiny::textInput(ns("admin_groups"), "Admin groups (from your sign-in service)", value = paste(unlist(p$admin_groups), collapse = ", "), width = "100%")),
+        shiny::p(class = "hint small", "With no admins or groups named, anyone using this app may change the policy, as on a laptop."),
+        shiny::textAreaInput(ns("access"), "Who may see which documents: one rule per line, set | documents | groups (for example: sops | hr-*.pdf | hr)",
+                             value = access_to_text(p$access), rows = 3, width = "100%"),
         bslib::layout_columns(col_widths = c(6, 6),
           shiny::numericInput(ns("max_steps"), "Steps per agent task", value = p$budgets$max_steps %||% 30, min = 1),
           shiny::numericInput(ns("max_gpu_minutes"), "GPU minutes per agent task", value = p$budgets$max_gpu_minutes %||% 120, min = 1)),
@@ -83,8 +117,14 @@ mod_policy_server <- function(id, runs_dir) {
       if (!policy_admin()) return()
       why <- trimws(input$why %||% "")
       if (!nzchar(why)) { shiny::showNotification("Say why, so the next person knows.", type = "warning"); return() }
-      v <- tryCatch(policy_set(policy_from_inputs(current(), input), note = why, runs_dir = runs_dir),
-                    error = function(e) { notify_error(e); NULL })
+      new <- tryCatch(policy_from_inputs(current(), input), error = function(e) { notify_error(e); NULL })
+      if (is.null(new)) return()
+      # Never lock everyone out: the person saving must still be an admin.
+      if (!policy_admin(policy = new)) {
+        shiny::showNotification("Not saved: you would no longer be an admin. Add your name or one of your groups.", type = "warning", duration = 10)
+        return()
+      }
+      v <- tryCatch(policy_set(new, note = why, runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
       if (!is.null(v)) {
         shiny::showNotification(sprintf("Policy version %d saved.", v), type = "message")
         shiny::updateTextInput(session, "why", value = "")

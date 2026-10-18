@@ -44,3 +44,28 @@ test_that("without admin rights the policy is shown but cannot be saved", {
     expect_equal(dragonfarm:::policy_current(runs)$version, 1L)
   })
 })
+
+test_that("admins, admin groups and access rules are set in the card, and no one locks everyone out", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs, dragonfarm.admin = NULL, dragonfarm.user = "jo.lee")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  shiny::testServer(dragonfarm:::mod_policy_server, args = list(runs_dir = runs), {
+    session$setInputs(outbound = "any", hosts = "", separate_signer = FALSE, governed = TRUE, max_steps = 30, max_gpu_minutes = 120,
+                      admins = "sam.k", admin_groups = "", access = "", why = "hand over")
+    session$setInputs(save = 1)
+    expect_equal(dragonfarm:::policy_current(runs)$version, 1L)          # jo.lee would lock themselves out: refused
+    session$setInputs(admins = "jo.lee, sam.k", admin_groups = "dragonfarm-admins",
+                      access = "sops | hr-*.pdf | hr, people-ops\n* | board-*.pdf | board", why = "pilot roles")
+    session$setInputs(save = 2)
+    p <- dragonfarm:::policy_current(runs)
+    expect_equal(p$version, 2L)
+    expect_equal(unlist(p$admins), c("jo.lee", "sam.k"))
+    expect_equal(unlist(p$admin_groups), "dragonfarm-admins")
+    expect_equal(p$access[[1]]$set, "sops"); expect_equal(unlist(p$access[[1]]$groups), c("hr", "people-ops"))
+    expect_null(p$access[[2]]$set)                                       # "*": every set
+    expect_true(p$registry$governed)
+  })
+  rules <- dragonfarm:::access_from_text("sops | hr-*.pdf | hr")
+  expect_equal(dragonfarm:::access_to_text(rules), "sops | hr-*.pdf | hr")
+  expect_error(dragonfarm:::access_from_text("sops | hr-*.pdf"), "three parts")
+})
