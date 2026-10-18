@@ -71,7 +71,14 @@ python_env_requirements <- function() {
   reqs <- dragon_python_requirements()
   off <- isFALSE(getOption("dragonfarm.python_locked")) || tolower(Sys.getenv("DRAGONFARM_PYTHON_LOCKED")) %in% c("false", "0", "no")
   pinned <- if (off) NULL else locked_requirements(reqs = reqs)
-  list(packages = pinned %||% reqs$packages, python_version = reqs$python_version, locked = !is.null(pinned))
+  # The lock was resolved for one Python and later ("resolved for Python 3.12");
+  # older interpreters may not install every pinned version.
+  pyv <- reqs$python_version
+  if (!is.null(pinned)) {
+    hdr <- grep("^# resolved for Python [0-9.]+", readLines(lock_path(), n = 10, warn = FALSE), value = TRUE)
+    if (length(hdr)) pyv <- sprintf(">=%s,<3.14", sub("^# resolved for Python ([0-9.]+).*$", "\\1", hdr[1]))
+  }
+  list(packages = pinned %||% reqs$packages, python_version = pyv, locked = !is.null(pinned))
 }
 
 # Installed packages in an interpreter, name -> version.

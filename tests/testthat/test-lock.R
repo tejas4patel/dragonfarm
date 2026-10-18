@@ -27,6 +27,7 @@ test_that("the environment is built from the locked versions (D-12), with an off
   expect_true(all(grepl("^[A-Za-z0-9._-]+==[^ ;]+( ; .+)?$", r$packages)))
   expect_true(any(grepl("^torch==", r$packages)))
   expect_true(any(grepl(" ; sys_platform", r$packages)))                  # platform markers are kept
+  expect_equal(r$python_version, ">=3.12,<3.14")                          # the Python the lock was resolved for
   withr::local_envvar(DRAGONFARM_PYTHON_LOCKED = "false")
   expect_false(dragonfarm:::python_env_requirements()$locked)
   expect_equal(dragonfarm:::python_env_requirements()$packages, dragon_python_requirements()$packages)
