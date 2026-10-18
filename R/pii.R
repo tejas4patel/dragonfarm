@@ -114,6 +114,12 @@ pii_allowed <- function(matches, allow) {
   grepl(paste0("^(", paste(globs, collapse = "|"), ")$"), trimws(matches), perl = TRUE, ignore.case = TRUE)
 }
 
+# Rows of a training set with likely personal data; NA when it cannot be scanned.
+pii_rows <- function(dataset) {
+  h <- tryCatch(dataset_pii(dataset), error = function(e) NULL)
+  if (is.null(h)) NA_integer_ else length(unique(h$row))
+}
+
 pii_counts <- function(hits) {
   if (!nrow(hits)) return("")
   tab <- table(hits$type)

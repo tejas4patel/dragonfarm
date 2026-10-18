@@ -124,7 +124,8 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   store_record_event("run_created", basename(run_dir), ok = TRUE, runs_dir = runs_dir,
                      detail = list(state = state, model = model, revision = revision,
                                    train_md5 = file_md5(file.path(run_dir, files$train)),
-                                   documents = dataset$documents$set, personal_data = getOption("dragonfarm.approval")))
+                                   documents = dataset$documents$set, personal_data = getOption("dragonfarm.approval"),
+                                   personal_data_rows = pii_rows(dataset)))
   writeLines(character(), file.path(run_dir, "log.txt"))
   list(run_dir = run_dir, files = files)
 }

@@ -198,3 +198,69 @@ test_that("the three governance tools are well formed and read-only", {
   expect_equal(dragonfarm:::tool_call("deletion_impact", list(set = "nope"))$code, "NOT_A_SET")
   expect_equal(dragonfarm:::tool_call("deletion_impact", list(run = "run-a", set = "kb"))$code, "INVALID_ARGUMENTS")
 })
+
+test_that("before signing: each planted concern is a finding, a clean run has none", {
+  fake <- write_fake_set()
+  runs <- fake$root
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  dragonfarm:::store_sync(runs)
+  md5 <- unname(tools::md5sum(file.path(fake$dir, "chunks.jsonl")))
+  clean <- gov_run(runs, "run-clean", documents = list(set = "kb", chunks_md5 = md5))
+  dragonfarm:::store_record_event("run_created", "run-clean", ok = TRUE, detail = list(personal_data_rows = 0L), runs_dir = runs)
+  f <- dragonfarm:::governance_findings("run-clean", runs_dir = runs)
+  expect_true(all(f$status == "ok")); expect_setequal(f$check, c("licence", "personal_data", "documents"))
+
+  risky <- gov_run(runs, "run-risky", model = "Qwen/Qwen2.5-3B-Instruct", documents = list(set = "kb", chunks_md5 = "an-older-version"))
+  cfg <- jsonlite::read_json(file.path(risky, "config.json")); cfg$model$trust_remote_code <- TRUE
+  jsonlite::write_json(cfg, file.path(risky, "config.json"), auto_unbox = TRUE, null = "null")
+  jsonlite::write_json(list(state = "succeeded"), file.path(risky, "status.json"), auto_unbox = TRUE)   # no evaluation
+  dragonfarm:::store_record_event("run_created", "run-risky", ok = TRUE, detail = list(personal_data_rows = 4L), runs_dir = runs)
+  f2 <- dragonfarm:::governance_findings("run-risky", runs_dir = runs)
+  look <- f2$check[f2$status == "look"]
+  expect_setequal(look, c("licence", "personal_data", "documents", "remote_code", "evaluation"))
+  expect_match(f2$note[f2$check == "personal_data"], "4 rows .* no approval recorded")
+  expect_match(f2$note[f2$check == "documents"], "re-read since")      # the set no longer holds what it was trained on
+
+  # A re-read set after training is flagged.
+  dragonfarm:::write_jsonl(list(list(id = "abc-000", source = "policy.pdf", section = "Returns", text = "Sixty days.")),
+                           file.path(fake$dir, "chunks.jsonl"))
+  dragonfarm:::store_sync(runs)
+  f3 <- dragonfarm:::governance_findings("run-clean", runs_dir = runs)
+  expect_equal(f3$status[f3$check == "documents"], "look"); expect_match(f3$note[f3$check == "documents"], "re-read since")
+
+  old <- gov_run(runs, "run-old")                                      # predates the run_created event
+  f4 <- dragonfarm:::governance_findings("run-old", runs_dir = runs)
+  expect_equal(f4$status[f4$check %in% c("personal_data", "creator")], c("unknown", "unknown"))
+})
+
+test_that("a run records how many rows held personal data, and a sign-off keeps the findings", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  withr::local_options(dragonfarm.user = "analyst.one")
+  ds <- dragon_map(dragon_dataset(data.frame(p = c("Mail jane.doe@example.org", "b", "c"), r = c("x", "y", "z"))), prompt = "p", response = "r")
+  prep <- dragonfarm:::prepare_run(ds, "HuggingFaceTB/SmolLM2-135M-Instruct", dragon_lora(), dragon_train_args(), dragon_hardware(),
+                                   name = "t", run_dir = NULL, runs_dir = runs, n_samples = 0)
+  jsonlite::write_json(list(state = "succeeded", eval_loss = 1.0), file.path(prep$run_dir, "status.json"), auto_unbox = TRUE)
+  expect_equal(jsonlite::fromJSON(dragonfarm:::store_events(1, kind = "run_created", runs_dir = runs)$detail)$personal_data_rows, 1L)
+  f <- dragonfarm:::governance_findings(dragon_run(prep$run_dir), runs_dir = runs)
+  expect_equal(f$status[f$check == "personal_data"], "look")
+
+  dragonfarm:::registry_propose(dragon_run(prep$run_dir), "bot", proposed_by = "someone.else", runs_dir = runs)
+  dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "Approved for testing.", signer = "qa", runs_dir = runs)
+  det <- jsonlite::fromJSON(dragonfarm:::store_events(1, kind = "model_signoff", runs_dir = runs)$detail, simplifyVector = FALSE)
+  expect_equal(vapply(det$findings, `[[`, "", "check"), "personal_data")   # only what was not ok is kept
+})
+
+test_that("Monitor shows the findings before a version is signed", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  d <- gov_run(runs, "20261018-run1", model = "Qwen/Qwen2.5-3B-Instruct")
+  dragonfarm:::registry_propose(dragon_run(d), "kb-bot", proposed_by = "tejas", runs_dir = runs)
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs), {
+    session$setInputs(reg_pick = "kb-bot@1")
+    html <- output$reg_findings$html
+    expect_match(html, "Before you sign"); expect_match(html, "qwen-research"); expect_match(html, "text-warning")
+  })
+})

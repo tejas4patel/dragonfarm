@@ -87,8 +87,13 @@ registry_sign_off <- function(name, version, decision = c("approved", "rejected"
   }
   store_exec(con, "INSERT INTO model_signoffs (name, version, decision, meaning, signer, signed_at) VALUES (?, ?, ?, ?, ?, ?)",
                  params = list(name, as.integer(version), decision, meaning, signer, now_utc()))
+  # What the signer was shown, kept with the signature.
+  at <- if (!is.na(row$run_dir[1]) && dir.exists(row$run_dir[1])) row$run_dir[1] else row$run_id[1]
+  findings <- tryCatch(governance_findings(at, runs_dir = runs_dir), error = function(e) NULL)
   store_record_event("model_signoff", sprintf("%s v%d", name, as.integer(version)), ok = TRUE,
-                     detail = list(decision = decision, meaning = meaning, signer = signer), runs_dir = runs_dir)
+                     detail = list(decision = decision, meaning = meaning, signer = signer,
+                                   findings = if (!is.null(findings)) rows_as_list(findings[findings$status != "ok", ], c("check", "status", "note"))),
+                     runs_dir = runs_dir)
   invisible(decision)
 }
 

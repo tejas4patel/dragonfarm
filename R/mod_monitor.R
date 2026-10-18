@@ -106,6 +106,7 @@ mod_monitor_ui <- function(id) {
         shiny::selectInput(ns("reg_decision"), "Decision", choices = c("Approve" = "approved", "Reject" = "rejected", "Retire" = "retired"), width = "100%"),
         shiny::textInput(ns("reg_meaning"), "What it means", placeholder = "Approved for answering support tickets", width = "100%")
       ),
+      shiny::uiOutput(ns("reg_findings")),
       shiny::actionButton(ns("reg_sign"), "Sign", class = "btn-primary")
     )
   )
@@ -274,6 +275,23 @@ mod_monitor_server <- function(id, state, runs_dir) {
       res <- tryCatch(registry_propose(r, trimws(input$reg_name %||% ""), runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
       if (!is.null(res)) shiny::showNotification(sprintf("%s version %d proposed. A person signs it off below.", res$name, res$version), type = "message")
       reg_tick(reg_tick() + 1)
+    })
+    # Before you sign: what the record says about the picked version's run.
+    output$reg_findings <- shiny::renderUI({
+      pick <- input$reg_pick %||% ""
+      l <- registry_rows()
+      if (!nzchar(pick) || is.null(l)) return(NULL)
+      parts <- strsplit(pick, "@", fixed = TRUE)[[1]]
+      row <- l[l$name == parts[1] & l$version == as.integer(parts[2]), , drop = FALSE]
+      if (!nrow(row)) return(NULL)
+      fx <- tryCatch(governance_findings(row$run_id[1], runs_dir = runs_dir), error = function(e) NULL)
+      if (is.null(fx)) return(shiny::p(class = "hint small", "The run behind this version is no longer on disk."))
+      mark <- c(ok = "\u2713", look = "!", unknown = "?")
+      shiny::div(class = "small",
+        shiny::tags$h6("Before you sign"),
+        shiny::tags$ul(class = "list-unstyled", lapply(seq_len(nrow(fx)), function(i) shiny::tags$li(
+          class = if (fx$status[i] == "look") "text-warning",
+          shiny::tags$span(`aria-hidden` = "true", mark[[fx$status[i]]]), " ", fx$note[i]))))
     })
     shiny::observeEvent(input$reg_sign, {
       pick <- input$reg_pick %||% ""

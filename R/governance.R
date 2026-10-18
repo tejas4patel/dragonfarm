@@ -115,7 +115,8 @@ provenance_report <- function(run, runs_dir = dragon_runs_dir()) {
                 train_md5 = file_md5(if (!is.null(cfg$data$train)) run_path(run, cfg$data$train)),
                 eval_md5 = file_md5(if (!is.null(cfg$data$eval)) run_path(run, cfg$data$eval))),
     documents = docs,
-    personal_data = created_detail$personal_data,
+    personal_data = created_detail[["personal_data"]],
+    personal_data_rows = created_detail[["personal_data_rows"]],
     evaluation = run_evaluation(run),
     registry = reg
   )
@@ -140,8 +141,10 @@ provenance_text <- function(p) {
     if (!is.null(p$documents)) sprintf("- Documents: set %s, version %s (%s)%s", p$documents$set, na(p$documents$version),
                                        if (isTRUE(p$documents$current)) "still the current version" else if (isFALSE(p$documents$current)) "the set has been re-read since" else "version not known",
                                        if (!is.null(p$documents$questions)) paste0("; questions ", basename(p$documents$questions)) else ""),
-    if (!is.null(p$personal_data)) sprintf("- Personal data: %s rows with hits; training approved by %s", na(p$personal_data$rows), na(p$personal_data$approved_by))
-    else "- Personal data: none found when the run was created (or not recorded)", "",
+    if (!is.null(p[["personal_data"]])) sprintf("- Personal data: %s rows with hits; training approved by %s", na(p[["personal_data"]]$rows), na(p[["personal_data"]]$approved_by))
+    else if (isTRUE(p$personal_data_rows > 0)) sprintf("- Personal data: %d rows with hits; no approval recorded (started from R code)", as.integer(p$personal_data_rows))
+    else if (identical(as.integer(p$personal_data_rows), 0L)) "- Personal data: none found when the run was created"
+    else "- Personal data: not recorded (the run predates this check)", "",
     "## Evaluation",
     if (length(p$evaluation)) sprintf("- %s: %s", names(p$evaluation), vapply(p$evaluation, function(x) if (is.list(x)) "see the run folder" else format(x, digits = 4), ""))
     else "- None yet", "",
@@ -192,4 +195,31 @@ impact_note <- function(x) {
   if (x$approved_versions) s <- paste(s, sprintf("%d of those model versions %s approved, so answers in governed mode depend on it.",
                                                   x$approved_versions, if (x$approved_versions == 1) "is" else "are"))
   s
+}
+
+# What a person should know before signing a model version off (G6, as a
+# fixed check rather than an agent). Each finding is "ok", "look" (worth
+# reading before signing) or "unknown" (not recorded). Nothing here blocks:
+# the findings are shown next to the sign-off and stored with it.
+governance_findings <- function(run, runs_dir = dragon_runs_dir()) {
+  p <- provenance_report(run, runs_dir = runs_dir)
+  f <- function(check, status, note) data.frame(check = check, status = status, note = note, stringsAsFactors = FALSE)
+  out <- list(
+    f("licence", if (identical(p$licence$kind, "permissive")) "ok" else if (identical(p$licence$kind, "check_terms")) "look" else "unknown",
+      p$licence$note),
+    if (!is.null(p[["personal_data"]])) f("personal_data", "look", sprintf("Trained on %s rows with likely personal data, approved by %s.",
+                                                                     p[["personal_data"]]$rows %||% "some", p[["personal_data"]]$approved_by %||% "someone"))
+    else if (isTRUE(p$personal_data_rows > 0)) f("personal_data", "look", sprintf("Trained on %d rows with likely personal data; no approval recorded (started from R code).", as.integer(p$personal_data_rows)))
+    else if (identical(as.integer(p$personal_data_rows), 0L)) f("personal_data", "ok", "No personal data was found in the training rows.")
+    else f("personal_data", "unknown", "Not recorded: the run predates this check."),
+    if (!is.null(p$documents)) {
+      if (isFALSE(p$documents$current)) f("documents", "look", sprintf("The document set %s has been re-read since training; answers may cite text that has changed.", p$documents$set))
+      else if (isTRUE(p$documents$current)) f("documents", "ok", sprintf("Trained on the current version of the document set %s.", p$documents$set))
+      else f("documents", "unknown", sprintf("The version of the document set %s it was trained on is not known.", p$documents$set))
+    },
+    if (isTRUE(p$model$trust_remote_code)) f("remote_code", "look", "The base model runs its own code when loaded (remote code allowed)."),
+    if (!length(p$evaluation)) f("evaluation", "look", "No evaluation recorded."),
+    if (is.na(p$started_by)) f("creator", "unknown", "Who created the run is not recorded.")
+  )
+  do.call(rbind, Filter(Negate(is.null), out))
 }

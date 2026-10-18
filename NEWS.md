@@ -138,6 +138,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   Agents can ask the same through three read-only tools: `check_licence`,
   `provenance_report` and `deletion_impact`.
 
+* Before a model version is signed off, Monitor lists what the record says
+  is worth reading first: a licence with terms of its own, training rows
+  with personal data (and who approved them, or that nobody did), a
+  document set re-read since training, remote code, or no evaluation. The
+  list is kept with the signature. Nothing here blocks a sign-off.
+
 ## Asking documents
 
 * Questions about a whole set ("which document is the oldest?", "what is in
