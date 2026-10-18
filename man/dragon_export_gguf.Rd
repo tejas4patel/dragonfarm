@@ -25,8 +25,11 @@ The output path, invisibly.
 }
 \description{
 Converts a merged model directory to GGUF for use with llama.cpp, Ollama,
-and similar runtimes. Requires a llama.cpp checkout; point the
-\code{LLAMA_CPP_DIR} environment variable at it.
+and similar runtimes. Requires a llama.cpp checkout (only its Python
+converter is used; nothing is compiled); point the \code{LLAMA_CPP_DIR}
+environment variable at it. The converter runs in dragonfarm's own Python
+with the checkout's \code{gguf-py} package, so nothing else is installed: a
+merged Qwen2.5 0.5B converted to \code{q8_0} (531 MB) in about a minute.
 }
 \examples{
 if (interactive()) {

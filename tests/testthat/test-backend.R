@@ -322,7 +322,7 @@ test_that("a model Ollama registers but cannot run is removed, with the reason",
   calls <- list()
   local_mocked_bindings(run = function(command, args, ...) { calls[[length(calls) + 1]] <<- args; list(status = 0, stdout = "", stderr = "") }, .package = "processx")
   local_mocked_bindings(ollama_try = function(name, ...) "MLX runtime is not available: failed to load MLX dynamic library")
-  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama"), error = function(e) e)
+  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama", llama_cpp_dir = ""), error = function(e) e)
   expect_s3_class(err, "dragonfarm_error")
   expect_match(conditionMessage(err), "could not answer")
   expect_match(conditionMessage(err), "dragon_export_gguf")
@@ -345,7 +345,7 @@ test_that("an MLX import refusal points at the GGUF route", {
   merged <- withr::local_tempdir()
   writeLines("{}", file.path(merged, "config.json")); file.create(file.path(merged, "model.safetensors"))
   local_mocked_bindings(run = function(command, args, ...) list(status = 1, stdout = "", stderr = 'Error: unsupported MLX architecture: model "Qwen2ForCausalLM"'), .package = "processx")
-  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama"), error = function(e) e)
+  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama", llama_cpp_dir = ""), error = function(e) e)
   expect_s3_class(err, "dragonfarm_error")
   expect_match(conditionMessage(err), "Qwen2ForCausalLM")
   expect_match(conditionMessage(err), "dragon_export_gguf")
@@ -371,4 +371,30 @@ test_that("an error event in the middle of a stream stops it", {
   local_mocked_bindings(close = function(con, ...) invisible(NULL), .package = "base")
   expect_error(dragonfarm:::chat_completion(b, list(list(role = "user", content = "hi")), on_token = function(p) NULL),
                "out of memory")
+})
+
+test_that("with a llama.cpp checkout, Ollama serves a GGUF file", {
+  merged <- withr::local_tempdir(); llama <- withr::local_tempdir()
+  writeLines("{}", file.path(merged, "config.json")); file.create(file.path(merged, "model.safetensors"))
+  file.create(file.path(llama, "convert_hf_to_gguf.py"))
+  calls <- list(); exported <- NULL
+  local_mocked_bindings(run = function(command, args, ...) { calls[[length(calls) + 1]] <<- args; list(status = 0, stdout = "", stderr = "") }, .package = "processx")
+  local_mocked_bindings(ollama_try = function(name, ...) NULL,
+                        dragon_export_gguf = function(merged_dir, quant, llama_cpp_dir, ...) { exported <<- quant; file.path(merged_dir, "model-q8_0.gguf") })
+  b <- dragon_serve_ollama(merged, name = "df-gguf", ollama = "ollama", llama_cpp_dir = llama)
+  expect_equal(exported, "q8_0")
+  expect_match(readLines(file.path(merged, "Modelfile"))[1], "model-q8_0[.]gguf$")
+  expect_false("--quantize" %in% calls[[1]])                          # the converter already quantised it
+  expect_equal(b$model, "df-gguf")
+})
+
+test_that("GGUF export puts the checkout's gguf package on the Python path", {
+  merged <- withr::local_tempdir(); llama <- withr::local_tempdir()
+  file.create(file.path(llama, "convert_hf_to_gguf.py"))
+  seen <- NULL
+  local_mocked_bindings(dragon_python = function(...) "python")
+  local_mocked_bindings(run = function(command, args, env, ...) { seen <<- env; list(status = 0, stdout = "", stderr = "") }, .package = "processx")
+  dragon_export_gguf(merged, llama_cpp_dir = llama)
+  expect_match(seen[["PYTHONPATH"]], "gguf-py", fixed = TRUE)
+  expect_match(seen[["PYTHONPATH"]], dragonfarm:::python_source_dir(), fixed = TRUE)   # the package's own Python code too
 })

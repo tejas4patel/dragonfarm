@@ -31,8 +31,11 @@ dragon_merge <- function(run, out_dir = NULL) {
 #' Export a merged model to GGUF
 #'
 #' Converts a merged model directory to GGUF for use with llama.cpp, Ollama,
-#' and similar runtimes. Requires a llama.cpp checkout; point the
-#' `LLAMA_CPP_DIR` environment variable at it.
+#' and similar runtimes. Requires a llama.cpp checkout (only its Python
+#' converter is used; nothing is compiled); point the `LLAMA_CPP_DIR`
+#' environment variable at it. The converter runs in dragonfarm's own Python
+#' with the checkout's `gguf-py` package, so nothing else is installed: a
+#' merged Qwen2.5 0.5B converted to `q8_0` (531 MB) in about a minute.
 #'
 #' @param merged_dir A merged model directory from [dragon_merge()].
 #' @param out_file Output path. Defaults to `model-<quant>.gguf` next to the model.
@@ -54,13 +57,18 @@ dragon_export_gguf <- function(merged_dir, out_file = NULL, quant = "q8_0",
     cli::cli_abort(c(
       "llama.cpp converter not found.",
       "i" = "Clone {.url https://github.com/ggml-org/llama.cpp} and set {.envvar LLAMA_CPP_DIR} to the checkout.",
-      "i" = "The converter needs {.code pip install -r requirements/requirements-convert_hf_to_gguf.txt} in the same Python."
+      "i" = "Nothing needs installing: the converter runs in dragonfarm's own Python."
     ))
   }
   out_file <- out_file %||% file.path(merged_dir, paste0("model-", quant, ".gguf"))
   py <- dragon_python()
+  env <- python_env()
+  # The checkout's own gguf package, ahead of anything installed (its
+  # requirements file would pin an older torch over the locked one).
+  env[["PYTHONPATH"]] <- paste(c(file.path(normalizePath(llama_cpp_dir, winslash = "/"), "gguf-py"), env[["PYTHONPATH"]]),
+                               collapse = .Platform$path.sep)
   res <- processx::run(py, c(script, merged_dir, "--outfile", out_file, "--outtype", quant),
-                       env = python_env(), error_on_status = FALSE, windows_hide_window = TRUE)
+                       env = env, error_on_status = FALSE, windows_hide_window = TRUE)
   if (res$status != 0) python_failure_message(res, "GGUF export")
   cli::cli_alert_success("GGUF written to {.path {out_file}}.")
   invisible(out_file)

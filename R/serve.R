@@ -4,20 +4,24 @@
 #' the result with Ollama, and checks that Ollama can answer with it. The
 #' returned backend points [dragon_generate()] and [dragon_chat()] at it.
 #'
-#' Recent Ollama versions import safetensors through their MLX engine. With
-#' Ollama 0.40.5 on Windows the import worked but the model could not answer
-#' ("MLX runtime is not available"), for Qwen and SmolLM2 runs alike; other
-#' systems were not tested. When that happens the unusable copy is removed
-#' and the error says so. A GGUF file made with [dragon_export_gguf()]
-#' (which needs llama.cpp) is the other route into Ollama.
+#' With a llama.cpp checkout (`LLAMA_CPP_DIR`), the merged model is first
+#' converted to GGUF with [dragon_export_gguf()] and Ollama serves that
+#' file; this worked with Ollama 0.40.5 on Windows. Without one, Ollama is
+#' asked to import the safetensors directly. Recent Ollama versions do that
+#' through their MLX engine, which on Windows refused a Qwen run and could
+#' not run a SmolLM2 one ("MLX runtime is not available"); the unusable copy
+#' is then removed and the error says so.
 #'
 #' Needs Ollama installed and its service running. The `ollama` command is
 #' looked for on the PATH and then in Ollama's usual install folders.
 #'
 #' @param run A `dragon_run`, or a merged model directory.
 #' @param name Model name to register. Defaults to `dragonfarm-<run id>`.
-#' @param quantize Optional Ollama quantization such as `"q8_0"` or `"q4_K_M"`
-#'   to shrink the served model.
+#' @param quantize Optional quantization such as `"q8_0"` to shrink the
+#'   served model. On the GGUF route it is the converter's output type
+#'   (default `"q8_0"`).
+#' @param llama_cpp_dir A llama.cpp checkout; when it holds the converter,
+#'   the GGUF route is used.
 #' @param ollama Path to the `ollama` executable.
 #' @return A `dragon_backend` for the served model.
 #' @export
@@ -27,7 +31,8 @@
 #' options(dragonfarm.backend = backend)
 #' dragon_chat(run)$say("Hello")
 #' }
-dragon_serve_ollama <- function(run, name = NULL, quantize = NULL, ollama = ollama_path()) {
+dragon_serve_ollama <- function(run, name = NULL, quantize = NULL, ollama = ollama_path(),
+                                llama_cpp_dir = Sys.getenv("LLAMA_CPP_DIR", unset = "")) {
   if (!nzchar(ollama)) {
     cli::cli_abort(c("Ollama was not found on the PATH.", "i" = "Install it from {.url https://ollama.com/download}, then try again."))
   }
@@ -40,11 +45,13 @@ dragon_serve_ollama <- function(run, name = NULL, quantize = NULL, ollama = olla
   }
   merged <- normalizePath(merged, winslash = "/")
   name <- name %||% paste0("dragonfarm-", if (inherits(run, "dragon_run")) slugify(run$id) else slugify(basename(merged)))
+  gguf_route <- nzchar(llama_cpp_dir) && file.exists(file.path(llama_cpp_dir, "convert_hf_to_gguf.py"))
+  source <- if (gguf_route) dragon_export_gguf(merged, quant = quantize %||% "q8_0", llama_cpp_dir = llama_cpp_dir) else merged
   modelfile <- file.path(merged, "Modelfile")
-  writeLines(ollama_modelfile(merged), modelfile)
+  writeLines(ollama_modelfile(source), modelfile)
   args <- c("create", name, "-f", modelfile)
-  if (!is.null(quantize)) args <- c(args, "--quantize", quantize)
-  cli::cli_alert_info("Registering {.val {name}} with Ollama from {.path {merged}}.")
+  if (!gguf_route && !is.null(quantize)) args <- c(args, "--quantize", quantize)
+  cli::cli_alert_info("Registering {.val {name}} with Ollama from {.path {source}}.")
   res <- processx::run(ollama, args, error_on_status = FALSE, windows_hide_window = TRUE)
   if (res$status != 0) {
     out <- paste(res$stdout, res$stderr)
@@ -92,9 +99,9 @@ ollama_try <- function(name, url = "http://localhost:11434") {
   NULL
 }
 
-ollama_modelfile <- function(merged_dir) {
+ollama_modelfile <- function(source) {
   c(
-    paste0("FROM ", merged_dir),
+    paste0("FROM ", source),
     "# Made by dragonfarm. The chat template comes from the model's tokenizer.",
     "PARAMETER temperature 0.7"
   )

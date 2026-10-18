@@ -4,17 +4,27 @@
 \alias{dragon_serve_ollama}
 \title{Serve a run's model with Ollama}
 \usage{
-dragon_serve_ollama(run, name = NULL, quantize = NULL, ollama = ollama_path())
+dragon_serve_ollama(
+  run,
+  name = NULL,
+  quantize = NULL,
+  ollama = ollama_path(),
+  llama_cpp_dir = Sys.getenv("LLAMA_CPP_DIR", unset = "")
+)
 }
 \arguments{
 \item{run}{A \code{dragon_run}, or a merged model directory.}
 
 \item{name}{Model name to register. Defaults to \verb{dragonfarm-<run id>}.}
 
-\item{quantize}{Optional Ollama quantization such as \code{"q8_0"} or \code{"q4_K_M"}
-to shrink the served model.}
+\item{quantize}{Optional quantization such as \code{"q8_0"} to shrink the
+served model. On the GGUF route it is the converter's output type
+(default \code{"q8_0"}).}
 
 \item{ollama}{Path to the \code{ollama} executable.}
+
+\item{llama_cpp_dir}{A llama.cpp checkout; when it holds the converter,
+the GGUF route is used.}
 }
 \value{
 A \code{dragon_backend} for the served model.
@@ -25,12 +35,13 @@ the result with Ollama, and checks that Ollama can answer with it. The
 returned backend points \code{\link[=dragon_generate]{dragon_generate()}} and \code{\link[=dragon_chat]{dragon_chat()}} at it.
 }
 \details{
-Recent Ollama versions import safetensors through their MLX engine. With
-Ollama 0.40.5 on Windows the import worked but the model could not answer
-("MLX runtime is not available"), for Qwen and SmolLM2 runs alike; other
-systems were not tested. When that happens the unusable copy is removed
-and the error says so. A GGUF file made with \code{\link[=dragon_export_gguf]{dragon_export_gguf()}}
-(which needs llama.cpp) is the other route into Ollama.
+With a llama.cpp checkout (\code{LLAMA_CPP_DIR}), the merged model is first
+converted to GGUF with \code{\link[=dragon_export_gguf]{dragon_export_gguf()}} and Ollama serves that
+file; this worked with Ollama 0.40.5 on Windows. Without one, Ollama is
+asked to import the safetensors directly. Recent Ollama versions do that
+through their MLX engine, which on Windows refused a Qwen run and could
+not run a SmolLM2 one ("MLX runtime is not available"); the unusable copy
+is then removed and the error says so.
 
 Needs Ollama installed and its service running. The \code{ollama} command is
 looked for on the PATH and then in Ollama's usual install folders.
