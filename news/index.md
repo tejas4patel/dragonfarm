@@ -705,6 +705,12 @@ a spreadsheet.
 
 ### Fixes
 
+- `dragon_compare(p)` on a pipeline started with `background = TRUE`
+  failed with “\$ operator is invalid for atomic vectors”, and printing
+  it reported the wrong number of runs: the object has a `runs_dir` and
+  no `runs`, and `$runs` partially matched `runs_dir`. Found by running
+  the post-training loop article for real.
+
 - Telling a refusal from an answer: a correct answer that quoted its
   source (“\[1\] states that ‘this guidance does not address …’”) or
   said something like “when the model does not include interactions” was
