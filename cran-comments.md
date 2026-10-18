@@ -11,9 +11,15 @@ skipped on CRAN.
 ## R CMD check results
 
 Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1,
-2026-10-18): 0 errors | 0 warnings | 1 note. The note is the incoming check's
-"Days since last update", from a run made six days after 0.3.4; this release is
-submitted at least a month after 0.3.4, so it should not appear.
+2026-10-18, run twice that day): 0 errors | 0 warnings | 1 note. The note is
+the incoming check's "Days since last update", from a run made six days after
+0.3.4; this release is submitted at least a month after 0.3.4, so it should
+not appear. Nothing is left in the temporary folder.
+
+Every help page has an example. Those that need the 'Python' environment, a
+trained run or a GPU are wrapped in `if (interactive())`; the others (listing
+runs and document sets, hardware settings, previewing and splitting the
+bundled example data) are quick and need nothing outside R.
 
 The "detritus in the temp directory" NOTE reported with 0.3.4 is fixed: a
 test started `Rscript -e` and stopped it, and on Windows that leaves an
@@ -41,8 +47,10 @@ and so started 'Python', now mocks it).
   keys in the operating system's keychain. Nothing touches the keychain
   during the check; tests use an in-memory stand-in.
 * New file `inst/python/requirements.lock` (about 100 KB): the 'Python'
-  packages pinned with hashes, for administrators who install without the
-  internet. Nothing reads it during the check.
+  packages pinned with hashes. When the package loads, it reads the pinned
+  versions from this file to declare them with `reticulate::py_require()`,
+  so every machine gets the same versions; nothing is installed and no
+  'Python' runs until a user calls a function that needs it.
 * New suggested packages 'htmltools', used only by a test that checks
   every input in the app has a label (it is always installed, as 'shiny'
   depends on it), and 'openssl', used to fingerprint exported records
