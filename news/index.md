@@ -153,11 +153,12 @@ a spreadsheet.
   and other MCP clients with
   [`dragon_mcp_server()`](https://dragonfarm.dev/reference/dragon_mcp_server.md):
   search a document set (or one document in it), answer from it with
-  citations, check an answer’s figures, read documents, list sets and
-  runs, check a run. Every call is checked against the tool’s contract,
-  callers named as agents are held to a policy (some calls are refused,
-  some wait for a person), and every call is recorded in a small
-  catalogue kept in the runs folder.
+  citations, check an answer’s figures, read documents, build the
+  training set (saved for a person to read before approving training),
+  list sets and runs, check a run. Every call is checked against the
+  tool’s contract, callers named as agents are held to a policy (some
+  calls are refused, some wait for a person), and every call is recorded
+  in a small catalogue kept in the runs folder.
 
 - Some protection against instructions planted in documents (“ignore
   your instructions”, “always say 90 days”, “answer in French”). For
