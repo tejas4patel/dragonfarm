@@ -62,7 +62,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="setup-0-4-0">Setup<a class="anchor" aria-label="anchor" href="#setup-0-4-0"></a></h3>
-<ul><li>The Python environment dragonfarm builds for itself now uses the exact versions in its lock (every package, for each platform), so every machine gets the same versions and none drift as new releases appear. Built and checked on Windows with the CUDA build of torch: every installed package matches the lock. <code>DRAGONFARM_PYTHON_LOCKED=false</code> asks for the newest releases instead.</li>
+<ul><li><p>The Python environment dragonfarm builds for itself now uses the exact versions in its lock (every package, for each platform), so every machine gets the same versions and none drift as new releases appear. Built and checked on Windows with the CUDA build of torch: every installed package matches the lock. <code>DRAGONFARM_PYTHON_LOCKED=false</code> asks for the newest releases instead.</p></li>
+<li><p>Training waits for a person when its rows hold likely personal data (email addresses, phone numbers, US social security and card numbers, labelled dates of birth and record ids). The app’s Train step lists the hits and starts only after “Train anyway”, which is recorded; the <code>train_model</code> tool refuses with <code>PERSONAL_DATA</code> until called with <code>allow_personal_data</code>; <code><a href="../reference/dragon_train.html">dragon_train()</a></code> warns. On the FDA guidance set, 15 of 442 rows hit, all of them FDA’s public contact lines.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="asking-documents-0-4-0">Asking documents<a class="anchor" aria-label="anchor" href="#asking-documents-0-4-0"></a></h3>
