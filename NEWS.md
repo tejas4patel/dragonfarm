@@ -143,6 +143,14 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows.
 
+* "Check for personal data" in the Documents step lists email addresses,
+  phone numbers, US social security numbers, card numbers, and labelled
+  dates of birth and patient or record ids found in a set, each with where
+  it was found, by fixed patterns (no model). Every hit is shown for a person
+  to judge: contact lines of organisations are common in public documents.
+  On the documents tested here it flagged only such contact lines and no
+  numbers, versions or dates by mistake.
+
 * The policy can be changed in the app: Settings has a Policy card for the
   tools each agent may use, what waits for a person, where data may go, the
   four-eyes rule for model sign-off, and agent budgets. Each save is a new

@@ -214,7 +214,38 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
         shiny::div(class = "kv", shiny::span("Index"), shiny::strong(if (is.null(m$index)) "not built yet" else m$index$model)),
         shiny::div(class = "btn-row",
           shiny::actionButton(session$ns("verify"), "Check it re-reads the same", class = "btn-outline-secondary btn-sm"),
-          shiny::uiOutput(session$ns("verify_result"), inline = TRUE))
+          shiny::uiOutput(session$ns("verify_result"), inline = TRUE)),
+        shiny::div(class = "btn-row",
+          shiny::actionButton(session$ns("pii"), "Check for personal data", class = "btn-outline-secondary btn-sm")),
+        shiny::uiOutput(session$ns("pii_result"))
+      )
+    })
+
+    # Personal data: fixed patterns, every hit listed for a person to judge.
+    pii <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$pii, {
+      docs <- state$documents
+      if (is.null(docs)) return()
+      h <- tryCatch(pii_scan(docs, runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
+      if (!is.null(h)) pii(list(set = docs$name, hits = h))
+    })
+    output$pii_result <- shiny::renderUI({
+      p <- pii()
+      docs <- state$documents
+      if (is.null(p) || is.null(docs) || !identical(p$set, docs$name)) return(NULL)
+      h <- p$hits
+      if (!nrow(h)) return(shiny::p(class = "small text-success", "No email addresses, phone numbers, ID numbers, card numbers, dates of birth or record ids found."))
+      counts <- attr(h, "counts"); counts <- counts[counts > 0]
+      labels <- c(email = "email addresses", phone = "phone numbers", ssn = "social security numbers", card = "card numbers",
+                  birth_date = "dates of birth", record_id = "patient or record ids")
+      shiny::tagList(
+        shiny::p(class = "small text-warning", paste0("Found ", paste(sprintf("%d %s", counts, labels[names(counts)]), collapse = ", "),
+                 ". Check each: contact lines of organisations are common in public documents.")),
+        shiny::div(class = "table-wrap", shiny::tags$table(class = "table table-sm",
+          shiny::tags$thead(shiny::tags$tr(lapply(c("Type", "Found", "Where", "Context"), shiny::tags$th))),
+          shiny::tags$tbody(lapply(seq_len(nrow(h)), function(i) shiny::tags$tr(
+            shiny::tags$td(labels[[h$type[i]]]), shiny::tags$td(h$match[i]), shiny::tags$td(h$source[i]),
+            shiny::tags$td(class = "small", h$context[i]))))))
       )
     })
 

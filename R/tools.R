@@ -217,6 +217,12 @@ tool_impl <- list(
     list(run = run$id, eval_loss = e$eval_loss, perplexity = e$perplexity, pref_accuracy = e$pref_accuracy,
          n_samples = if (is.data.frame(e$samples)) nrow(e$samples) else 0L)
   },
+  scan_personal_data = function(args) {
+    docs <- dragon_documents_load(args$set)
+    h <- pii_scan(docs)
+    list(set = docs$name, counts = as.list(attr(h, "counts")),
+         hits = rows_as_list(utils::head(h, 50), c("type", "match", "source", "chunk")))
+  },
   verify_document_set = function(args) {
     v <- documents_verify(args$set)
     v[c("set", "verdict", "files", "missing", "changed", "not_checked", "reader_then", "reader_now", "chunks_differ")]

@@ -1,0 +1,46 @@
+{
+  "name": "scan_personal_data",
+  "title": "Check a document set for personal data",
+  "description": "List email addresses, phone numbers, US social security numbers, card numbers, labelled dates of birth and labelled patient or record ids found in a document set, by fixed patterns, with where each was found. Nothing is changed.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 2
+  },
+  "errors": [
+    "NOT_A_SET",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "set"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "set": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Document set name or folder."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "set",
+      "counts"
+    ],
+    "properties": {
+      "set": {
+        "type": "string"
+      },
+      "counts": {
+        "type": "object"
+      },
+      "hits": {
+        "type": "array"
+      }
+    }
+  }
+}
