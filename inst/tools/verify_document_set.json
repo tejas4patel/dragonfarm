@@ -1,0 +1,50 @@
+{
+  "name": "verify_document_set",
+  "title": "Check a document set re-reads identically",
+  "description": "Read a saved set's files again into a temporary folder and compare with the saved chunks: identical, sources changed (a file changed or is missing), reader changed, or differs. Web pages are not fetched again. The saved set is not changed.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 10
+  },
+  "errors": [
+    "NOT_A_SET",
+    "FILE_NOT_FOUND",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "set"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "set": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Document set name or folder."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "set",
+      "verdict"
+    ],
+    "properties": {
+      "set": {
+        "type": "string"
+      },
+      "verdict": {
+        "type": "string"
+      },
+      "files": {
+        "type": "integer"
+      },
+      "chunks_differ": {
+        "type": "integer"
+      }
+    }
+  }
+}
