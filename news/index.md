@@ -580,6 +580,13 @@ a spreadsheet.
 - The app opens from RStudio’s Addins menu (“dragonfarm”), no code
   needed.
 
+- Monitor says how much room runs take, warns about a run that has
+  stopped moving, and points at the biggest saving: the checkpoints of
+  finished runs, which are only used to resume a run that stopped. On
+  one laptop they were 14 of 18 GB. “Remove them” lists the runs and
+  frees the space only after you confirm; each run keeps its trained
+  adapter, and the removal is recorded.
+
 - Every model choice in the app has an (i) icon: hovering over it, or
   focusing it with the keyboard, shows how the four model sizes compare
   on that task, as measured for the “Choosing a model size” article.
