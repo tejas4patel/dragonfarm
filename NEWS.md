@@ -116,6 +116,14 @@ PDF and as Word, live web pages, and a spreadsheet.
   matches the lock. `DRAGONFARM_PYTHON_LOCKED=false` asks for the newest
   releases instead.
 
+* Training waits for a person when its rows hold likely personal data
+  (email addresses, phone numbers, US social security and card numbers,
+  labelled dates of birth and record ids). The app's Train step lists the
+  hits and starts only after "Train anyway", which is recorded; the
+  `train_model` tool refuses with `PERSONAL_DATA` until called with
+  `allow_personal_data`; `dragon_train()` warns. On the FDA guidance set,
+  15 of 442 rows hit, all of them FDA's public contact lines.
+
 ## Asking documents
 
 * Questions about a whole set ("which document is the oldest?", "what is in

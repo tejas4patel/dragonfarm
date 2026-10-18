@@ -71,3 +71,35 @@ pii_scan <- function(docs, runs_dir = dragon_runs_dir()) {
   store_record_event("pii_scan", docs$name, ok = nrow(hits) == 0, detail = list(chunks = nrow(ch), found = counts), runs_dir = runs_dir)
   structure(hits, counts = unlist(counts), class = c("dragon_pii", "data.frame"))
 }
+
+# Personal data in a training set (D-11): every text cell, conversations
+# included, by the same fixed patterns. One row per hit with the data row it
+# is in. Large sets are scanned up to max_rows rows.
+dataset_pii <- function(dataset, max_rows = 20000L) {
+  d <- if (is.list(dataset)) dataset$data
+  if (!is.data.frame(d) || !nrow(d)) return(data.frame(row = integer(), type = character(), match = character(), context = character()))
+  d <- utils::head(d, max_rows)
+  cell_text <- function(v) {
+    if (is.character(v)) return(v)
+    if (is.list(v)) return(vapply(v, function(x) paste(unlist(lapply(x, function(m) if (is.list(m)) m$content else m)), collapse = "\n"), ""))
+    NULL
+  }
+  out <- list()
+  for (col in names(d)) {
+    txt <- cell_text(d[[col]])
+    if (is.null(txt)) next
+    for (i in which(!is.na(txt) & nzchar(txt))) {
+      h <- pii_find(txt[i])
+      if (nrow(h)) out[[length(out) + 1]] <- cbind(row = i, h)
+    }
+  }
+  if (!length(out)) return(data.frame(row = integer(), type = character(), match = character(), context = character()))
+  out <- do.call(rbind, out)
+  out[!duplicated(out[c("row", "type", "match")]), , drop = FALSE]   # a text shown in two columns counts once
+}
+
+pii_counts <- function(hits) {
+  if (!nrow(hits)) return("")
+  tab <- table(hits$type)
+  paste(sprintf("%d %s", as.integer(tab), names(tab)), collapse = ", ")
+}

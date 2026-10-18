@@ -36,6 +36,11 @@ dragon_train <- function(dataset, model, lora = dragon_lora(), args = dragon_tra
                          hardware = dragon_hardware(), name = NULL, run_dir = NULL,
                          runs_dir = dragon_runs_dir(), n_samples = 10,
                          revision = NULL, trust_remote_code = FALSE, wait = FALSE) {
+  hits <- tryCatch(dataset_pii(dataset), error = function(e) NULL)
+  if (!is.null(hits) && nrow(hits)) {
+    cli::cli_warn(c("The training rows hold likely personal data: {pii_counts(hits)}.",
+                    "i" = "Review them before training; the app's Train step lists every hit."))
+  }
   prep <- prepare_run(dataset, model, lora, args, hardware, name, run_dir, runs_dir, n_samples,
                       revision = revision, trust_remote_code = trust_remote_code)
   files <- prep$files

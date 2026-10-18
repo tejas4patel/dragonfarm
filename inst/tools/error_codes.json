@@ -21,5 +21,6 @@
   "NOT_OPTED_IN": "Nothing is sent to this provider until a person opts in to it.",
   "QUOTA_REACHED": "The daily cap set for this provider has been reached; the local model is used instead.",
   "NOT_APPROVED": "In governed mode, a trained run that is not an approved model version.",
+  "PERSONAL_DATA": "Training rows that hold likely personal data, not yet reviewed by a person.",
   "UNKNOWN": "Anything not named above."
 }

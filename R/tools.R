@@ -226,6 +226,12 @@ tool_impl <- list(
   train_model = function(args) {
     qa <- dragon_questions_load(args$questions)
     ds <- dragon_questions_dataset(qa)
+    hits <- dataset_pii(ds)
+    if (nrow(hits) && !isTRUE(args$allow_personal_data)) {
+      cli::cli_abort(c("The training rows hold likely personal data: {pii_counts(hits)}.",
+                       "i" = "A person should review them; call again with allow_personal_data = true once they have."),
+                     class = "dragonfarm_error", code = "PERSONAL_DATA")
+    }
     hw <- tryCatch(hardware_info(), error = function(e) NULL)
     four_bit <- isTRUE(suggest_train_4bit(args$model, hw))
     # A model that needs 4-bit on this GPU also needs batch 1 and gradient

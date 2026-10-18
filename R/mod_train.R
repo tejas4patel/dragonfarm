@@ -251,12 +251,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       }
     }
 
-    shiny::observeEvent(input$start, {
-      p <- problems()
-      if (length(p)) {
-        shiny::showNotification(paste(p, collapse = " "), type = "warning")
-        return()
-      }
+    start_training <- function() {
       run <- tryCatch({
         s <- settings()
         shiny::withProgress(message = "Launching trainer", detail = "Preparing Python on first use", {
@@ -268,6 +263,38 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
         shiny::showNotification(sprintf("Run %s is off to dragon school.", run$id), type = "message")
         nav_to("monitor")
       }
+    }
+
+    # D-11: training waits for a person when the rows hold likely personal
+    # data; the hits are shown and the choice is recorded.
+    pii_hits <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$start, {
+      p <- problems()
+      if (length(p)) {
+        shiny::showNotification(paste(p, collapse = " "), type = "warning")
+        return()
+      }
+      hits <- tryCatch(dataset_pii(state$mapped), error = function(e) NULL)
+      if (is.null(hits) || !nrow(hits)) return(start_training())
+      pii_hits(hits)
+      shown <- utils::head(hits, 10)
+      shiny::showModal(shiny::modalDialog(
+        title = "These rows hold likely personal data",
+        shiny::p(sprintf("Found %s in the training rows. Training waits for your decision.", pii_counts(hits))),
+        shiny::tags$table(class = "table table-sm", shiny::tags$thead(shiny::tags$tr(lapply(c("Row", "Kind", "Found"), shiny::tags$th))),
+          shiny::tags$tbody(lapply(seq_len(nrow(shown)), function(i) shiny::tags$tr(
+            shiny::tags$td(shown$row[i]), shiny::tags$td(shown$type[i]), shiny::tags$td(shown$match[i]))))),
+        if (nrow(hits) > 10) shiny::p(class = "small", sprintf("And %d more.", nrow(hits) - 10)),
+        footer = shiny::tagList(shiny::modalButton("Cancel"),
+                                shiny::actionButton(session$ns("pii_ok"), "Train anyway", class = "btn-outline-danger"))
+      ))
+    })
+    shiny::observeEvent(input$pii_ok, {
+      shiny::removeModal()
+      hits <- pii_hits()
+      store_record_event("approval_decision", "train_with_personal_data", ok = TRUE,
+                         detail = list(found = as.list(table(hits$type)), rows = length(unique(hits$row))))
+      start_training()
     })
 
     # Cloud GPU path: the same settings, but the run is zipped instead of launched.
