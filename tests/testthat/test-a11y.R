@@ -42,3 +42,13 @@ test_that("scrolling text boxes can be reached with the keyboard and are named",
     expect_match(tag, 'aria-label="[^"]+"', info = id)
   }
 })
+
+test_that("small hint text is coloured, not faded, so it keeps AA contrast", {
+  # Faded text is invisible to axe's contrast check when another element
+  # overlaps it; the trace note under an answer measured 4.29:1 at 0.65.
+  css <- readLines(system.file("app", "www", "dragonfarm.css", package = "dragonfarm"), warn = FALSE)
+  rule <- function(sel) css[startsWith(css, paste0(sel, " {"))]
+  expect_match(rule(".trace-note"), "color: var(--df-muted)", fixed = TRUE)
+  expect_false(grepl("opacity", rule(".trace-note")))
+  expect_match(rule(".form-control::placeholder"), "opacity: 1;", fixed = TRUE)
+})

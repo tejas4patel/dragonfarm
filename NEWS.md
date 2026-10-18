@@ -300,7 +300,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   rules. The page declares its language, the hardware badge and dark-mode
   switch sit outside the tab list, warning and success text are dark enough
   to read, and every text box and drop-down has a label for screen readers.
-  The check covers the app as it first opens, not every result card.
+  The same check also passes on what appears after you act: a reply beside
+  the base model's, a judge's verdict, a chat with its feedback buttons, an
+  answer with its sources, and the review of written questions. Contrast
+  the checker cannot judge was measured by hand; that found the faint note
+  under each answer at 4.29:1, below the 4.5:1 needed, and it is now darker,
+  as is placeholder text in boxes.
 
 * The app has a Settings page for the keys of outside services (Hugging
   Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a key

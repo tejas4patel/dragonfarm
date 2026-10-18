@@ -172,7 +172,7 @@ a:hover { color: var(--df-coral); }
   background: var(--df-input) !important; color: var(--df-body); border: 1px solid var(--df-line-2) !important;
   border-radius: 0.65rem !important; box-shadow: none !important; transition: border-color 0.15s, box-shadow 0.15s;
 }
-.form-control::placeholder { color: var(--df-muted); opacity: 0.75; }
+.form-control::placeholder { color: var(--df-muted); opacity: 1; }   /* 0.75 gave 3.4:1 in light mode */
 .form-control:focus, .form-select:focus, .selectize-input.focus {
   border-color: var(--df-amber) !important; box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.22) !important; outline: 0;
 }
@@ -447,7 +447,7 @@ ol.plan li { margin-bottom: 6px; }
 .plan-tag { font-size: 0.72rem; padding: 1px 8px; border-radius: 999px; background: rgba(127, 127, 127, 0.14); }
 .plan-tag.gpu { background: rgba(91, 208, 138, 0.18); }
 .plan-tag.out { background: rgba(255, 200, 87, 0.28); font-weight: 600; }
-.trace-note { font-size: 0.72rem; opacity: 0.65; margin: 6px 0 0; }
+.trace-note { font-size: 0.72rem; color: var(--df-muted); margin: 6px 0 0; }   /* muted, not faded: 4.29:1 in a light bubble was below AA */
 /* Settings: one card per service, plus free tiers. */
 .free-tier { margin-bottom: 14px; }
 .card-header .pill { margin-left: 8px; }
