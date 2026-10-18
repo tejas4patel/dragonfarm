@@ -21,3 +21,13 @@ dragon_resume(run, wait = FALSE)
 ## Value
 
 A `dragon_run` object.
+
+## Examples
+
+``` r
+if (interactive()) {
+# A run that was cancelled or stopped carries on from its last checkpoint
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_resume(run)
+}
+```

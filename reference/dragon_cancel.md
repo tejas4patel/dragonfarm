@@ -22,3 +22,14 @@ dragon_cancel(run, timeout = 120)
 ## Value
 
 The run, invisibly.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_dataset(dragon_example_data()) |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+  dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct")
+dragon_cancel(run)
+}
+```

@@ -63,3 +63,11 @@ dragon_generate(
 ## Value
 
 A character vector, one reply per prompt.
+
+## Examples
+
+``` r
+if (interactive()) {
+dragon_generate("HuggingFaceTB/SmolLM2-135M-Instruct", "Say hello in five words.")
+}
+```

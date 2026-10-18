@@ -42,3 +42,12 @@ data frame with columns `prompt`, `reference`, `generated`. Preference
 runs report `pref_accuracy` (how often the model scores the chosen reply
 above the rejected one), `reward_margin`, and `eval_pairs` instead of
 perplexity, and their samples also carry `rejected`.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_evaluate(run, n_samples = 5)
+}
+```

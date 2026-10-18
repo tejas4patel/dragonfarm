@@ -55,3 +55,14 @@ dragon_questions_dataset(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15)
 A mapped `dragon_dataset` ready for
 [`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md).
 Its data has a `negative` column marking the "not covered" rows.
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+qa <- dragon_questions(docs)
+ds <- dragon_questions_dataset(qa)
+dragon_preview(ds, n = 1)
+}
+```

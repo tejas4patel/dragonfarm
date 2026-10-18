@@ -45,3 +45,12 @@ A data frame with one row per hit: `query` (when several), `n` (rank),
 `id`, `source`, `section`, `page` (PDFs), `text`, `score` (cosine
 similarity times the chunk's weight; rows are ordered by the combined
 ranking, so it need not decrease), `similarity`, and `weight`.
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+dragon_retrieve(docs, "How long is the return window?", k = 3)
+}
+```

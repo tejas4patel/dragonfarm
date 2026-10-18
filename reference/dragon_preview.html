@@ -66,6 +66,29 @@
     <p>Invisibly, a list of message lists.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">ds</span> <span class="op">&lt;-</span> <span class="fu"><a href="dragon_map.html">dragon_map</a></span><span class="op">(</span><span class="fu"><a href="dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                 prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">dragon_preview</span><span class="op">(</span><span class="va">ds</span>, n <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── Row 1 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">user</span>:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Ember thermostat keeps dropping off Wi-Fi</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> I've tried setting up my Ember thermostat three times and it never gets past the Wi-Fi step. The app just says 'connection failed'. My phone is on the same 2.4 GHz network.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">assistant</span>:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Thanks for the details. Wi-Fi drops on the Ember thermostat are almost always a 2.4 GHz band-steering issue with mesh routers. Please try these steps: (1) In your router app, create a dedicated 2.4 GHz network or temporarily disable band steering. (2) Hold the reset button on the Ember thermostat for 10 seconds until the light blinks amber. (3) Set it up again in the app on that 2.4 GHz network. If it still drops after 24 hours, reply with your router model and we will escalate to our network team.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── Row 2 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">user</span>:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Invoice total is wrong</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The invoice for my Nook speaker shows a higher total than the price on the checkout page. Looks like tax was applied twice.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">assistant</span>:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Sorry about the confusion with your Nook speaker charge. I've looked at the order on our side. When a payment is authorized and then captured, some banks show both as separate pending lines for 2 to 3 business days before the authorization drops off. If both charges are still showing after 3 business days, reply here with the last four digits of the card and the order number and we will refund the duplicate within one business day. Either way, you will only ever be charged once for the Nook speaker.</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

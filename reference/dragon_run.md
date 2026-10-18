@@ -18,3 +18,12 @@ dragon_run(dir)
 ## Value
 
 A `dragon_run` object.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_status(run)
+}
+```

@@ -20,3 +20,12 @@ dragon_archived_runs(runs_dir = dragon_runs_dir())
 ## Value
 
 A data frame, one row per archived run.
+
+## Examples
+
+``` r
+dragon_archived_runs(tempdir())
+#> [1] id         dir        state      stage      method     model      created_at
+#> [8] eval_loss 
+#> <0 rows> (or 0-length row.names)
+```

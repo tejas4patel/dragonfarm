@@ -32,3 +32,12 @@ dragon_prompts(run, split = c("eval", "train"), n = Inf, seed = 42)
 ## Value
 
 A character vector.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+head(dragon_prompts(run, split = "eval", n = 5))
+}
+```

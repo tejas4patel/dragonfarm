@@ -19,3 +19,12 @@ dragon_chunks(docs)
 A data frame with one row per chunk: `id`, `source`, `section`, `text`,
 `n_words`, `quoted` (a block quote), `code` (a code block), and `weight`
 (0.7 for changelog-like sources, else 1).
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+head(dragon_chunks(docs))
+}
+```

@@ -34,3 +34,12 @@ dragon_logs(run, n = 50)
 runs `pref_acc`, `reward_margin`, `eval_pref_acc`, `eval_reward_margin`.
 
 `dragon_logs()`: a character vector.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_status(run)$state
+}
+```

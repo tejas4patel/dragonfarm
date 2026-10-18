@@ -23,3 +23,12 @@ dragon_merge(run, out_dir = NULL)
 ## Value
 
 The output path, invisibly.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dir <- dragon_merge(run)
+}
+```

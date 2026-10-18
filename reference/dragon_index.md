@@ -31,3 +31,12 @@ dragon_index(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE)
 ## Value
 
 The `dragon_documents` object, reloaded, invisibly.
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies", index = FALSE)
+docs <- dragon_index(docs)
+}
+```

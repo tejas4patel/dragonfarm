@@ -32,3 +32,13 @@ dragon_questions_list(docs)
 `dragon_questions_load()` and `dragon_questions_save()` return the
 `dragon_questions` data frame; `dragon_questions_list()` a data frame of
 the set's question files with counts.
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+qa <- dragon_questions(docs)
+qa <- dragon_questions_load(attr(qa, "path"))
+}
+```

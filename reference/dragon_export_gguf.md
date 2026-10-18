@@ -38,3 +38,12 @@ dragon_export_gguf(
 ## Value
 
 The output path, invisibly.
+
+## Examples
+
+``` r
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_export_gguf(dragon_merge(run))
+}
+```

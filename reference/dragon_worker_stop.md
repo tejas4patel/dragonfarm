@@ -31,3 +31,11 @@ workers, question generators, and trainers alike, so check
 if a run might be in progress.
 [`dragon_check()`](https://dragonfarm.dev/reference/dragon_check.md)
 lists them without stopping anything.
+
+## Examples
+
+``` r
+if (interactive()) {
+dragon_worker_stop()
+}
+```

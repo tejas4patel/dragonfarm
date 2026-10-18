@@ -23,3 +23,13 @@ dragon_documents_load(dir, runs_dir = dragon_runs_dir())
 ## Value
 
 A `dragon_documents` object.
+
+## Examples
+
+``` r
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+docs <- dragon_documents_load("policies")
+docs
+}
+```

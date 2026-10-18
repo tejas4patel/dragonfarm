@@ -34,3 +34,32 @@ dragon_hardware(
 ## Value
 
 A `dragon_hardware` object.
+
+## Examples
+
+``` r
+dragon_hardware()
+#> $device
+#> [1] "auto"
+#> 
+#> $dtype
+#> [1] "auto"
+#> 
+#> $load_in_4bit
+#> [1] FALSE
+#> 
+#> attr(,"class")
+#> [1] "dragon_hardware"
+dragon_hardware(device = "cpu")
+#> $device
+#> [1] "cpu"
+#> 
+#> $dtype
+#> [1] "auto"
+#> 
+#> $load_in_4bit
+#> [1] FALSE
+#> 
+#> attr(,"class")
+#> [1] "dragon_hardware"
+```
