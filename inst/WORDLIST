@@ -5,6 +5,7 @@ backends
 bfloat
 bitsandbytes
 catalogue’s
+CFR
 checkpointing
 CMD
 Colab
@@ -31,13 +32,18 @@ Gemma
 GGUF
 github
 gov
+Groq
 GRPO
 ICH
 Instruc
 io
+json
 JSONL
 Kaggle
+kaggle
 Kaggle's
+Keychain
+keychain
 linter
 LM
 LoRA
@@ -50,6 +56,7 @@ nonexistent
 NVIDIA's
 Ollama
 OpenAI
+OpenRouter
 ORPO
 patel
 peft
@@ -57,12 +64,14 @@ peft's
 pid
 pilcrow
 pollers
+Postgres
 pptx
 preinstalled
 processx's
 PyPI
 PyPI's
 pytest
+PyTorch
 QLoRA
 Quickstart
 quickstart
@@ -71,6 +80,7 @@ R's
 regex
 RL
 RLAIF
+RPostgres
 RStudio
 RStudio's
 RTX
@@ -82,6 +92,8 @@ search's
 serializable
 Shiny's
 shinyapps
+SOPs
+SQLite
 SQuAD
 standalone
 stdin
