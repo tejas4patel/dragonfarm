@@ -176,7 +176,9 @@ a spreadsheet.
   now says whether agents are on for this machine. Agents need a model
   of 3B or larger: on 20 tool-use tasks, 3B and 7B models got 17 and 18
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
-  still works through the fixed workflows. An agent’s task keeps a
+  still works through the fixed workflows. With a model server
+  connected, the server’s model is the one that counts, so a CPU-only
+  laptop with a server can run agents. An agent’s task keeps a
   checkpoint after every step; if R stops mid-task, it carries on from
   there without repeating the tool calls it already made. The policy can
   name a model per agent, and when an agent cannot finish (its model is
