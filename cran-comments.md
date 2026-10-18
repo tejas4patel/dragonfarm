@@ -11,15 +11,17 @@ skipped on CRAN.
 ## R CMD check results
 
 Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1,
-2026-10-17): 0 errors | 0 warnings | 1 note. The note is the incoming check's
-"Days since last update", from a run made five days after 0.3.4; this release is
+2026-10-18): 0 errors | 0 warnings | 1 note. The note is the incoming check's
+"Days since last update", from a run made six days after 0.3.4; this release is
 submitted at least a month after 0.3.4, so it should not appear.
 
 The "detritus in the temp directory" NOTE reported with 0.3.4 is fixed: a
 test started `Rscript -e` and stopped it, and on Windows that leaves an
 `Rscript*` file in the temporary folder. The test now runs a script file in
 its own temporary folder, and the package's background pipelines also run
-from a script file.
+from a script file. Each test file was also run with its own fresh temporary
+folder and leaves nothing behind (one test that reached the hardware probe,
+and so started 'Python', now mocks it).
 
 ## Changes that touch the check
 
