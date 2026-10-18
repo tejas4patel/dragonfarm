@@ -26,7 +26,7 @@ A path.
 
 ``` r
 dragon_runs_dir()
-#> [1] "/tmp/RtmpUppAp5/dragonfarm_runs"
+#> [1] "/tmp/RtmpG5Tga0/dragonfarm_runs"
 withr::with_options(list(dragonfarm.runs_dir = "~/dragonfarm_runs"), dragon_runs_dir())
 #> [1] "~/dragonfarm_runs"
 ```

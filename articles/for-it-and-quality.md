@@ -118,11 +118,12 @@ precedence.
 ## Not there yet
 
 - **Identity.** On a server that signs people in, such as Posit Connect,
-  the record names the signed-in person, and the policy can name who may
-  change it; on a laptop it names the operating system user. This was
-  tested with a simulated sign-in, not yet on a real Connect server, and
-  a sign-off is still not an electronic signature in the sense of 21 CFR
-  Part 11.
+  the record names the signed-in person, the policy can name who may
+  change it, and it can limit documents to groups so that no one else is
+  shown a passage from them; on a laptop it names the operating system
+  user. This was tested with a simulated sign-in, not yet on a real
+  Connect server, and a sign-off is still not an electronic signature in
+  the sense of 21 CFR Part 11.
 - **Validation.** There is no validation pack yet. Settings can run a
   qualification report (installation and the controls above, on
   throwaway data, with evidence for each check), which a validation can
