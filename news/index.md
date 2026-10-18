@@ -705,6 +705,15 @@ a spreadsheet.
 
 ### Fixes
 
+- Telling a refusal from an answer: a correct answer that quoted its
+  source (“\[1\] states that ‘this guidance does not address …’”) or
+  said something like “when the model does not include interactions” was
+  counted as declining, in the answer check, the agent harness and the
+  answer metrics. Quoted text is now ignored, and a declining sentence
+  has to be about the sources. Found by comparing the metrics with 30
+  hand-checked FDA answers; on 96 answers it changed exactly that case,
+  and every real refusal is still caught.
+
 - A chat with a server or Ollama that refused the request (an unknown
   model, a bad key) recorded an empty reply as the assistant’s turn,
   which could then be rated and exported for training. A refused stream,
