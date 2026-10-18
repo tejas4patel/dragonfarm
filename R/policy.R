@@ -49,6 +49,11 @@ policy_problems <- function(policy) {
       p <- c(p, sprintf("%s must be a list of names", f))
     }
   }
+  for (r in policy$access %||% list()) {
+    if (!is.character(r$documents %||% "") || !length(c(unlist(r$groups), unlist(r$users)))) {
+      p <- c(p, "each access rule needs documents (a file pattern) and groups or users")
+    }
+  }
   bad <- setdiff(unlist(policy$approvals$side_effects), tool_side_effects)
   if (length(bad)) p <- c(p, sprintf("unknown side effect '%s'", bad))
   p

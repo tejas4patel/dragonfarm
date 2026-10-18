@@ -33,3 +33,36 @@ test_that("named admins and admin groups decide who may change the policy", {
   pol$admins <- list(42)
   expect_match(dragonfarm:::policy_problems(pol), "admins")
 })
+
+test_that("a person never receives a passage from a document their groups may not see", {
+  f <- write_fake_set()
+  runs <- dirname(dirname(f$dir))
+  withr::local_options(dragonfarm.runs_dir = runs, dragonfarm.user = "sam.k")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_default()
+  pol$access <- list(list(set = "kb", documents = "policy*.pdf", groups = list("hr")))
+  dragonfarm:::policy_set(pol, set_by = "admin", runs_dir = runs)
+  asked_k <- NULL
+  testthat::local_mocked_bindings(
+    worker_start = function(...) invisible(NULL),
+    worker_request = function(req) {
+      asked_k <<- req$k
+      ids <- c("abc-000", "def-000", "abc-001")[seq_len(min(req$k, 3))]
+      list(hits = lapply(req$queries, function(q) lapply(ids, function(id) list(id = id, score = 1, similarity = 1))))
+    }
+  )
+  docs <- dragon_documents_load(f$dir)
+  h <- dragon_retrieve(docs, "warranty", k = 2)
+  expect_equal(asked_k, 3L)                                   # the whole set is ranked, then filtered
+  expect_false(any(h$source == "policy.pdf"))                 # sam.k is not in hr
+  expect_equal(h$n, seq_len(nrow(h)))
+  expect_no_match(dragonfarm:::listing_for(docs, list(model = "m")) %||% "", "policy.pdf", fixed = TRUE)
+  bad <- dragonfarm:::tool_call("search_documents", list(set = f$dir, query = "warranty", source = "nope.pdf"))
+  expect_no_match(bad$error, "policy.pdf", fixed = TRUE)      # a hidden document is never named
+
+  testthat::local_mocked_bindings(current_groups = function(...) "hr")
+  h2 <- dragon_retrieve(docs, "warranty", k = 2)
+  expect_true(any(h2$source == "policy.pdf"))                 # hr members see it
+  pol$access <- list(list(set = "kb", documents = "x.pdf"))
+  expect_match(dragonfarm:::policy_problems(pol), "access rule")
+})

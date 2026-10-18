@@ -174,6 +174,7 @@ tool_impl <- list(
     if (!is.null(args$source)) {
       # One document: rank the whole set, keep that document's top k.
       ch <- dragon_chunks(docs)
+      ch <- ch[!ch$source %in% access_hidden(docs$name, ch$source), , drop = FALSE]   # never name a hidden document
       want <- unique(ch$source[tolower(ch$source) == tolower(args$source)])
       if (!length(want)) {
         cli::cli_abort(c("No document called {.val {args$source}} in this set.", i = "It has: {.val {sort(unique(ch$source))}}."),
@@ -251,6 +252,7 @@ tool_impl <- list(
     ch <- dragon_chunks(docs)
     src <- data.frame(n = vapply(args$sources, function(x) as.integer(x$n), 0L), id = vapply(args$sources, function(x) as.character(x$id), ""))
     src$text <- ch$text[match(src$id, ch$id)]
+    src$text[ch$source[match(src$id, ch$id)] %in% access_hidden(docs$name, ch$source)] <- NA   # hidden text is not consulted
     src$text[is.na(src$text)] <- ""
     r <- answer_check(args$answer, src, args$question %||% "")
     r[c("citations", "bad_citations")] <- lapply(r[c("citations", "bad_citations")], as.list)

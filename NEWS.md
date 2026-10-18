@@ -195,8 +195,10 @@ PDF and as Word, live web pages, and a spreadsheet.
 * On a server that signs people in, such as Posit Connect, the record,
   proposals, sign-offs and policy changes name the signed-in person, not the
   server's account. The policy can name admins and admin groups; then only
-  they may change it. Tested with a simulated sign-in, not yet on a real
-  Connect server.
+  they may change it. Access rules in the policy can limit documents to
+  groups ("hr-*.pdf" for HR only): a person outside them never receives a
+  passage from those documents, in search, answers, chat or the set's
+  listing. Tested with a simulated sign-in, not yet on a real Connect server.
 
 * Governed mode: an admin can tick "Only approved model versions answer
   questions" in Settings. Then a trained run answers in Ask, Chat and the

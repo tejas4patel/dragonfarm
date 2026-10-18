@@ -49,10 +49,15 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense"), e
   check_number(k, "k", min = 1, integer = TRUE)
   check_number(extra, "extra", min = 0, integer = TRUE)
   if (is.null(docs$manifest$index)) docs <- dragon_index(docs)
-  worker_start()
-  res <- worker_request(list(op = "retrieve", dir = docs$dir, queries = as.list(query), k = as.integer(k),
-                             method = method, extra = as.integer(extra)))
   chunks <- dragon_chunks(docs)
+  # Documents this person may not see (policy access rules) never reach the
+  # results: the whole set is ranked and they are dropped before the top k.
+  hidden <- access_hidden(docs$name, chunks$source,
+                          policy = tryCatch(policy_current(trace_runs_dir(docs)), error = function(e) NULL))
+  k_ask <- if (length(hidden)) nrow(chunks) else as.integer(k)
+  worker_start()
+  res <- worker_request(list(op = "retrieve", dir = docs$dir, queries = as.list(query), k = as.integer(k_ask),
+                             method = method, extra = if (length(hidden)) 0L else as.integer(extra)))
   rows <- list()
   for (qi in seq_along(res$hits)) {
     for (n in seq_along(res$hits[[qi]])) {
@@ -68,6 +73,12 @@ dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense"), e
     query = character(), n = integer(), id = character(), source = character(), section = character(),
     page = integer(), text = character(), score = numeric(), similarity = numeric(), weight = numeric(),
     stringsAsFactors = FALSE)
+  if (length(hidden) && nrow(out)) {
+    out <- out[!out$source %in% hidden, , drop = FALSE]
+    out <- do.call(rbind, lapply(split(out, factor(out$query, levels = unique(query))), function(x) {
+      x <- utils::head(x, as.integer(k)); x$n <- seq_len(nrow(x)); x
+    }))
+  }
   if (length(query) == 1L) out$query <- NULL
   rownames(out) <- NULL
   out
@@ -348,6 +359,9 @@ documents_prompt <- function(question, hits, mark = FALSE, listing = NULL) {
 listing_for <- function(docs, target, max_docs = 20L) {
   if (is.null(target) || !is.null(target$adapter)) return(NULL)
   srcs <- Filter(function(s) is.null(s$error) && (s$n_words %||% 0) > 0, docs$manifest$sources %||% list())
+  hidden <- access_hidden(docs$name, vapply(srcs, function(s) s$name %||% "", ""),
+                          policy = tryCatch(policy_current(trace_runs_dir(docs)), error = function(e) NULL))
+  srcs <- Filter(function(s) !(s$name %in% hidden), srcs)
   if (length(srcs) < 2) return(NULL)
   shown <- utils::head(srcs, max_docs)
   names <- vapply(shown, function(s) {
