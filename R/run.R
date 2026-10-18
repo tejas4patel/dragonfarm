@@ -175,10 +175,11 @@ resolve_run_for_removal <- function(run, runs_dir, force) {
 #' @export
 #' @examples
 #' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
 #' dragon_archive_run(run)
 #' dragon_archived_runs()
 #' dragon_unarchive_run(run$id)
-#' dragon_delete_run("20260101-000000-old-experiment")
+#' # dragon_delete_run(run) removes it for good
 #' }
 dragon_archive_run <- function(run, runs_dir = dragon_runs_dir(), force = FALSE) {
   info <- resolve_run_for_removal(run, runs_dir, force)

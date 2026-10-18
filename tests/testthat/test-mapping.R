@@ -62,3 +62,8 @@ test_that("preview prints rows", {
   expect_message(out <- dragon_preview(ds, n = 2), "Row 1")
   expect_length(out, 2)
 })
+
+test_that("training on nothing says so plainly", {
+  # dragon_feedback() returns sft = NULL before anyone has given feedback.
+  expect_error(dragonfarm:::check_dataset(NULL, mapped = TRUE), "nothing to train on")
+})

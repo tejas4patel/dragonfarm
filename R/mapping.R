@@ -29,6 +29,9 @@ dragon_map <- function(dataset, prompt, response, system = NULL) {
 }
 
 check_dataset <- function(dataset, mapped = FALSE, kind = NULL) {
+  if (is.null(dataset)) {
+    cli::cli_abort("{.arg dataset} is NULL: there is nothing to train on yet.")
+  }
   if (!inherits(dataset, "dragon_dataset")) {
     cli::cli_abort("{.arg dataset} must be created with {.fn dragon_dataset}.")
   }

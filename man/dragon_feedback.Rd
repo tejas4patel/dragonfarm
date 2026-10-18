@@ -35,9 +35,10 @@ reproducible through \code{\link[=dragon_code]{dragon_code()}}.
 }
 \examples{
 if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))   # the run people chatted with
 fb <- dragon_feedback()
 fb$records
-better <- dragon_train(fb$sft, dpo, wait = TRUE)       # continue from the run people chatted with
-dpo2 <- dragon_prefer(fb$pairs, better, wait = TRUE)
+if (!is.null(fb$sft)) better <- dragon_train(fb$sft, run, wait = TRUE)
+if (!is.null(fb$pairs)) dpo2 <- dragon_prefer(fb$pairs, better, wait = TRUE)
 }
 }

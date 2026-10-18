@@ -24,6 +24,9 @@ result from \code{\link[=dragon_judge]{dragon_judge()}}. Runs that lack a measur
 \examples{
 if (interactive()) {
 dragon_compare()                 # everything in the runs directory
-dragon_compare(sft, dpo)         # two specific runs
+ids <- dragon_runs()$id
+a <- dragon_run(file.path(dragon_runs_dir(), ids[1]))
+b <- dragon_run(file.path(dragon_runs_dir(), ids[2]))
+dragon_compare(a, b)             # two specific runs
 }
 }
