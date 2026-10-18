@@ -63,7 +63,11 @@ test_that("a model id that does not exist gets a plain message and a suggestion"
   expect_match(msg, "Did you mean \"Qwen/Qwen2.5-3B-Instruct\"?", fixed = TRUE)
   far <- dragonfarm:::error_message("OSError: nobody/nothing-like-it is not a local folder and is not a valid model identifier")
   expect_false(grepl("Did you mean", far))
-  expect_equal(dragonfarm:::error_message("CUDA out of memory"), "CUDA out of memory")
+  # old error text without a code is recognised as running out of memory and
+  # gets the advice, unless it already carries it
+  expect_match(dragonfarm:::error_message("CUDA out of memory"), "gradient accumulation")
+  done <- "CUDA error: out of memory. This usually means the GPU ran out of memory."
+  expect_equal(dragonfarm:::error_message(done), done)
 })
 
 test_that("error codes from Python are worded in one place", {

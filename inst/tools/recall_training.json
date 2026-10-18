@@ -1,0 +1,64 @@
+{
+  "name": "recall_training",
+  "title": "Recall past training runs",
+  "description": "Past training runs on this machine with their settings and how they ended (succeeded, or the error code such as OUT_OF_MEMORY), newest first. Use it to choose settings that fit before starting a run.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "model": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null,
+        "description": "Only runs of this model id; null for all."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 10
+      }
+    }
+  },
+  "output": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": [
+        "run",
+        "model",
+        "state"
+      ],
+      "properties": {
+        "run": {
+          "type": "string"
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

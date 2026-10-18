@@ -9,7 +9,7 @@
     "answer": {"tools": ["list_document_sets", "search_documents", "answer_question"], "min_model_b": 7},
     "ingestion": {"tools": ["list_document_sets", "read_documents", "search_documents"]},
     "ops": {"tools": ["list_document_sets", "list_runs", "run_status"]},
-    "trainer": {"tools": ["list_document_sets", "write_practice_questions", "train_model", "evaluate_run", "promote_model", "list_runs", "run_status", "cancel_run"]}
+    "trainer": {"tools": ["list_document_sets", "write_practice_questions", "recall_training", "train_model", "evaluate_run", "promote_model", "list_runs", "run_status", "cancel_run"]}
   },
   "budgets": {"max_steps": 30, "max_gpu_minutes": 120},
   "outbound": {"allowed_hosts": null, "note": "Hosts this machine may send data to: null for any, [] for none, or a list such as [\"api.anthropic.com\", \"*.huggingface.co\"]. Every outbound call is recorded either way."},

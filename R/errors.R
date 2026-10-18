@@ -23,6 +23,7 @@ error_message <- function(error, code = NULL) {
 # Codes for text that came without one.
 legacy_error_code <- function(error) {
   if (grepl("is not a local folder and is not a valid model identifier", error, fixed = TRUE)) return("MODEL_NOT_FOUND")
+  if (grepl("out of memory|CUDA_ERROR_OUT_OF_MEMORY|DefaultCPUAllocator: can't allocate", error, ignore.case = TRUE)) return("OUT_OF_MEMORY")
   "UNKNOWN"
 }
 
