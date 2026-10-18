@@ -323,7 +323,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
       shiny::tagList(
         shiny::div(class = "bubble user", shiny::span(class = "role", "you"), shiny::div(class = "content", a$question)),
         shiny::div(class = "bubble assistant", shiny::span(class = "role", a$model), shiny::div(class = "content md", md_html(a$answer)), sources_footnotes(a$sources),
-                   trace_note(a$trace))
+                   check_note(a), trace_note(a$trace))
       )
     })
 

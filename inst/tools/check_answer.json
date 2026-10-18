@@ -1,0 +1,97 @@
+{
+  "name": "check_answer",
+  "title": "Check an answer's citations and figures against its excerpts",
+  "description": "No model involved. Checks that every citation like [2] points at an excerpt the answer was given, and that every figure in the answer (numbers, dates, percentages, versions) appears in the excerpts it cites or in the question. It cannot tell whether the words are right; a real figure used wrongly passes. Give the sources (n and id) that answer_question returned.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "NOT_A_SET",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "set",
+      "answer",
+      "sources"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "set": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Document set name or folder the answer came from."
+      },
+      "answer": {
+        "type": "string"
+      },
+      "question": {
+        "type": "string",
+        "default": "",
+        "description": "Figures that appear in the question count as given."
+      },
+      "sources": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": [
+            "n",
+            "id"
+          ],
+          "properties": {
+            "n": {
+              "type": "integer"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "ok",
+      "bad_citations",
+      "ungrounded"
+    ],
+    "properties": {
+      "ok": {
+        "type": "boolean"
+      },
+      "declined": {
+        "type": "boolean"
+      },
+      "citations": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "bad_citations": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "figures": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "ungrounded": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

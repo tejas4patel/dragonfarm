@@ -30,6 +30,7 @@
           "required": ["n", "source", "cited"],
           "properties": {
             "n": {"type": "integer"},
+            "id": {"type": "string", "description": "The excerpt's id; check_answer takes it."},
             "source": {"type": "string"},
             "section": {"type": ["string", "null"]},
             "page": {"type": ["integer", "null"]},

@@ -179,7 +179,7 @@ tool_impl <- list(
     model <- args$model
     if (!is.null(model) && !dir.exists(model) && dir.exists(file.path(dragon_runs_dir(), model))) model <- dragon_run(file.path(dragon_runs_dir(), model))
     a <- dragon_ask(docs, args$question, model = model, k = as.integer(args$k), compare = isTRUE(args$compare))
-    list(answer = a$answer, model = a$model %||% "", sources = rows_as_list(a$sources, c("n", "source", "section", "page", "cited")))
+    list(answer = a$answer, model = a$model %||% "", sources = rows_as_list(a$sources, c("n", "id", "source", "section", "page", "cited")))
   },
   list_runs = function(args) {
     runs <- dragon_runs()
@@ -222,6 +222,17 @@ tool_impl <- list(
     h <- pii_scan(docs)
     list(set = docs$name, counts = as.list(attr(h, "counts")),
          hits = rows_as_list(utils::head(h, 50), c("type", "match", "source", "chunk")))
+  },
+  check_answer = function(args) {
+    docs <- dragon_documents_load(args$set)
+    ch <- dragon_chunks(docs)
+    src <- data.frame(n = vapply(args$sources, function(x) as.integer(x$n), 0L), id = vapply(args$sources, function(x) as.character(x$id), ""))
+    src$text <- ch$text[match(src$id, ch$id)]
+    src$text[is.na(src$text)] <- ""
+    r <- answer_check(args$answer, src, args$question %||% "")
+    r[c("citations", "bad_citations")] <- lapply(r[c("citations", "bad_citations")], as.list)
+    r[c("figures", "ungrounded")] <- lapply(r[c("figures", "ungrounded")], function(x) as.list(unname(x)))
+    r
   },
   verify_document_set = function(args) {
     v <- documents_verify(args$set)
