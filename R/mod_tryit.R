@@ -81,10 +81,7 @@ mod_tryit_server <- function(id, state, runs_dir) {
   shiny::moduleServer(id, function(input, output, session) {
     runs <- shiny::reactivePoll(3000, session,
       checkFunc = function() runs_change_signature(runs_dir),
-      valueFunc = function() {
-        df <- dragon_runs(runs_dir)
-        df[file.exists(file.path(df$dir, "adapter", "adapter_config.json")), , drop = FALSE]
-      }
+      valueFunc = function() runs_with_adapter(runs_dir)
     )
     shiny::observe({
       df <- runs()
@@ -97,7 +94,7 @@ mod_tryit_server <- function(id, state, runs_dir) {
 
     run <- shiny::reactive({
       shiny::req(input$run)
-      dragon_run(file.path(runs_dir, input$run))
+      run_open(input$run, runs_dir)
     })
 
     replies <- shiny::reactiveValues(tuned = NULL, base = NULL)

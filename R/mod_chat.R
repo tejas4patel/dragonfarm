@@ -99,10 +99,7 @@ mod_chat_server <- function(id, state, runs_dir) {
 
     runs <- shiny::reactivePoll(4000, session,
       checkFunc = function() runs_change_signature(runs_dir),
-      valueFunc = function() {
-        df <- dragon_runs(runs_dir)
-        df[file.exists(file.path(df$dir, "adapter", "adapter_config.json")), , drop = FALSE]
-      }
+      valueFunc = function() runs_with_adapter(runs_dir)
     )
     shiny::observe({
       df <- runs()
@@ -159,7 +156,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       if (!is_server_backend(bk)) {
         run_id <- input[[paste0("run", suffix)]]
         if (is.null(run_id) || !nzchar(run_id)) return(NULL)
-        x <- dragon_run(file.path(runs_dir, run_id))
+        x <- run_open(run_id, runs_dir)
       }
       sys <- if (nzchar(trimws(input$system %||% ""))) input$system
       docs <- documents_choice()
@@ -272,8 +269,8 @@ mod_chat_server <- function(id, state, runs_dir) {
     shiny::observeEvent(input$load, {
       f <- input$load
       if (is.null(f)) return()
-      rec <- tryCatch(read_json(f$datapath), error = function(e) NULL)
-      if (is.null(rec) || !identical(rec$format, "dragonfarm-chat")) {
+      rec <- chat_transcript_read(f$datapath)
+      if (is.null(rec)) {
         shiny::showNotification("That file is not a dragonfarm chat transcript.", type = "warning")
         return()
       }
@@ -438,7 +435,7 @@ mod_chat_server <- function(id, state, runs_dir) {
       content = function(file) {
         ch <- chat_obj()
         if (is.null(ch)) {
-          write_json(list(format = "dragonfarm-chat", version = 1L, saved_at = now_iso(), messages = history()), file)
+          chat_transcript_write(history(), file)
         } else {
           ch$save(file)
         }

@@ -530,3 +530,14 @@ as_pipeline_runs <- function(x) {
   ids <- Filter(Negate(is.null), lapply(rec$steps, function(s) s$run))
   lapply(ids, function(id) dragon_run(file.path(rec$runs_dir, id)))
 }
+
+# Saved pipeline records, newest first, and a signature for polling (U1).
+pipeline_records_signature <- function(runs_dir) {
+  f <- list.files(file.path(runs_dir, "pipelines"), pattern = "[.]json$", full.names = TRUE)
+  paste(f, file.info(f)$mtime, collapse = "|")
+}
+
+pipeline_records <- function(runs_dir) {
+  f <- sort(list.files(file.path(runs_dir, "pipelines"), pattern = "[.]json$", full.names = TRUE), decreasing = TRUE)
+  lapply(f, function(p) tryCatch(read_json_retry(p), error = function(e) NULL))
+}

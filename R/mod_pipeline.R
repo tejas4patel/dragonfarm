@@ -108,16 +108,8 @@ mod_pipeline_server <- function(id, state, runs_dir) {
     })
 
     records <- shiny::reactivePoll(3000, session,
-      checkFunc = function() {
-        d <- file.path(runs_dir, "pipelines")
-        f <- list.files(d, pattern = "\\.json$", full.names = TRUE)
-        paste(f, file.info(f)$mtime, collapse = "|")
-      },
-      valueFunc = function() {
-        d <- file.path(runs_dir, "pipelines")
-        f <- sort(list.files(d, pattern = "\\.json$", full.names = TRUE), decreasing = TRUE)
-        lapply(f, function(p) tryCatch(read_json_retry(p), error = function(e) NULL))
-      }
+      checkFunc = function() pipeline_records_signature(runs_dir),
+      valueFunc = function() pipeline_records(runs_dir)
     )
 
     output$pipelines <- shiny::renderUI({

@@ -258,3 +258,15 @@ skipped_note <- function(skipped) {
   sprintf("Skipped %d file%s dragonfarm can't read: %s.", length(skipped), if (length(skipped) == 1) "" else "s",
           paste(parts, collapse = ", "))
 }
+
+# Folder of saved document sets, for polling (U1).
+documents_signature <- function(runs_dir) runs_change_signature(file.path(runs_dir, "documents"))
+
+# Copy uploaded files (a Shiny fileInput data frame: name, datapath) into the
+# set's uploads folder. Returns that folder when it holds any file, else NULL.
+documents_stage_uploads <- function(name, files, runs_dir) {
+  upload_dir <- file.path(runs_dir, "documents", name, "uploads")
+  dir.create(upload_dir, recursive = TRUE, showWarnings = FALSE)
+  if (!is.null(files) && nrow(files)) file.copy(files$datapath, file.path(upload_dir, files$name), overwrite = TRUE)
+  if (dir.exists(upload_dir) && length(list.files(upload_dir))) upload_dir else NULL
+}

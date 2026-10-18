@@ -266,3 +266,14 @@ chat_retrieve <- function(docs, text, previous, k) {
   rownames(out) <- NULL
   out
 }
+
+# A transcript file from the app (U1): the parsed record, or NULL when the
+# file is not a dragonfarm chat transcript.
+chat_transcript_read <- function(path) {
+  rec <- tryCatch(read_json(path), error = function(e) NULL)
+  if (is.null(rec) || !identical(rec$format, "dragonfarm-chat")) NULL else rec
+}
+
+chat_transcript_write <- function(messages, file) {
+  write_json(list(format = "dragonfarm-chat", version = 1L, saved_at = now_iso(), messages = messages), file)
+}

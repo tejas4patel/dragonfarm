@@ -180,3 +180,6 @@ md_html <- function(text) {
   html <- gsub("<img[^>]*>", "", html, perl = TRUE)
   shiny::HTML(html)
 }
+
+# Hand a file to a Shiny download (U1: modules do not touch files).
+copy_for_download <- function(from, to) file.copy(from, to, overwrite = TRUE)

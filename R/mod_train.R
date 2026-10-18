@@ -129,10 +129,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
     # Finished runs with an adapter can be the starting point of the next stage.
     base_runs <- shiny::reactivePoll(4000, session,
       checkFunc = function() runs_change_signature(runs_dir),
-      valueFunc = function() {
-        df <- dragon_runs(runs_dir)
-        df[df$state == "succeeded" & file.exists(file.path(df$dir, "adapter", "adapter_config.json")), , drop = FALSE]
-      }
+      valueFunc = function() runs_with_adapter(runs_dir, succeeded_only = TRUE)
     )
     shiny::observe({
       df <- base_runs()
@@ -143,13 +140,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
                                selected = if (!is.null(selected) && selected %in% choices) selected else "")
     })
 
-    base <- shiny::reactive({
-      id <- input$base_run
-      if (is.null(id) || !nzchar(id)) return(NULL)
-      dir <- file.path(runs_dir, id)
-      if (!file.exists(file.path(dir, "config.json"))) return(NULL)
-      dragon_run(dir)
-    })
+    base <- shiny::reactive(run_find(input$base_run, runs_dir))
 
     # Tick 4-bit (and gradient checkpointing with it) when the chosen model's
     # full-precision weights would not leave room to train on this GPU; untick
@@ -351,7 +342,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
 
     output$bundle_zip <- shiny::downloadHandler(
       filename = function() basename(state$cloud$bundle),
-      content = function(file) file.copy(state$cloud$bundle, file),
+      content = function(file) copy_for_download(state$cloud$bundle, file),
       contentType = "application/zip"
     )
 
@@ -388,8 +379,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       cl <- state$cloud
       if (is.null(cl) || !isTRUE(cl$auto)) return(NULL)
       shiny::invalidateLater(5000)
-      st <- tryCatch(read_json(file.path(cl$run_dir, "status.json")), error = function(e) NULL)
-      st$remote
+      run_remote_state(cl$run_dir)
     })
     shiny::observe({
       r <- kaggle_progress()

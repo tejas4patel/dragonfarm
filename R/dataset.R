@@ -99,3 +99,17 @@ print.dragon_dataset <- function(x, ...) {
 dragon_example_data <- function() {
   system.file("extdata", "support_tickets.jsonl", package = "dragonfarm")
 }
+
+# TRUE when the first non-empty line of a JSONL file is an object with a
+# "messages" list (the chat format).
+looks_like_conversations <- function(path) {
+  con <- file(path, open = "r", encoding = "UTF-8")
+  on.exit(close(con))
+  repeat {
+    line <- readLines(con, n = 1, warn = FALSE)
+    if (!length(line)) return(FALSE)
+    if (nzchar(trimws(line))) break
+  }
+  x <- tryCatch(jsonlite::fromJSON(line, simplifyVector = FALSE), error = function(e) NULL)
+  is.list(x) && is.list(x$messages) && length(x$messages) > 0
+}

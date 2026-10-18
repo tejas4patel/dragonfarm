@@ -120,7 +120,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
       valueFunc = function() dragon_runs(runs_dir)
     )
     archived_runs_poll <- shiny::reactivePoll(3000, session,
-      checkFunc = function() runs_change_signature(file.path(runs_dir, "archived")),
+      checkFunc = function() archived_runs_signature(runs_dir),
       valueFunc = function() dragon_archived_runs(runs_dir)
     )
     runs <- shiny::reactive(if (isTRUE(input$show_archived)) archived_runs_poll() else active_runs())
@@ -210,11 +210,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
     # Where the selected run came from, as a short Markdown report.
     output$provenance <- shiny::downloadHandler(
       filename = function() sprintf("provenance-%s.md", input$run %||% "run"),
-      content = function(file) {
-        p <- provenance_report(run(), runs_dir = runs_dir)
-        store_record_event("export", run()$id, ok = TRUE, detail = list(what = "provenance"), runs_dir = runs_dir)
-        writeLines(provenance_text(p), file, useBytes = TRUE)
-      },
+      content = function(file) provenance_write(run(), file, runs_dir = runs_dir),
       contentType = "text/markdown"
     )
 
@@ -352,11 +348,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
     # (a req() inside one closes the session), so they use this rather than run().
     current_run <- shiny::reactive({
       id <- input$run
-      if (is.null(id) || !nzchar(id)) return(NULL)
-      dir <- file.path(runs_dir, id)
-      if (!file.exists(file.path(dir, "config.json"))) return(NULL)
+      r <- run_find(id, runs_dir)
+      if (is.null(r)) return(NULL)
       # Reuse the live handle when this is the run we launched, so a crash is detected quickly.
-      if (!is.null(state$run) && identical(state$run$id, id)) state$run else dragon_run(dir)
+      if (!is.null(state$run) && identical(state$run$id, id)) state$run else r
     })
     run <- shiny::reactive({
       r <- current_run()
@@ -364,15 +359,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
       r
     })
 
-    file_sig <- function(path) {
-      if (!file.exists(path)) return("")
-      info <- file.info(path)
-      paste(info$mtime, info$size)
-    }
     run_file_sig <- function(name) {
       r <- current_run()
       if (is.null(r)) return("")
-      paste(r$id, file_sig(file.path(r$dir, name)))
+      run_file_signature(r, name)
     }
     progress <- shiny::reactivePoll(1000, session,
       checkFunc = function() run_file_sig("progress.jsonl"),
@@ -514,7 +504,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
         shiny::showNotification("This run is not running.", type = "warning")
         return()
       }
-      writeLines(now_iso(), file.path(r$dir, "cancel.request"))
+      run_request_cancel(r)
       shiny::showNotification("Cancel requested. The trainer saves a checkpoint and stops after the current step.", type = "message")
     })
 

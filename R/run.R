@@ -237,3 +237,43 @@ print.dragon_run <- function(x, ...) {
   if (!is.null(st$error)) cli::cli_text("{.strong Error:} {error_message(st$error, st$error_code)}")
   invisible(x)
 }
+
+# Store-level helpers for the app (U1): Shiny modules ask these instead of
+# building paths themselves.
+
+# Runs that have a trained adapter; with succeeded_only, finished ones only.
+runs_with_adapter <- function(runs_dir, succeeded_only = FALSE) {
+  df <- dragon_runs(runs_dir)
+  keep <- file.exists(file.path(df$dir, "adapter", "adapter_config.json"))
+  if (succeeded_only) keep <- keep & df$state == "succeeded"
+  df[keep, , drop = FALSE]
+}
+
+# A run by its id: run_open() errors like dragon_run() when there is none;
+# run_find() returns NULL instead (for pickers whose choice may be stale).
+run_open <- function(id, runs_dir) dragon_run(file.path(runs_dir, id))
+
+run_find <- function(id, runs_dir) {
+  if (is.null(id) || !nzchar(id)) return(NULL)
+  dir <- file.path(runs_dir, id)
+  if (!file.exists(file.path(dir, "config.json"))) return(NULL)
+  dragon_run(dir)
+}
+
+# Ask a running trainer to stop after its current step.
+run_request_cancel <- function(run) writeLines(now_iso(), run_path(run, "cancel.request"))
+
+# Changes when one of a run's files changes (for polling).
+run_file_signature <- function(run, name) {
+  p <- run_path(run, name)
+  if (!file.exists(p)) return(paste(run$id, ""))
+  info <- file.info(p)
+  paste(run$id, info$mtime, info$size)
+}
+
+# What the cloud round trip last reported for a run folder.
+run_remote_state <- function(run_dir) {
+  tryCatch(read_json(file.path(run_dir, "status.json")), error = function(e) NULL)$remote
+}
+
+archived_runs_signature <- function(runs_dir) runs_change_signature(file.path(runs_dir, "archived"))

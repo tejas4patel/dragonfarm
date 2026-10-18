@@ -223,3 +223,11 @@ governance_findings <- function(run, runs_dir = dragon_runs_dir()) {
   )
   do.call(rbind, Filter(Negate(is.null), out))
 }
+
+# The provenance report as a Markdown file (Monitor's download); recorded.
+provenance_write <- function(run, file, runs_dir = dragon_runs_dir()) {
+  p <- provenance_report(run, runs_dir = runs_dir)
+  store_record_event("export", p$run, ok = TRUE, detail = list(what = "provenance"), runs_dir = runs_dir)
+  writeLines(provenance_text(p), file, useBytes = TRUE)
+  invisible(file)
+}

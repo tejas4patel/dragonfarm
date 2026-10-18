@@ -127,7 +127,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
     })
 
     saved_sets <- shiny::reactivePoll(4000, session,
-      checkFunc = function() runs_change_signature(file.path(runs_dir, "documents")),
+      checkFunc = function() documents_signature(runs_dir),
       valueFunc = function() tryCatch(dragon_documents_list(runs_dir), error = function(e) NULL)
     )
     shiny::observe({
@@ -172,10 +172,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
         shiny::showNotification("Add at least one file or page first. If a file is still uploading, wait for \"Upload complete\" under the drop box.", type = "warning", duration = 8)
         return()
       }
-      upload_dir <- file.path(runs_dir, "documents", name, "uploads")
-      dir.create(upload_dir, recursive = TRUE, showWarnings = FALSE)
-      if (nrow(files)) file.copy(files$datapath, file.path(upload_dir, files$name), overwrite = TRUE)
-      paths <- c(if (dir.exists(upload_dir) && length(list.files(upload_dir))) upload_dir, urls)
+      paths <- c(documents_stage_uploads(name, files, runs_dir), urls)
       shiny::withProgress(message = "Reading and indexing. The first time downloads a small embedding model.", value = 0.4, {
         docs <- tryCatch(dragon_documents(paths, name = name, runs_dir = runs_dir), error = function(e) { notify_error(e); NULL })
       })
@@ -276,10 +273,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
 
     runs <- shiny::reactivePoll(4000, session,
       checkFunc = function() runs_change_signature(runs_dir),
-      valueFunc = function() {
-        df <- dragon_runs(runs_dir)
-        df[file.exists(file.path(df$dir, "adapter", "adapter_config.json")), , drop = FALSE]
-      }
+      valueFunc = function() runs_with_adapter(runs_dir)
     )
     shiny::observe({
       df <- runs()
@@ -293,7 +287,7 @@ mod_documents_server <- function(id, state, nav_to, runs_dir) {
     chosen_model <- function() {
       m <- input$model
       if (is.null(m) || !nzchar(m)) return(NULL)
-      if (startsWith(m, "run:")) dragon_run(file.path(runs_dir, sub("^run:", "", m))) else m
+      if (startsWith(m, "run:")) run_open(sub("^run:", "", m), runs_dir) else m
     }
 
     # Pieces of an answer pushed straight to the browser as they are written;
