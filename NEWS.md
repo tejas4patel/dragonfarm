@@ -224,7 +224,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   answer tool only once a person has approved it as a model version in
   Monitor; until then it is refused with NOT_APPROVED before anything runs.
   Untrained models, Try it and evaluation are not affected, so a candidate
-  can still be checked before it is approved.
+  can still be checked before it is approved. On a server (Posit Connect, or
+  a shared Postgres catalogue) governed mode and the four-eyes sign-off are
+  on by default; on a single laptop they are off. A choice saved in Settings
+  always wins.
 
 * More of the record-keeping is in the app, not just in R: Monitor has a
   "Model versions" card (propose a finished, evaluated run as a version of a

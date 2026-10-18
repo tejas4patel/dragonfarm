@@ -147,3 +147,20 @@ test_that("run pickers say which runs are not approved, only in governed mode", 
   dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "ok", runs_dir = runs)
   expect_equal(dragonfarm:::approval_note(c("run-1", "run-2"), runs), c("", " - not approved"))
 })
+
+test_that("governed mode and four-eyes are on by default on a server and off on a laptop (D-10)", {
+  runs <- withr::local_tempdir()
+  withr::local_envvar(RSTUDIO_PRODUCT = NA, CONNECT_SERVER = NA, DRAGONFARM_CATALOG = NA)
+  withr::local_options(dragonfarm.runs_dir = runs, dragonfarm.catalog = NULL)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  p <- dragonfarm:::policy_current(runs)
+  expect_false(p$registry$governed); expect_false(p$registry$separate_signer)   # a laptop
+  withr::local_envvar(RSTUDIO_PRODUCT = "CONNECT")
+  p <- dragonfarm:::policy_current(runs)
+  expect_true(p$registry$governed); expect_true(p$registry$separate_signer)     # on Posit Connect
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- FALSE
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "pilot without sign-off", runs_dir = runs)
+  p <- dragonfarm:::policy_current(runs)
+  expect_false(p$registry$governed)                                               # a saved choice wins
+  expect_true(p$registry$separate_signer)                                         # the unset one keeps the default
+})

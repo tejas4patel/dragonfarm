@@ -13,6 +13,6 @@
   },
   "budgets": {"max_steps": 30, "max_gpu_minutes": 120},
   "outbound": {"allowed_hosts": null, "note": "Hosts this machine may send data to: null for any, [] for none, or a list such as [\"api.anthropic.com\", \"*.huggingface.co\"]. Every outbound call is recorded either way."},
-  "registry": {"separate_signer": false, "governed": false, "note": "separate_signer true: a model version must be signed off by someone other than the person who proposed it (four eyes). governed true: a trained run answers people only when it is an approved model version."},
+  "registry": {"separate_signer": null, "governed": null, "note": "separate_signer true: a model version must be signed off by someone other than the person who proposed it (four eyes). governed true: a trained run answers people only when it is an approved model version. null (unset): on for a server (Posit Connect or a shared Postgres catalogue), off on a single laptop."},
   "min_model_b": {"default": 3, "note": "Smallest model, in billions of parameters, that may drive an agent. 3 from 20 tool-use tasks (0.5B 13, 1.5B 15, 3B 17, 7B 18 right). The answer agent needs 7: on the policies suite a 3B agent got 16 of 18 against 18 for the fixed workflow, a 7B 18."}
 }

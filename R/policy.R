@@ -15,9 +15,24 @@ policy_current <- function(runs_dir = dragon_runs_dir()) {
     body <- policy_default()
     store_exec(con, "INSERT INTO policies (version, body, set_by, set_at) VALUES (1, ?, 'dragonfarm default', ?)",
                    params = list(as.character(jsonlite::toJSON(body, auto_unbox = TRUE, null = "null")), now_utc()))
-    return(c(body, list(version = 1L)))
+    return(policy_effective(c(body, list(version = 1L))))
   }
-  c(jsonlite::fromJSON(row$body, simplifyVector = FALSE), list(version = as.integer(row$version)))
+  policy_effective(c(jsonlite::fromJSON(row$body, simplifyVector = FALSE), list(version = as.integer(row$version))))
+}
+
+# D-10: governed mode and the four-eyes sign-off are on by default on a
+# server (Posit Connect, or a shared Postgres catalogue) and off on a single
+# laptop, where one person would otherwise have to approve their own runs.
+# A value an admin has saved always wins; only an unset one takes the default.
+deployment_is_server <- function() {
+  !is.null(store_shared()) || identical(toupper(Sys.getenv("RSTUDIO_PRODUCT")), "CONNECT") || nzchar(Sys.getenv("CONNECT_SERVER"))
+}
+
+policy_effective <- function(p) {
+  server <- deployment_is_server()
+  if (is.null(p$registry$governed)) p$registry$governed <- server
+  if (is.null(p$registry$separate_signer)) p$registry$separate_signer <- server
+  p
 }
 
 # Problems with a policy (empty when it is sound): every agent's tools must

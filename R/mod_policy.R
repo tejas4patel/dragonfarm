@@ -95,6 +95,7 @@ mod_policy_server <- function(id, runs_dir) {
                              value = isTRUE(p$registry$separate_signer)),
         shiny::checkboxInput(ns("governed"), "Only approved model versions answer questions (trained runs need a sign-off first)",
                              value = isTRUE(p$registry$governed)),
+        shiny::p(class = "hint small", "Until saved here, both are on for a server (Posit Connect or a shared catalogue) and off on a single laptop."),
         shiny::tags$h6("People and documents"),
         bslib::layout_columns(col_widths = c(6, 6),
           shiny::textInput(ns("admins"), "Admins (names, comma-separated)", value = paste(unlist(p$admins), collapse = ", "), width = "100%"),
