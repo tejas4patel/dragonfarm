@@ -307,3 +307,46 @@ test_that("a server backend keeps the key's variable, not the key (D-14)", {
   withr::local_envvar(MY_TEAM_KEY = "sk-team")
   expect_equal(dragonfarm:::backend_key(own), "sk-team")
 })
+
+test_that("Ollama is found in its install folder when R started before it was installed", {
+  local <- withr::local_tempdir()
+  exe <- file.path(local, "Programs", "Ollama", "ollama.exe")
+  dir.create(dirname(exe), recursive = TRUE); file.create(exe)
+  withr::local_envvar(PATH = "", LOCALAPPDATA = local)
+  expect_equal(normalizePath(dragonfarm:::ollama_path()), normalizePath(exe))
+})
+
+test_that("a model Ollama registers but cannot run is removed, with the reason", {
+  merged <- withr::local_tempdir()
+  writeLines("{}", file.path(merged, "config.json")); file.create(file.path(merged, "model.safetensors"))
+  calls <- list()
+  local_mocked_bindings(run = function(command, args, ...) { calls[[length(calls) + 1]] <<- args; list(status = 0, stdout = "", stderr = "") }, .package = "processx")
+  local_mocked_bindings(ollama_try = function(name, ...) "MLX runtime is not available: failed to load MLX dynamic library")
+  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama"), error = function(e) e)
+  expect_s3_class(err, "dragonfarm_error")
+  expect_match(conditionMessage(err), "could not answer")
+  expect_match(conditionMessage(err), "dragon_export_gguf")
+  expect_equal(calls[[1]][1:2], c("create", "df-test"))
+  expect_equal(calls[[2]], c("rm", "df-test"))                          # the unusable copy is removed
+})
+
+test_that("ollama_try reports Ollama's error, and NULL when it answers", {
+  skip_if_not_installed("httr2")
+  reply <- NULL
+  local_mocked_bindings(req_perform = function(req, ...) reply, .package = "httr2")
+  reply <- httr2::response(status_code = 500, headers = list(`content-type` = "application/json"),
+                           body = charToRaw('{"error":"MLX runtime is not available"}'))
+  expect_match(dragonfarm:::ollama_try("m"), "MLX runtime")
+  reply <- httr2::response(status_code = 200, headers = list(`content-type` = "application/json"), body = charToRaw('{"response":"Hi"}'))
+  expect_null(dragonfarm:::ollama_try("m"))
+})
+
+test_that("an MLX import refusal points at the GGUF route", {
+  merged <- withr::local_tempdir()
+  writeLines("{}", file.path(merged, "config.json")); file.create(file.path(merged, "model.safetensors"))
+  local_mocked_bindings(run = function(command, args, ...) list(status = 1, stdout = "", stderr = 'Error: unsupported MLX architecture: model "Qwen2ForCausalLM"'), .package = "processx")
+  err <- tryCatch(dragon_serve_ollama(merged, name = "df-test", ollama = "ollama"), error = function(e) e)
+  expect_s3_class(err, "dragonfarm_error")
+  expect_match(conditionMessage(err), "Qwen2ForCausalLM")
+  expect_match(conditionMessage(err), "dragon_export_gguf")
+})

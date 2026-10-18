@@ -4,12 +4,7 @@
 \alias{dragon_serve_ollama}
 \title{Serve a run's model with Ollama}
 \usage{
-dragon_serve_ollama(
-  run,
-  name = NULL,
-  quantize = NULL,
-  ollama = Sys.which("ollama")
-)
+dragon_serve_ollama(run, name = NULL, quantize = NULL, ollama = ollama_path())
 }
 \arguments{
 \item{run}{A \code{dragon_run}, or a merged model directory.}
@@ -25,14 +20,20 @@ to shrink the served model.}
 A \code{dragon_backend} for the served model.
 }
 \description{
-Merges the adapter into the base model (if not done already) and
-registers the result with Ollama, which imports safetensors directly for
-the Llama, Qwen2, Gemma, and related families. Ollama then serves it
-quickly on the CPU or GPU of whatever machine it runs on, and the returned
-backend points \code{\link[=dragon_generate]{dragon_generate()}} and \code{\link[=dragon_chat]{dragon_chat()}} at it.
+Merges the adapter into the base model (if not done already), registers
+the result with Ollama, and checks that Ollama can answer with it. The
+returned backend points \code{\link[=dragon_generate]{dragon_generate()}} and \code{\link[=dragon_chat]{dragon_chat()}} at it.
 }
 \details{
-Needs the \code{ollama} command on the PATH and the Ollama service running.
+Recent Ollama versions import safetensors through their MLX engine. With
+Ollama 0.40.5 on Windows the import worked but the model could not answer
+("MLX runtime is not available"), for Qwen and SmolLM2 runs alike; other
+systems were not tested. When that happens the unusable copy is removed
+and the error says so. A GGUF file made with \code{\link[=dragon_export_gguf]{dragon_export_gguf()}}
+(which needs llama.cpp) is the other route into Ollama.
+
+Needs Ollama installed and its service running. The \code{ollama} command is
+looked for on the PATH and then in Ollama's usual install folders.
 }
 \examples{
 if (interactive()) {
