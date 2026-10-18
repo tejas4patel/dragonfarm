@@ -46,9 +46,9 @@ if (requireNamespace("ellmer", quietly = TRUE)) {
 #>  [3] "evaluate_run"             "list_document_sets"      
 #>  [5] "list_runs"                "promote_model"           
 #>  [7] "read_documents"           "recall_training"         
-#>  [9] "run_status"               "search_documents"        
-#> [11] "train_model"              "verify_document_set"     
-#> [13] "write_practice_questions"
+#>  [9] "run_status"               "scan_personal_data"      
+#> [11] "search_documents"         "train_model"             
+#> [13] "verify_document_set"      "write_practice_questions"
 if (FALSE) { # \dontrun{
 chat <- ellmer::chat_anthropic()
 chat$register_tools(dragon_ellmer_tools())
