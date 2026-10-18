@@ -283,6 +283,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   turned on there too, with a daily cap. Messages that used to say "set
   HF_TOKEN in the R session" now point to Settings.
 
+* `dragon_backend_server()` gains `api_key_env`, the name of the environment
+  variable that holds the key; the key is read each time a request is sent
+  and never stored in the backend object. With no key given, it now keeps
+  the name `DRAGONFARM_API_KEY` (or `OPENAI_API_KEY`) rather than copying
+  the key, so a backend saved with a background job holds no key. A key
+  passed as `api_key` still works, with a warning once per session.
+
 * Try it's judge can be a free-tier model (OpenRouter or Groq) as well as
   Claude or a local model, once its key and opt-in are set in Settings.
   A judge running in the background looks its key up when it is called, so

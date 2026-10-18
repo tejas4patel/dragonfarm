@@ -55,7 +55,7 @@ provider_backend <- function(name, model, runs_dir = dragon_runs_dir()) {
     cli::cli_abort(c("No {p$title} key found.", "i" = "Create one at {.url {p$sign_up}} and set {.envvar {p$key_env}}."),
                    class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
-  b <- dragon_backend_server(p$base_url, model, api_key = key)
+  b <- dragon_backend_server(p$base_url, model, api_key_env = p$key_env)
   b$provider <- name
   b$runs_dir <- runs_dir
   b

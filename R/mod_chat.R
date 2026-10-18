@@ -134,7 +134,12 @@ mod_chat_server <- function(id, state, runs_dir) {
         server = {
           u <- trimws(input[[paste0("server_url", suffix)]] %||% "")
           mo <- trimws(input[[paste0("server_model", suffix)]] %||% "")
-          if (nzchar(u) && nzchar(mo)) dragon_backend_server(u, mo, api_key = input[[paste0("server_key", suffix)]] %||% "")
+          if (nzchar(u) && nzchar(mo)) {
+            b <- dragon_backend_server(u, mo)
+            typed <- input[[paste0("server_key", suffix)]] %||% ""
+            if (nzchar(typed)) b$api_key <- typed   # this session only; Chat is never saved to a background job
+            b
+          }
         },
         dragon_backend_local()
       )

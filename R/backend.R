@@ -33,8 +33,13 @@
 #'   are downloaded in full (about 15 GB for a 7B) and quantized at load.
 #' @param url Base URL of the server, ending in `/v1`.
 #' @param model Model name as the server knows it.
-#' @param api_key Bearer token, if the server needs one. Defaults to
-#'   `DRAGONFARM_API_KEY`, then `OPENAI_API_KEY`.
+#' @param api_key Bearer token, if the server needs one. Prefer
+#'   `api_key_env`: a key given here is kept inside the backend object, so it
+#'   travels wherever the object is saved (a background job, for example),
+#'   and a warning says so once per session.
+#' @param api_key_env Name of the environment variable that holds the key,
+#'   read each time a request is sent, so the key is never stored. Defaults to
+#'   `DRAGONFARM_API_KEY` when it is set, else `OPENAI_API_KEY`.
 #' @param headers Extra HTTP headers as a named character vector.
 #' @return A `dragon_backend` object.
 #' @name dragon_backend
@@ -61,20 +66,34 @@ dragon_backend_local <- function(keep_loaded = TRUE, device = "auto", dtype = "a
 
 #' @rdname dragon_backend
 #' @export
-dragon_backend_server <- function(url, model, api_key = NULL, headers = NULL) {
+dragon_backend_server <- function(url, model, api_key = NULL, headers = NULL, api_key_env = NULL) {
   check_string(url, "url")
   check_string(model, "model")
   url <- sub("/+$", "", url)
   if (!grepl("/v1$", url)) url <- paste0(url, "/v1")
-  api_key <- api_key %||% Sys.getenv("DRAGONFARM_API_KEY", unset = Sys.getenv("OPENAI_API_KEY"))
-  structure(list(kind = "server", url = url, model = model, api_key = api_key, headers = headers),
+  if (!is.null(api_key) && nzchar(api_key)) {
+    cli::cli_warn(c("A key given as {.arg api_key} is kept inside the backend object.",
+                    "i" = "Use {.arg api_key_env} with the name of an environment variable, so the key is read when needed and never stored."),
+                  .frequency = "once", .frequency_id = "dragonfarm_api_key")
+  }
+  # The key's variable, not its value (D-14): read each time a request is sent.
+  api_key_env <- api_key_env %||% if (nzchar(Sys.getenv("DRAGONFARM_API_KEY"))) "DRAGONFARM_API_KEY" else "OPENAI_API_KEY"
+  structure(list(kind = "server", url = url, model = model, api_key = if (!is.null(api_key) && nzchar(api_key)) api_key,
+                 api_key_env = api_key_env, headers = headers),
             class = c("dragon_backend_server", "dragon_backend"))
+}
+
+# The key for a request: one given directly, else the named variable now.
+backend_key <- function(backend) {
+  if (!is.null(backend$api_key) && nzchar(backend$api_key)) return(backend$api_key)
+  if (is.null(backend$api_key_env) || !nzchar(backend$api_key_env)) return("")
+  Sys.getenv(backend$api_key_env)
 }
 
 #' @rdname dragon_backend
 #' @export
 dragon_backend_ollama <- function(model, url = "http://localhost:11434") {
-  b <- dragon_backend_server(url, model, api_key = "")
+  b <- dragon_backend_server(url, model, api_key_env = "")
   b$kind <- "ollama"
   b
 }
@@ -308,8 +327,9 @@ chat_completion_request <- function(backend, messages, max_new_tokens, temperatu
     httr2::req_headers(`content-type` = "application/json") |>
     httr2::req_body_json(body, auto_unbox = TRUE) |>
     httr2::req_error(is_error = function(resp) FALSE)
-  if (!is.null(backend$api_key) && nzchar(backend$api_key)) {
-    req <- httr2::req_headers(req, Authorization = paste("Bearer", backend$api_key), .redact = "Authorization")
+  key <- backend_key(backend)
+  if (nzchar(key)) {
+    req <- httr2::req_headers(req, Authorization = paste("Bearer", key), .redact = "Authorization")
   }
   if (length(backend$headers)) req <- httr2::req_headers(req, !!!as.list(backend$headers))
   req

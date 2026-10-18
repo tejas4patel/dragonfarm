@@ -14,7 +14,13 @@ dragon_backend_local(
   load_in_4bit = "auto"
 )
 
-dragon_backend_server(url, model, api_key = NULL, headers = NULL)
+dragon_backend_server(
+  url,
+  model,
+  api_key = NULL,
+  headers = NULL,
+  api_key_env = NULL
+)
 
 dragon_backend_ollama(model, url = "http://localhost:11434")
 
@@ -37,10 +43,16 @@ are downloaded in full (about 15 GB for a 7B) and quantized at load.}
 
 \item{model}{Model name as the server knows it.}
 
-\item{api_key}{Bearer token, if the server needs one. Defaults to
-\code{DRAGONFARM_API_KEY}, then \code{OPENAI_API_KEY}.}
+\item{api_key}{Bearer token, if the server needs one. Prefer
+\code{api_key_env}: a key given here is kept inside the backend object, so it
+travels wherever the object is saved (a background job, for example),
+and a warning says so once per session.}
 
 \item{headers}{Extra HTTP headers as a named character vector.}
+
+\item{api_key_env}{Name of the environment variable that holds the key,
+read each time a request is sent, so the key is never stored. Defaults to
+\code{DRAGONFARM_API_KEY} when it is set, else \code{OPENAI_API_KEY}.}
 }
 \value{
 A \code{dragon_backend} object.

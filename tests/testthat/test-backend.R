@@ -16,7 +16,7 @@ test_that("backend constructors normalize their inputs", {
   loc <- dragon_backend_local()
   expect_s3_class(loc, "dragon_backend_local")
   expect_true(loc$keep_loaded)
-  srv <- dragon_backend_server("https://host.example.com", "my/model", api_key = "k")
+  srv <- suppressWarnings(dragon_backend_server("https://host.example.com", "my/model", api_key = "k"))   # the key warning has its own test
   expect_equal(srv$url, "https://host.example.com/v1")
   expect_equal(dragon_backend_server("http://h/v1/", "m", api_key = "")$url, "http://h/v1")
   oll <- dragon_backend_ollama("support-0.5b")
@@ -34,7 +34,7 @@ test_that("backend constructors normalize their inputs", {
 
 test_that("the chat completion request follows the OpenAI shape", {
   skip_if_not_installed("httr2")
-  b <- dragon_backend_server("https://host/v1", "m", api_key = "secret", headers = c(`x-extra` = "1"))
+  b <- suppressWarnings(dragon_backend_server("https://host/v1", "m", api_key = "secret", headers = c(`x-extra` = "1")))
   req <- dragonfarm:::chat_completion_request(b, list(list(role = "user", content = "hi")), 64, 0.2, 0.9)
   expect_equal(req$url, "https://host/v1/chat/completions")
   body <- req$body$data
@@ -288,4 +288,22 @@ test_that("conversations reach the worker as a JSON array even when named", {
   backend_generate(dragon_backend_local(keep_loaded = TRUE), list(model = "m"), convos)
   json <- as.character(jsonlite::toJSON(seen$conversations, auto_unbox = TRUE))
   expect_true(startsWith(json, "[["))
+})
+
+test_that("a server backend keeps the key's variable, not the key (D-14)", {
+  withr::local_envvar(DRAGONFARM_API_KEY = "sk-from-env-PROBE", OPENAI_API_KEY = NA)
+  b <- dragon_backend_server("https://models.example.com/v1", "m")
+  expect_equal(b$api_key_env, "DRAGONFARM_API_KEY")
+  expect_null(b$api_key)
+  expect_false(length(grepRaw("sk-from-env-PROBE", serialize(b, NULL), fixed = TRUE)) > 0)   # nothing to save to disk
+  expect_equal(dragonfarm:::backend_key(b), "sk-from-env-PROBE")                              # read when sending
+  withr::local_envvar(DRAGONFARM_API_KEY = "sk-rotated")
+  expect_equal(dragonfarm:::backend_key(b), "sk-rotated")                                     # a rotated key is picked up
+  expect_equal(dragonfarm:::backend_key(dragon_backend_ollama("m")), "")                      # Ollama sends none
+  rlang::local_options(rlib_warning_verbosity = "verbose")                                  # the warning is once per session
+  expect_warning(d <- dragon_backend_server("https://x.example.com/v1", "m", api_key = "sk-direct"), "kept inside")
+  expect_equal(dragonfarm:::backend_key(d), "sk-direct")
+  own <- dragon_backend_server("https://x.example.com/v1", "m", api_key_env = "MY_TEAM_KEY")
+  withr::local_envvar(MY_TEAM_KEY = "sk-team")
+  expect_equal(dragonfarm:::backend_key(own), "sk-team")
 })
