@@ -240,3 +240,20 @@ test_that("build_training_set saves the rows train_model would use, for a person
   expect_true(rows[[2]]$negative)
   expect_equal(dragonfarm:::tool_call("build_training_set", list(questions = qfile), agent = "answer")$code, "NOT_ALLOWED")
 })
+
+test_that("no agent can change the policy: no tool writes it, and asking for one is refused", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  reg <- dragonfarm:::tool_registry()
+  expect_false(any(grepl("polic|budget|approv|audit", names(reg))))   # no tool touches policy, budgets, approvals or the record
+  v <- dragonfarm:::policy_current()$version
+  for (agent in names(dragonfarm:::policy_current()$agents)) {
+    r <- dragonfarm:::tool_call("set_policy", list(agents = list()), agent = agent)
+    expect_false(r$ok)
+  }
+  expect_equal(dragonfarm:::policy_current()$version, v)
+  ev <- dragonfarm:::store_events(runs_dir = runs)
+  expect_equal(sum(ev$name == "set_policy"), length(dragonfarm:::policy_current()$agents))   # every attempt is recorded
+  expect_true(all(ev$ok[ev$name == "set_policy"] == 0))              # every attempt is in the record, refused
+})
