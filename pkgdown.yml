@@ -7,6 +7,7 @@ articles:
   articles/documents: documents.html
   articles/evaluate: evaluate.html
   articles/fda-guidance: fda-guidance.html
+  articles/for-it-and-quality: for-it-and-quality.html
   articles/introducing-0-4-0: introducing-0-4-0.html
   articles/model-sizes: model-sizes.html
   articles/offline-install: offline-install.html
@@ -16,7 +17,7 @@ articles:
   reinforcement-learning: reinforcement-learning.html
   shiny-app: shiny-app.html
   articles/under-the-hood: under-the-hood.html
-last_built: 2026-10-18T05:12Z
+last_built: 2026-10-18T05:40Z
 urls:
   reference: https://dragonfarm.dev/reference
   article: https://dragonfarm.dev/articles

@@ -78,9 +78,10 @@ index when you download.
 ## One catalogue for the team
 
 Each runs folder keeps a small record of what happened: answers and
-where they came from, approvals, policies, model versions and sign-offs.
-On a laptop that is a file in the folder. For a team, point everyone at
-one Postgres database instead, for example in the server’s `.Renviron`:
+where they came from, approvals, policies, model versions and who signed
+them off. On a laptop that is a file in the folder. For a team, point
+everyone at one Postgres database instead, for example in the server’s
+`.Renviron`:
 
 ``` sh
 DRAGONFARM_CATALOG=postgresql://dragonfarm:PASSWORD@db.example.com:5432/dragonfarm

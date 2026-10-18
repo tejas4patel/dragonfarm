@@ -39,6 +39,8 @@
   settings](https://dragonfarm.dev/articles/under-the-hood.md):
 - [Install without the
   internet](https://dragonfarm.dev/articles/offline-install.md):
+- [For IT and quality
+  teams](https://dragonfarm.dev/articles/for-it-and-quality.md):
 
 ### Announcements
 
