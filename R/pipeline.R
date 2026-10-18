@@ -214,6 +214,12 @@ launch_rscript <- function(script_path, log_path) {
 # R code the background process runs. Uses the installed package, or the
 # development copy when the pipeline was started from load_all().
 pipeline_script <- function(spec_path) {
+  sprintf("%s; dragonfarm:::run_pipeline_file('%s')", package_loader(), normalizePath(spec_path, winslash = "/", mustWork = FALSE))
+}
+
+# How a background R process loads dragonfarm: the installed package, or the
+# development copy when this session used load_all().
+package_loader <- function() {
   loader <- "suppressPackageStartupMessages(library(dragonfarm))"
   if (requireNamespace("pkgload", quietly = TRUE) && isTRUE(pkgload::is_dev_package("dragonfarm"))) {
     # pkgload::pkg_path() takes a directory, not a package name; the
@@ -221,7 +227,7 @@ pipeline_script <- function(spec_path) {
     root <- tryCatch(dirname(system.file(package = "dragonfarm")), error = function(e) NULL)
     if (!is.null(root) && nzchar(root)) loader <- sprintf("pkgload::load_all('%s', quiet = TRUE)", normalizePath(root, winslash = "/", mustWork = FALSE))
   }
-  sprintf("%s; dragonfarm:::run_pipeline_file('%s')", loader, normalizePath(spec_path, winslash = "/", mustWork = FALSE))
+  loader
 }
 
 run_pipeline_file <- function(spec_path) {

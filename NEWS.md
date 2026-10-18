@@ -147,7 +147,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   packs the run, saves it to your Downloads folder and opens the notebook,
   which now asks Colab and Kaggle for a GPU by itself. In Colab you press
   Run all and pick the file; when the results land in Downloads, the app
-  imports them. The steps the app shows no longer include any code.
+  imports them. The steps the app shows no longer include any code. With a
+  Kaggle key (kaggle.json), Kaggle needs no clicks at all: the app uploads
+  the run as a private dataset, starts the notebook on a GPU, waits, and
+  imports the results, showing where it is as it goes.
 
 * Every answer from documents (`dragon_ask()`, the Ask step, and chats with
   documents) is recorded in the runs folder's catalogue with what it came

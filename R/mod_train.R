@@ -49,6 +49,7 @@ mod_train_ui <- function(id) {
           "No GPU here? Train on a cloud GPU", value = "cloud",
           shiny::p(class = "hint", "Same run, on a free cloud GPU. One click packs the run, saves it to your Downloads folder and opens the notebook; there you press Run all and pick the file. The results come back by themselves."),
           shiny::selectInput(ns("provider"), "Provider", choices = cloud_provider_choices(), width = "100%"),
+          shiny::uiOutput(ns("provider_hint")),
           shiny::actionButton(ns("bundle"), "Train on the cloud GPU", class = "btn-primary"),
           shiny::uiOutput(ns("cloud_ready"))
         )
@@ -292,8 +293,17 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
                              rewards = s$rewards, group_size = s$group_size,
                              temperature = s$rl_temperature, max_new_tokens = s$rl_max_new_tokens)
         info <- dragon_remote(run, provider, open = FALSE)
+        # Kaggle with a key: the whole round trip runs in the background.
+        if (identical(provider, "kaggle") && kaggle_ready()) info$auto <- kaggle_start(run)
         list(run = run, info = info)
       }, error = function(e) { notify_error(e); NULL })
+      if (!is.null(res) && !is.null(res$info$auto)) {
+        state$run <- res$run
+        state$cloud <- list(run_id = res$run$id, run_dir = res$run$dir, provider = provider, url = res$info$url,
+                            bundle = res$info$bundle, auto = TRUE, local = FALSE, since = Sys.time(), imported = FALSE)
+        shiny::showNotification("Sent to Kaggle. Training runs there by itself; follow it here.", type = "message")
+        return()
+      }
       if (!is.null(res)) {
         # On this machine: save the zip where the notebook's file picker
         # opens, and open the provider in the system browser. On a server
@@ -334,9 +344,42 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       }
     })
 
+    output$provider_hint <- shiny::renderUI({
+      if (!identical(input$provider, "kaggle")) return(NULL)
+      if (kaggle_ready()) shiny::p(class = "hint", "Your Kaggle key is set up: dragonfarm does everything on Kaggle for you.")
+      else shiny::p(class = "hint", "Tip: with a Kaggle key (kaggle.com, Settings > API > Create New Token, saved as kaggle.json in your .kaggle folder) dragonfarm runs Kaggle for you, with no clicks there.")
+    })
+
+    # The automatic Kaggle round trip reports its stage in status.json.
+    kaggle_progress <- shiny::reactive({
+      cl <- state$cloud
+      if (is.null(cl) || !isTRUE(cl$auto)) return(NULL)
+      shiny::invalidateLater(5000)
+      st <- tryCatch(read_json(file.path(cl$run_dir, "status.json")), error = function(e) NULL)
+      st$remote
+    })
+    shiny::observe({
+      r <- kaggle_progress()
+      cl <- shiny::isolate(state$cloud)
+      if (is.null(r) || isTRUE(cl$imported) || !identical(r$stage, "imported")) return()
+      cl$imported <- TRUE
+      state$cloud <- cl
+      state$run <- dragon_run(cl$run_dir)
+      shiny::showNotification(sprintf("Results for %s are back from Kaggle. See Monitor.", cl$run_id), type = "message", duration = NULL)
+    })
+
     output$cloud_ready <- shiny::renderUI({
       cl <- state$cloud
       if (is.null(cl)) return(NULL)
+      if (isTRUE(cl$auto)) {
+        r <- kaggle_progress()
+        return(shiny::div(class = "cloud-ready",
+          shiny::p(class = if (identical(r$stage, "failed")) "text-danger small" else if (identical(r$stage, "imported")) "text-success small" else "small",
+                   kaggle_stage_label(r$stage)),
+          if (identical(r$stage, "failed") && !is.null(r$detail)) shiny::tags$pre(class = "small", r$detail),
+          shiny::p(class = "hint", "You can close this tab; training carries on at Kaggle and the results are imported when it ends.")
+        ))
+      }
       shiny::div(class = "cloud-ready",
         if (isTRUE(cl$imported)) shiny::p(class = "text-success small", "Results imported. The run is ready in Monitor.")
         else if (!is.null(cl$saved)) shiny::p(class = "small", "Saved ", shiny::code(basename(cl$saved)), " to your Downloads folder (",
