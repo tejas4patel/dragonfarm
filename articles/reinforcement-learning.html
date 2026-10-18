@@ -146,8 +146,13 @@ travels with the cloud bundle.</p>
 <h2 id="train">Train<a class="anchor" aria-label="anchor" href="#train"></a>
 </h2>
 <p>Start from a fine-tuned run when you have one; the RL stage folds its
-adapters in before adding its own.</p>
+adapters in before adding its own. Here it is the support-ticket model
+from the <a href="quickstart.html">quickstart</a>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tickets</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_dataset.html">dragon_dataset</a></span><span class="op">(</span><span class="fu"><a href="../reference/dragon_example_data.html">dragon_example_data</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/dragon_map.html">dragon_map</a></span><span class="op">(</span>prompt <span class="op">=</span> <span class="st">"{subject}\n\n{body}"</span>, response <span class="op">=</span> <span class="st">"reply"</span><span class="op">)</span></span>
+<span><span class="va">sft</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">tickets</span>, <span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, wait <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dragon_reinforce.html">dragon_reinforce</a></span><span class="op">(</span></span>
 <span>  <span class="va">prompts</span>, <span class="va">sft</span>,                    <span class="co"># or a model id such as "Qwen/Qwen2.5-0.5B-Instruct"</span></span>
 <span>  rewards <span class="op">=</span> <span class="va">rewards</span>,</span>
@@ -164,7 +169,7 @@ so short <code>max_new_tokens</code> and modest <code>group_size</code>
 keep steps fast. Progress rows carry <code>reward</code>,
 <code>reward_std</code>, <code>kl</code>, and
 <code>completion_len</code>, plus one column per reward:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dragon_status.html">dragon_progress</a></span><span class="op">(</span><span class="va">rl</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"step"</span>, <span class="st">"reward"</span>, <span class="st">"reward_numeric"</span>, <span class="st">"reward_length"</span>, <span class="st">"kl"</span>, <span class="st">"completion_len"</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>The Monitor panel plots mean reward on a second axis next to the
 loss.</p>
@@ -172,7 +177,7 @@ loss.</p>
 <div class="section level2">
 <h2 id="read-the-result">Read the result<a class="anchor" aria-label="anchor" href="#read-the-result"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dragon_evaluate.html">dragon_evaluate</a></span><span class="op">(</span><span class="va">rl</span><span class="op">)</span>   <span class="co"># mean held-out reward, per reward</span></span>
 <span><span class="fu"><a href="../reference/dragon_generate.html">dragon_generate</a></span><span class="op">(</span><span class="va">rl</span>, <span class="st">"What is 417 + 285? Reply with just the number."</span>, temperature <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/dragon_compare.html">dragon_compare</a></span><span class="op">(</span><span class="va">sft</span>, <span class="va">rl</span><span class="op">)</span></span></code></pre></div>
@@ -215,7 +220,7 @@ collapsing to a single token.</li>
 fine-tune, then preference optimization for style, then RL for a
 verifiable target, and each starts from the previous run. In a
 pipeline:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dragon_pipeline.html">dragon_pipeline</a></span><span class="op">(</span><span class="st">"Qwen/Qwen2.5-0.5B-Instruct"</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/dragon_step.html">dragon_step_train</a></span><span class="op">(</span><span class="va">tickets</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/dragon_step.html">dragon_step_reinforce</a></span><span class="op">(</span><span class="va">prompts</span>, rewards <span class="op">=</span> <span class="va">rewards</span>, group_size <span class="op">=</span> <span class="fl">6</span>, max_new_tokens <span class="op">=</span> <span class="fl">16</span><span class="op">)</span>,</span>

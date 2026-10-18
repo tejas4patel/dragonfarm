@@ -82,7 +82,15 @@ travels with the cloud bundle.
 ## Train
 
 Start from a fine-tuned run when you have one; the RL stage folds its
-adapters in before adding its own.
+adapters in before adding its own. Here it is the support-ticket model
+from the [quickstart](https://dragonfarm.dev/articles/quickstart.md):
+
+``` r
+
+tickets <- dragon_dataset(dragon_example_data()) |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply")
+sft <- dragon_train(tickets, "Qwen/Qwen2.5-0.5B-Instruct", wait = TRUE)
+```
 
 ``` r
 
