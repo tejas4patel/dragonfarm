@@ -94,10 +94,13 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
          evidence = sprintf("unapproved run: %s; untrained model: %s", code, untrained))
   })
   add("Operation", "A judge saved for a background job holds no key", {
+    # A probe key made now, so it appears in no source file (an installed
+    # package can carry its source with each function).
+    probe <- paste0("sk-ant-", paste(sample(c(letters, 0:9), 24, TRUE), collapse = ""))
     old <- Sys.getenv("ANTHROPIC_API_KEY", unset = NA)
-    Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-QUALIFICATION-PROBE")
+    Sys.setenv(ANTHROPIC_API_KEY = probe)
     on.exit(if (is.na(old)) Sys.unsetenv("ANTHROPIC_API_KEY") else Sys.setenv(ANTHROPIC_API_KEY = old), add = TRUE)
-    leaked <- length(grepRaw("QUALIFICATION-PROBE", serialize(dragon_judge_anthropic(), NULL), fixed = TRUE)) > 0
+    leaked <- length(grepRaw(probe, serialize(dragon_judge_anthropic(), NULL), fixed = TRUE)) > 0
     list(ok = !leaked, evidence = if (leaked) "the saved judge contains the key" else "the saved judge contains no key")
   })
   add("Operation", "Personal-data patterns", {
