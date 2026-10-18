@@ -198,3 +198,23 @@ kill_run_process <- function(run, st) {
   }
   invisible(TRUE)
 }
+
+# A run that says "running" but has stopped moving: the process is alive but
+# the last progress line is older than 15 minutes or five of its usual gaps
+# between progress lines, whichever is longer (30 minutes before the first
+# line, which covers loading a large model). A laptop that sleeps stalls GPU
+# jobs this way. Returns the minutes since the last sign of life, or NULL.
+run_stalled <- function(run, st, now = Sys.time()) {
+  if (!identical(st$state, "running")) return(NULL)
+  prog <- run_path(run, "progress.jsonl")
+  rows <- if (file.exists(prog)) read_jsonl(prog) else list()
+  last <- if (length(rows)) file.info(prog)$mtime else file.info(run_path(run, "status.json"))$mtime
+  if (is.na(last)) return(NULL)
+  idle <- as.numeric(difftime(now, last, units = "mins"))
+  limit <- if (length(rows) >= 2) {
+    el <- vapply(rows, function(r) as.numeric(r$elapsed_s %||% NA), 0)
+    gap <- stats::median(diff(el[!is.na(el)]), na.rm = TRUE) / 60
+    max(15, 5 * if (is.finite(gap)) gap else 0)
+  } else if (length(rows)) 15 else 30
+  if (idle > limit) round(idle) else NULL
+}

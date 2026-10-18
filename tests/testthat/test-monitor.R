@@ -141,3 +141,17 @@ test_that("Monitor proposes a run as a model version, signs it off, and replays 
     expect_match(output$replay_ui$html, "Same result as before")
   })
 })
+
+test_that("a running run with no progress for too long is called stalled", {
+  dir <- copy_fixture_run()
+  run <- dragon_run(dir)
+  st <- list(state = "running")
+  now <- file.info(file.path(dir, "progress.jsonl"))$mtime
+  expect_null(dragonfarm:::run_stalled(run, st, now = now + 10 * 60))              # 10 min: not yet
+  expect_equal(dragonfarm:::run_stalled(run, st, now = now + 40 * 60), 40)         # 40 min with ~25 s gaps: stalled
+  expect_null(dragonfarm:::run_stalled(run, list(state = "succeeded"), now = now + 600 * 60))
+  unlink(file.path(dir, "progress.jsonl"))
+  started <- file.info(file.path(dir, "status.json"))$mtime
+  expect_null(dragonfarm:::run_stalled(run, st, now = started + 20 * 60))          # loading a model: grace of 30 min
+  expect_equal(dragonfarm:::run_stalled(run, st, now = started + 45 * 60), 45)
+})
