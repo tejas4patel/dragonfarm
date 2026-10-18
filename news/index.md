@@ -224,6 +224,11 @@ a spreadsheet.
   [`dragon_feedback()`](https://dragonfarm.dev/reference/dragon_feedback.md)
   in R.
 
+- The Data step loads chat-format JSONL (a `messages` list per row, the
+  format Chat exports) as whole conversations, ready to train without a
+  Map step. Before, multi-turn training needed
+  [`dragon_conversations()`](https://dragonfarm.dev/reference/dragon_conversations.md).
+
 - The app passes an automated WCAG 2.1 A/AA check (axe-core 4.10.2) on
   every tab, in light and dark mode; before, it flagged 68 places under
   5 rules. The page declares its language, the hardware badge and
