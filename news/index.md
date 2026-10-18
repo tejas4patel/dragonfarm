@@ -149,7 +149,9 @@ a spreadsheet.
   `allow_personal_data`;
   [`dragon_train()`](https://dragonfarm.dev/reference/dragon_train.md)
   warns. On the FDA guidance set, 15 of 442 rows hit, all of them FDA’s
-  public contact lines.
+  public contact lines; an admin can list such public contacts in
+  Settings (“\*@fda.hhs.gov, 301-796-3400”), and with FDA’s listed the
+  same set has none.
 
 ### Asking documents
 
