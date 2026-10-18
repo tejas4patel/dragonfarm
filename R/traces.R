@@ -23,6 +23,10 @@ agent_trace_view <- function(d, runs_dir = dragon_runs_dir()) {
     shiny::div(class = "kv", shiny::span("Goal"), shiny::strong(d$goal %||% "")),
     shiny::div(class = "kv", shiny::span("Model"), shiny::strong(d$model %||% "")),
     shiny::div(class = "kv", shiny::span("Model time"), shiny::strong(sprintf("%.1f s", (d$model_ms %||% 0) / 1000))),
+    # The plan it started with: what it was allowed to do.
+    if (!is.null(d$plan)) shiny::div(class = "kv", shiny::span("Allowed"),
+      shiny::strong(sprintf("%s; at most %s steps%s", paste(unlist(d$plan$tools), collapse = ", "), d$plan$max_steps %||% "?",
+                            if (length(unlist(d$plan$waits))) paste0("; waits for a person before ", paste(unlist(d$plan$waits), collapse = ", ")) else ""))),
     if (nrow(steps)) shiny::tags$table(class = "table table-sm",
       shiny::tags$thead(shiny::tags$tr(lapply(c("Step", "Tool", "Result", "Time"), shiny::tags$th))),
       shiny::tags$tbody(lapply(seq_len(nrow(steps)), function(i) shiny::tags$tr(

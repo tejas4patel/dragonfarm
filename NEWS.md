@@ -198,7 +198,11 @@ PDF and as Word, live web pages, and a spreadsheet.
   there without repeating the tool calls it already made. The policy can
   name a model per agent, and when an agent cannot finish (its model is too
   small, it runs out of steps, or it fails) the fixed workflow answers
-  instead; Monitor's "Last 7 days" counts how often that happened.
+  instead; Monitor's "Last 7 days" counts how often that happened. Before a
+  task starts, its plan says what the agent may use and what each tool does
+  (reads, writes, cannot be undone, leaves the machine), which steps wait
+  for a person, its budget, and how long such tasks took here before. The
+  plan is kept with the task, and Monitor shows it beside the steps taken.
 
 * Settings can run a qualification report: checks that the installation
   matches what is specified (Python packages against the lock, models pinned

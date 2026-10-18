@@ -132,11 +132,19 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   task <- list(id = sprintf("%s-%s", format(Sys.time(), "%Y%m%d-%H%M%S"), paste(sample(c(letters, 0:9), 6, TRUE), collapse = "")),
                goal = goal, agent = agent, model = target$model, max_steps = max_steps, status = "running",
                started = now_utc(), elapsed = 0,
+               plan = tryCatch(agent_plan_record(agent_plan(goal, agent, target$model)), error = function(e) NULL),
                convo = list(list(role = "system", content = agent_roles[[agent]] %||% "Use the tools to do what the user asks."),
                             list(role = "user", content = goal)),
                steps = list())
   agent_checkpoint_save(task)
   agent_loop(task, target, backend, max_result_chars)
+}
+
+# What a task's record keeps of its plan: enough to compare what the agent
+# was allowed to do with what it did.
+agent_plan_record <- function(p) {
+  list(tools = as.list(p$tools$tool), waits = as.list(p$tools$tool[p$tools$waits]), max_steps = p$max_steps,
+       policy_version = p$policy_version)
 }
 
 # Carry on with a task from its checkpoint. A finished task is not run again.
@@ -161,7 +169,7 @@ agent_loop <- function(task, target, backend, max_result_chars) {
     store_record_event("agent_run", task$agent, ok = identical(stopped, "answered"), code = if (!identical(stopped, "answered")) stopped,
                        detail = list(goal = task$goal, model = task$model, max_steps = task$max_steps, steps = length(task$steps),
                                      tools = vapply(task$steps, `[[`, "", "tool"), answer_hash = result_hash(answer), task = task$id,
-                                     model_ms = task$model_ms %||% 0),
+                                     model_ms = task$model_ms %||% 0, plan = task$plan),
                        duration_ms = round(1000 * task$elapsed))
     list(answer = answer, steps = task$steps, stopped = stopped, task = task$id)
   }
