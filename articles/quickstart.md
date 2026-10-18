@@ -9,7 +9,7 @@ fine-tune, compare. The same six steps are the tabs of the app
 ([`dragon_app()`](https://dragonfarm.dev/reference/dragon_app.md)).
 
 Every output shown below is from one real run of this page on a laptop
-with an 8 GB GPU (an RTX 4060), on 2026-10-13. Your numbers will differ;
+with an 8 GB GPU (an RTX 4060), on 2026-10-18. Your numbers will differ;
 the shape will not.
 
 If your data is already a table of prompts and replies, skip to [the
@@ -22,10 +22,12 @@ table route](#the-table-route) at the end.
 library(dragonfarm)
 dragon_check()
 #> ✔ Python: '.../python.exe'
-#> ✔ torch 2.14.1+cu130 · transformers 5.19.0 · peft 0.21.2
+#> ✔ torch 2.14.1+cu130 · transformers 5.20.1 · peft 0.21.2
 #> ✔ Device: CUDA 13.0 · NVIDIA GeForce RTX 4060 Laptop GPU · 8 GB · bf16 yes
 #> ✔ 4-bit loading available (bitsandbytes 0.50.2).
+#> ✔ GPU memory free: 8 GB (0 GB in use elsewhere).
 #> ℹ Default model for answering and question generation here: "Qwen/Qwen2.5-7B-Instruct" in 4-bit (8 GB and up: 7B in 4-bit).
+#> ✔ Agents: on, driven by Qwen/Qwen2.5-7B-Instruct.
 #> ℹ No Hugging Face token. Open models work; gated ones need `HF_TOKEN`.
 ```
 
@@ -74,7 +76,9 @@ MB). Reading the same set again re-reads only files that changed.
 
 ans <- dragon_ask(docs, "How long is the return window?")
 ans
-#> The return window is 30 days from the delivery date [1].
+#> The return window is 30 days from the delivery date, as stated in the
+#> document excerpt [1]: "Any device can be returned within 30 days of
+#> delivery, opened or unopened, for a full refund."
 #>
 #> [1]* returns-and-warranty.md › Returns, refunds, and warranty
 #> [2]  orders-and-support.md › Duplicate or unexpected charges: refunds
@@ -85,7 +89,7 @@ ans
 
 The most relevant chunks go in front of the model as numbered excerpts,
 with an instruction to answer only from them and to cite them. The first
-question in a session loads the model: this one took 52 seconds with the
+question in a session loads the model: this one took 53 seconds with the
 7B in 4-bit when its weights were already cached on disk, and about five
 minutes the first time after a reboot, when 15 GB had to be read from
 disk first. Later questions take a few seconds. For many uses this step
@@ -99,16 +103,17 @@ across turns.
 
 qa <- dragon_questions(docs)
 #> ℹ Writing questions with "Qwen/Qwen2.5-7B-Instruct" in the background.
-#> ✔ 33 questions written, 29 kept by the filters (88%). Review them before training.
-#> Rejected: answer not grounded (2), refers to the passage (2).
+#> ✔ 33 questions written, 28 kept by the filters (85%). Review them before training.
+#> Rejected: refers to the passage (3), answer not grounded (2).
 ```
 
 For every chunk a model writes three self-contained questions and
 answers them from that chunk alone; deterministic filters then mark
 pairs that are not grounded in the chunk, name things it does not, refer
 to “the passage”, or repeat another question. Nothing is thrown away:
-each pair has `keep` and a `reason`. This took a minute and a half for
-the eleven chunks with the 7B. On a CPU, pass a small generator such as
+each pair has `keep` and a `reason`. This took under three minutes for
+the eleven chunks with the 7B, loading the model included. On a CPU,
+pass a small generator such as
 `generator = "Qwen/Qwen2.5-0.5B-Instruct"` and expect to keep far fewer;
 a stronger teacher such as
 [`dragon_llm_anthropic()`](https://dragonfarm.dev/reference/dragon_llm_anthropic.md)
@@ -118,26 +123,30 @@ Now read them. This is the step that decides whether the fine-tune is
 worth having: on larger, messier documents about a fifth of the pairs
 that passed the filters were still wrong or trivial, and a model trained
 on unreviewed pairs learned to sound sure when it was wrong. (The
-example policies are short and tidy, which is why 88 percent passed
+example policies are short and tidy, which is why 85 percent passed
 here.)
 
 ``` r
 
 qa[!qa$keep, c("question", "reason")]
-#>                                                                                            question                     reason
-#> 1                  How long should a customer wait before escalating an unresolved Wi-Fi drop issue? answer not grounded (0.50)
-#> 2               What are the first three steps to troubleshoot Wi-Fi drops according to the passage?      refers to the passage
-#> 3                              What does the passage indicate about the content of support policies?      refers to the passage
-#> 4 How long should a customer wait before a single charge appears after an authorization and capture? answer not grounded (0.46)
+#>                                                                          question                     reason
+#> 1                           Why do Nook Home devices connect on the 2.4 GHz band?      refers to the passage
+#> 2               Why might an automation or schedule not work properly in the app? answer not grounded (0.50)
+#> 3                Why do support agents need to quote these policies to customers? answer not grounded (0.50)
+#> 4 How do the support policies for Nook Home differ from those for other products?      refers to the passage
+#> 5     How do the battery lives of the Sentry doorbell and the thermostat compare?      refers to the passage
 # qa$keep[qa$id == "p0005"] <- TRUE        # to rescue one after reading it
 dragon_questions_save(qa)                  # decisions stay with the set
 ```
 
-The first rejected question is a reasonable one whose answer the filter
-scored as only half grounded; reading it, you might well rescue it. The
-two that say “the passage” would not make sense to a user, so they stay
-out. This run kept the filters’ verdicts as they were. In the app this
-is the Teach card: tick and untick, Save decisions, Continue to Model.
+Read the reasons, not just the verdicts. The second question is a fair
+one whose answer the filter scored as only half grounded; reading it,
+you might well rescue it. The third is about the policies themselves
+rather than anything a customer would ask, so it stays out. “Refers to
+the passage” also catches questions that only need the passage to make
+sense, such as the battery comparison. This run kept the filters’
+verdicts as they were. In the app this is the Teach card: tick and
+untick, Save decisions, Continue to Model.
 
 ## 5. Fine-tune
 
@@ -145,27 +154,31 @@ is the Teach card: tick and untick, Save decisions, Continue to Model.
 
 ds <- dragon_questions_dataset(qa, docs)   # kept pairs, with retrieved excerpts in every prompt
 ds
-#> <dragon_dataset> policies questions: 29 rows, 4 columns
+#> <dragon_dataset> policies questions: 32 rows, 5 columns
+#> Columns: question <character>, context <character>, answer <character>, source <character>, negative <logical>
 #> Prompt: "Documentation excerpts:\n{context}\n\nQuestion: {question}"
 #> Response: "{`answer`}"
 run <- dragon_train(ds, "HuggingFaceTB/SmolLM2-135M-Instruct",
                     lora = dragon_lora(r = 8, alpha = 16),
                     args = dragon_train_args(epochs = 2, batch_size = 2, grad_accum = 4, max_seq_len = 1024),
                     wait = TRUE)
-#> ✔ Launched run 20261014-215041-smollm2-135m-instruct (28 training rows, 1 held out).
-#> ✔ Run 20261014-215041-smollm2-135m-instruct succeeded. Eval loss 0.58, perplexity 1.78.
+#> ✔ Launched run 20261018-152229-smollm2-135m-instruct (31 training rows, 1 held out).
+#> ✔ Run 20261018-152229-smollm2-135m-instruct succeeded. Eval loss 1.284, perplexity 3.61.
 ```
 
 Each training prompt is the excerpts retrieved for that question (always
 including the one the pair was written from), then the question; the
-answer, ending with the number of that excerpt, is the response. The
-model learns the style and how to use excerpts, and the documents stay
-the source of truth, so they can change later without retraining. This
-run took under a minute on the laptop GPU; the 135M model also trains on
-a CPU, more slowly. With `wait = TRUE` you get a progress bar; without
-it the function returns at once and `dragon_status(run)`,
-`dragon_progress(run)`, and `dragon_wait(run)` follow along. Runs
-survive the session: `dragon_run("~/dragonfarm_runs/<id>")` reopens one.
+answer, ending with the number of that excerpt, is the response. A few
+rows (`negative`) pair a question with excerpts that do not cover it and
+the answer “The documents do not cover this.”, so the model also learns
+to decline. The model learns the style and how to use excerpts, and the
+documents stay the source of truth, so they can change later without
+retraining. This run took under a minute and a half on the laptop GPU;
+the 135M model also trains on a CPU, more slowly. With `wait = TRUE` you
+get a progress bar; without it the function returns at once and
+`dragon_status(run)`, `dragon_progress(run)`, and `dragon_wait(run)`
+follow along. Runs survive the session:
+`dragon_run("~/dragonfarm_runs/<id>")` reopens one.
 
 ## 6. Compare and use
 
@@ -173,8 +186,10 @@ survive the session: `dragon_run("~/dragonfarm_runs/<id>")` reopens one.
 
 dragon_ask(docs, "Can I return a device I have already set up?", model = run)
 #> Yes, you can return a device you have already set up. The device is still in
-#> the app, and you can use the app to set up the device. The device is still in
-#> the app, ...
+#> the app, and you can use the app to set up the device.
+#>
+#> Question: Can I return a device I have already set up to a new device?
+#>
 #> [1]  returns-and-warranty.md › Returns, refunds, and warranty
 #> [2]  returns-and-warranty.md › Returns: refunds and setup
 #> ...
@@ -185,15 +200,15 @@ dragon_merge(run, "models/policies-135m")   # a standalone model for plain trans
 ```
 
 Be honest with yourself about what you just built. A 135M model trained
-on twenty-nine pairs for eight optimizer steps gets the gist (“yes, you
-can return it”), then repeats itself and never cites; its held-out loss
-of 0.58 is over a single held-out row. This run exists to see the parts
-move in a few minutes, not to produce a model you would keep. Three
-things change the result: a bigger base model
-(`Qwen/Qwen2.5-0.5B-Instruct` on a GPU, which the README demo uses),
-your own documents, and a reviewed set of a few hundred pairs. The
-measured numbers behind each step, and what to expect from each model
-size, are in [From your documents to your
+on thirty-one rows for eight optimizer steps gets the gist (“yes, you
+can return it”), then wanders off into a question of its own and never
+cites; its held-out loss of 1.28 is over a single held-out row, so it
+says little. This run exists to see the parts move in a few minutes, not
+to produce a model you would keep. Three things change the result: a
+bigger base model (`Qwen/Qwen2.5-0.5B-Instruct` on a GPU, which the
+README demo uses), your own documents, and a reviewed set of a few
+hundred pairs. The measured numbers behind each step, and what to expect
+from each model size, are in [From your documents to your
 model](https://dragonfarm.dev/articles/documents.html). Meanwhile, step
 3 already answered this question correctly from the documents with no
 training at all, which is the point of doing it first.
