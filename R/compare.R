@@ -84,9 +84,10 @@ print.dragon_comparison <- function(x, ...) {
   df <- as.data.frame(x)
   num <- vapply(df, is.numeric, logical(1))
   df[num] <- lapply(df[num], function(col) ifelse(is.na(col), "", formatC(col, digits = 3, format = "fg")))
-  df$model <- basename(df$model)
-  df$from <- ifelse(is.na(df$from), "", df$from)
-  df$method <- ifelse(is.na(df$method), "", df$method)
+  # Columns may have been dropped by subsetting (cmp[, c("id", "state")]).
+  if (!is.null(df$model)) df$model <- basename(df$model)
+  if (!is.null(df$from)) df$from <- ifelse(is.na(df$from), "", df$from)
+  if (!is.null(df$method)) df$method <- ifelse(is.na(df$method), "", df$method)
   keep <- vapply(df, function(col) any(nzchar(as.character(col)) & !is.na(col)), logical(1))
   print(df[, keep, drop = FALSE], row.names = FALSE, right = FALSE)
   invisible(x)

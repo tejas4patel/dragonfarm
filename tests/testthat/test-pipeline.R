@@ -292,3 +292,9 @@ test_that("dragon_compare() takes a background pipeline (its runs, not its runs_
   expect_equal(cmp$id, c("run-a", "run-b"))
   expect_match(paste(cli::cli_fmt(print(p)), collapse = " "), "0 runs")   # not the length of runs_dir
 })
+
+test_that("a comparison still prints after its columns are subset", {
+  cmp <- structure(data.frame(id = c("a", "b"), state = c("succeeded", "failed"), eval_loss = c(1.2, NA)),
+                   class = c("dragon_comparison", "data.frame"))
+  expect_output(print(cmp), "succeeded")
+})
