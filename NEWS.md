@@ -122,7 +122,9 @@ PDF and as Word, live web pages, and a spreadsheet.
   hits and starts only after "Train anyway", which is recorded; the
   `train_model` tool refuses with `PERSONAL_DATA` until called with
   `allow_personal_data`; `dragon_train()` warns. On the FDA guidance set,
-  15 of 442 rows hit, all of them FDA's public contact lines.
+  15 of 442 rows hit, all of them FDA's public contact lines; an admin can
+  list such public contacts in Settings ("*@fda.hhs.gov, 301-796-3400"),
+  and with FDA's listed the same set has none.
 
 ## Asking documents
 

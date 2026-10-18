@@ -56,6 +56,7 @@ policy_from_inputs <- function(current, input) {
   if (!is.null(input$admins)) p$admins <- names_from_text(input$admins)
   if (!is.null(input$admin_groups)) p$admin_groups <- names_from_text(input$admin_groups)
   if (!is.null(input$access)) p$access <- access_from_text(input$access)
+  if (!is.null(input$pii_allow)) p$pii_allow <- names_from_text(input$pii_allow)
   p$budgets$max_steps <- as.integer(input$max_steps %||% p$budgets$max_steps)
   p$budgets$max_gpu_minutes <- as.integer(input$max_gpu_minutes %||% p$budgets$max_gpu_minutes)
   p
@@ -106,6 +107,8 @@ mod_policy_server <- function(id, runs_dir) {
         shiny::p(class = "hint small", "With no admins or groups named, anyone using this app may change the policy, as on a laptop."),
         shiny::textAreaInput(ns("access"), "Who may see which documents: one rule per line, set | documents | groups (for example: sops | hr-*.pdf | hr)",
                              value = access_to_text(p$access), rows = 3, width = "100%"),
+        shiny::textInput(ns("pii_allow"), "Public contacts that are not personal data (comma-separated, * for any characters)",
+                         value = paste(unlist(p$pii_allow), collapse = ", "), placeholder = "*@fda.hhs.gov, 301-796-3400", width = "100%"),
         bslib::layout_columns(col_widths = c(6, 6),
           shiny::numericInput(ns("max_steps"), "Steps per agent task", value = p$budgets$max_steps %||% 30, min = 1),
           shiny::numericInput(ns("max_gpu_minutes"), "GPU minutes per agent task", value = p$budgets$max_gpu_minutes %||% 120, min = 1)),

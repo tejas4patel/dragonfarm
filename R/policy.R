@@ -64,6 +64,9 @@ policy_problems <- function(policy) {
       p <- c(p, sprintf("%s must be a list of names", f))
     }
   }
+  if (!is.null(policy$pii_allow) && !all(vapply(as.list(policy$pii_allow), function(x) is.character(x) && length(x) == 1 && nzchar(x), TRUE))) {
+    p <- c(p, "pii_allow must be a list of contact patterns")
+  }
   for (r in policy$access %||% list()) {
     if (!is.character(r$documents %||% "") || !length(c(unlist(r$groups), unlist(r$users)))) {
       p <- c(p, "each access rule needs documents (a file pattern) and groups or users")

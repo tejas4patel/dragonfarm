@@ -55,3 +55,20 @@ test_that("the Train step shows the hits and trains only after 'Train anyway'", 
   expect_equal(ev$name, "train_with_personal_data")
   expect_match(ev$detail, "email")
 })
+
+test_that("public contacts an admin allows are not treated as personal data", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  d <- data.frame(p = c("Write to druginfo@fda.hhs.gov", "Mail jane.doe@example.org", "Call 301-796-3400"), r = "ok")
+  ds <- dragon_map(dragon_dataset(d), prompt = "p", response = "r")
+  expect_equal(nrow(dragonfarm:::dataset_pii(ds)), 3)
+  pol <- dragonfarm:::policy_current(runs); pol$version <- NULL
+  pol$pii_allow <- list("*@fda.hhs.gov", "301-796-3400")
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "FDA public contacts", runs_dir = runs)
+  h <- dragonfarm:::dataset_pii(ds)
+  expect_equal(h$match, "jane.doe@example.org")                        # only the person is left
+  expect_false(dragonfarm:::pii_allowed("x@fdaXhhs.gov", "*@fda.hhs.gov"))   # dots are literal
+  pol$pii_allow <- list(7)
+  expect_match(dragonfarm:::policy_problems(pol), "pii_allow")
+})

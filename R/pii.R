@@ -75,7 +75,7 @@ pii_scan <- function(docs, runs_dir = dragon_runs_dir()) {
 # Personal data in a training set (D-11): every text cell, conversations
 # included, by the same fixed patterns. One row per hit with the data row it
 # is in. Large sets are scanned up to max_rows rows.
-dataset_pii <- function(dataset, max_rows = 20000L) {
+dataset_pii <- function(dataset, max_rows = 20000L, allow = pii_allow_list()) {
   d <- if (is.list(dataset)) dataset$data
   if (!is.data.frame(d) || !nrow(d)) return(data.frame(row = integer(), type = character(), match = character(), context = character()))
   d <- utils::head(d, max_rows)
@@ -95,7 +95,23 @@ dataset_pii <- function(dataset, max_rows = 20000L) {
   }
   if (!length(out)) return(data.frame(row = integer(), type = character(), match = character(), context = character()))
   out <- do.call(rbind, out)
-  out[!duplicated(out[c("row", "type", "match")]), , drop = FALSE]   # a text shown in two columns counts once
+  out <- out[!duplicated(out[c("row", "type", "match")]), , drop = FALSE]   # a text shown in two columns counts once
+  if (length(allow)) out <- out[!pii_allowed(out$match, allow), , drop = FALSE]
+  out
+}
+
+# Public contacts an admin has listed in the policy (pii_allow), such as a
+# regulator's helpdesk: "*@fda.hhs.gov", "301-796-3400". Matches are
+# compared case-insensitively, with * standing for any characters.
+pii_allow_list <- function() {
+  unlist(tryCatch(policy_current()$pii_allow, error = function(e) NULL))
+}
+
+pii_allowed <- function(matches, allow) {
+  if (!length(matches) || !length(allow)) return(rep(FALSE, length(matches)))
+  # Escape everything, then let * stand for any characters.
+  globs <- vapply(allow, function(g) gsub("\\*", ".*", gsub("([][{}()+?.^$|\\\\])", "\\\\\\1", trimws(g))), "")
+  grepl(paste0("^(", paste(globs, collapse = "|"), ")$"), trimws(matches), perl = TRUE, ignore.case = TRUE)
 }
 
 pii_counts <- function(hits) {
