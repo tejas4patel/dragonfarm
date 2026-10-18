@@ -190,6 +190,33 @@ Every hit is listed for a person to judge.</li>
 </ul>
 </div>
 <div class="section level2">
+<h2 id="setting-it-up-for-a-team">Setting it up for a team<a class="anchor" aria-label="anchor" href="#setting-it-up-for-a-team"></a>
+</h2>
+<p>On a server such as Posit Connect, three things make it a team
+tool:</p>
+<ul>
+<li>
+<strong>One record for everyone.</strong> Set the environment
+variable <code>DRAGONFARM_CATALOG</code> to a Postgres address
+(<code>postgresql://user:password@host/db</code>). Every person’s
+answers, approvals and sign-offs then land in one append-only
+database.</li>
+<li>
+<strong>People and documents.</strong> In Settings, the policy card
+names the admins (people or sign-in groups) and says who may see which
+documents, one rule per line: <code>sops | hr-*.pdf | hr</code> keeps
+the HR files of the set <code>sops</code> for the <code>hr</code> group.
+Nobody outside it is shown a passage from them.</li>
+<li>
+<strong>Rules of the house.</strong> The same card switches on
+governed mode, the four-eyes sign-off, and where data may go, down to
+nowhere.</li>
+</ul>
+<p>Each save is a new policy version with who saved it and why. The card
+refuses a change that would leave its author without admin rights, so no
+one locks the team out by accident.</p>
+</div>
+<div class="section level2">
 <h2 id="keys">Keys<a class="anchor" aria-label="anchor" href="#keys"></a>
 </h2>
 <p>Keys for outside services are kept in the operating system’s keychain

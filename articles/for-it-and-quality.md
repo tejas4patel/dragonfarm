@@ -108,6 +108,26 @@ SQLite and for Postgres.
   of birth and patient or record ids, by fixed patterns. Every hit is
   listed for a person to judge.
 
+## Setting it up for a team
+
+On a server such as Posit Connect, three things make it a team tool:
+
+- **One record for everyone.** Set the environment variable
+  `DRAGONFARM_CATALOG` to a Postgres address
+  (`postgresql://user:password@host/db`). Every person’s answers,
+  approvals and sign-offs then land in one append-only database.
+- **People and documents.** In Settings, the policy card names the
+  admins (people or sign-in groups) and says who may see which
+  documents, one rule per line: `sops | hr-*.pdf | hr` keeps the HR
+  files of the set `sops` for the `hr` group. Nobody outside it is shown
+  a passage from them.
+- **Rules of the house.** The same card switches on governed mode, the
+  four-eyes sign-off, and where data may go, down to nowhere.
+
+Each save is a new policy version with who saved it and why. The card
+refuses a change that would leave its author without admin rights, so no
+one locks the team out by accident.
+
 ## Keys
 
 Keys for outside services are kept in the operating system’s keychain

@@ -233,8 +233,10 @@ a spreadsheet.
   then only they may change it. Access rules in the policy can limit
   documents to groups (“hr-\*.pdf” for HR only): a person outside them
   never receives a passage from those documents, in search, answers,
-  chat or the set’s listing. Tested with a simulated sign-in, not yet on
-  a real Connect server.
+  chat or the set’s listing. Admins, admin groups and access rules are
+  set in the policy card in Settings, which refuses a change that would
+  leave its author without admin rights. Tested with a simulated
+  sign-in, not yet on a real Connect server.
 
 - Governed mode: an admin can tick “Only approved model versions answer
   questions” in Settings. Then a trained run answers in Ask, Chat and
