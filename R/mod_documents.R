@@ -41,7 +41,7 @@ mod_documents_top_ui <- function(ns) {
       ),
       bslib::layout_columns(
         col_widths = c(8, 4),
-        shiny::textInput(ns("url"), label = NULL, placeholder = "https://... a web page", width = "100%"),
+        shiny::textInput(ns("url"), label = shiny::tags$span(class = "visually-hidden", "Web page address"), placeholder = "https://... a web page", width = "100%"),
         shiny::actionButton(ns("add_url"), "Add page", class = "btn-outline-secondary", width = "100%")
       ),
       shiny::uiOutput(ns("pending")),
@@ -58,7 +58,7 @@ mod_documents_top_ui <- function(ns) {
     ),
     bslib::card(
       bslib::card_header("Ask"),
-      shiny::textAreaInput(ns("question"), label = NULL, rows = 3, width = "100%",
+      shiny::textAreaInput(ns("question"), label = shiny::tags$span(class = "visually-hidden", "Your question"), rows = 3, width = "100%",
                            placeholder = "Ask anything the documents should be able to answer."),
       bslib::layout_columns(
         col_widths = c(8, 4),

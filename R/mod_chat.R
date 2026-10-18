@@ -60,7 +60,7 @@ mod_chat_ui <- function(id) {
       shiny::uiOutput(ns("context_banner")),
       shiny::uiOutput(ns("panes")),
       shiny::div(class = "chat-compose",
-        shiny::textAreaInput(ns("text"), NULL, rows = 2, width = "100%", placeholder = "Type a message"),
+        shiny::textAreaInput(ns("text"), shiny::tags$span(class = "visually-hidden", "Message"), rows = 2, width = "100%", placeholder = "Type a message"),
         shiny::actionButton(ns("send"), "Send", class = "btn-primary")
       )
     ),

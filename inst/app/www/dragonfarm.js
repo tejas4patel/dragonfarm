@@ -14,10 +14,26 @@
     link.setAttribute("title", m[2]);
   }
 
+  // The navbar list is a tab list, so screen readers expect only tabs in it.
+  // Move the hardware badge and the dark-mode switch out, just after it.
+  function moveExtras() {
+    var nav = document.getElementById("nav");
+    if (!nav || nav.parentNode.querySelector(".df-nav-extras")) return;
+    var box = document.createElement("div"); box.className = "df-nav-extras";
+    Array.prototype.slice.call(nav.children).forEach(function (li) {
+      if (li.querySelector("a[data-value]")) return;
+      if (li.classList.contains("bslib-nav-spacer")) { li.remove(); return; }
+      while (li.firstChild) box.appendChild(li.firstChild);
+      li.remove();
+    });
+    nav.parentNode.insertBefore(box, nav.nextSibling);
+  }
+
   function decorate() {
     document.querySelectorAll("#nav a[data-value]").forEach(function (link) {
       if (!link.querySelector(".df-step-n")) setTitle(link, link.textContent.trim());
     });
+    moveExtras();
   }
   if (document.readyState !== "loading") decorate();
   else document.addEventListener("DOMContentLoaded", decorate);

@@ -183,6 +183,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   has "Check it re-reads the same", which reads a set's files again and says
   whether they come back identical.
 
+* The app passes an automated WCAG 2.1 A/AA check (axe-core 4.10.2) on
+  every tab, in light and dark mode; before, it flagged 68 places under 5
+  rules. The page declares its language, the hardware badge and dark-mode
+  switch sit outside the tab list, warning and success text are dark enough
+  to read, and every text box and drop-down has a label for screen readers.
+  The check covers the app as it first opens, not every result card.
+
 * The app has a Settings page for the keys of outside services (Hugging
   Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a key
   once, and it is checked and kept in the computer's own keychain (through

@@ -35,6 +35,7 @@ dragon_app <- function(runs_dir = dragon_runs_dir(), route = c("documents", "tab
   ui <- bslib::page_navbar(
     title = shiny::tags$span(class = "df-brand", brand_mark(), shiny::tags$span("dragonfarm")),
     window_title = "dragonfarm",
+    lang = "en",
     id = "nav",
     # Not fillable: otherwise every card shares one screenful of height and
     # panels such as the drag-and-drop slots and the Try it controls get clipped.

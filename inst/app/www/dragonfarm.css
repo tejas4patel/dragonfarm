@@ -22,6 +22,7 @@ html:root {
   --df-amber-soft: #FFF1DC;
   --df-ok: #2E8B57;
   --df-ok-soft: #E3F3E9;
+  --df-ok-ink: #1E6B40;
   --df-bad: #C2410C;
   --df-bad-soft: #FDE7DD;
   --df-grad: linear-gradient(90deg, var(--df-amber), var(--df-coral));
@@ -49,6 +50,7 @@ html[data-bs-theme="dark"] {
   --df-amber-soft: rgba(255, 181, 71, 0.12);
   --df-ok: #6BCB93;
   --df-ok-soft: rgba(46, 139, 87, 0.18);
+  --df-ok-ink: #6BCB93;
   --df-bad: #FF8A65;
   --df-bad-soft: rgba(194, 65, 12, 0.18);
   --df-coral-ink: #FF9A6B;
@@ -105,6 +107,13 @@ code, pre, kbd { font-variant-ligatures: none; }
 .agent-mode { font-weight: 500; padding-left: 8px; border-left: 1px solid rgba(255, 255, 255, 0.18); }
 .agent-mode.on { color: #5BD08A; }
 .agent-mode.off { color: #9AA7C2; }
+/* Readable on white and on the dark cards (WCAG AA 4.5:1). */
+.text-warning { color: var(--df-coral-ink) !important; }
+.text-success { color: var(--df-ok-ink) !important; }
+/* Labels kept for screen readers only take no space. */
+.control-label:has(> .visually-hidden:only-child) { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+/* The badge and dark-mode switch, moved out of the tab list by dragonfarm.js. */
+.df-nav-extras { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .df-mode { display: inline-flex; align-items: center; margin-left: 6px; }
 .df-mode bslib-input-dark-mode { --text-1: #D5DCEC; --text-2: #FFB547; --vertical-correction: 0; }
 
@@ -344,7 +353,7 @@ details.qa-chunk .qa .why { display: inline-block; margin-top: 3px; font-size: 0
 .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .pill.running, .pill.queued { background: var(--df-amber-soft); color: var(--df-coral-ink); }
 .pill.running::before { animation: df-blink 1.2s ease-in-out infinite; }
-.pill.succeeded { background: var(--df-ok-soft); color: var(--df-ok); }
+.pill.succeeded { background: var(--df-ok-soft); color: var(--df-ok-ink); }
 .pill.failed { background: var(--df-bad-soft); color: var(--df-bad); }
 .pill.cancelled { background: var(--df-card-2); color: var(--df-muted); }
 .pill.bundled { background: var(--df-accent-soft); color: var(--df-accent); }

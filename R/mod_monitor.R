@@ -6,7 +6,7 @@ mod_monitor_ui <- function(id) {
       bslib::card(
         bslib::card_header("Runs"),
         shiny::checkboxInput(ns("show_archived"), "Show archived", value = FALSE),
-        shiny::selectInput(ns("run"), NULL, choices = character(), width = "100%"),
+        shiny::selectInput(ns("run"), shiny::tags$span(class = "visually-hidden", "Run"), choices = character(), width = "100%"),
         shiny::uiOutput(ns("facts")),
         shiny::conditionalPanel(
           condition = sprintf("!input['%s']", ns("show_archived")),
