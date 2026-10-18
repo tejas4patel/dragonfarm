@@ -218,3 +218,19 @@ run_stalled <- function(run, st, now = Sys.time()) {
   } else if (length(rows)) 15 else 30
   if (idle > limit) round(idle) else NULL
 }
+
+# Disk space: a run's folder (adapter, data, merged copy if any), and all
+# runs together with the largest first, so a person can decide what to
+# archive or delete (both stay a person's choice).
+dir_bytes <- function(dir) {
+  f <- list.files(dir, recursive = TRUE, full.names = TRUE, all.files = TRUE)
+  sum(file.info(f)$size, na.rm = TRUE)
+}
+
+runs_space <- function(runs) {
+  if (!nrow(runs)) return(data.frame(id = character(), bytes = numeric()))
+  out <- data.frame(id = runs$id, bytes = vapply(runs$dir, dir_bytes, 0, USE.NAMES = FALSE))
+  out[order(-out$bytes), , drop = FALSE]
+}
+
+fmt_bytes <- function(b) format(structure(b, class = "object_size"), units = "auto", standard = "SI")

@@ -8,6 +8,7 @@ mod_monitor_ui <- function(id) {
         shiny::checkboxInput(ns("show_archived"), "Show archived", value = FALSE),
         shiny::selectInput(ns("run"), shiny::tags$span(class = "visually-hidden", "Run"), choices = character(), width = "100%"),
         shiny::uiOutput(ns("facts")),
+        shiny::uiOutput(ns("space")),
         shiny::conditionalPanel(
           condition = sprintf("!input['%s']", ns("show_archived")),
           # Cancel while a run is going, Resume once it stopped short; neither
@@ -356,6 +357,15 @@ mod_monitor_server <- function(id, state, runs_dir) {
       valueFunc = function() { r <- current_run(); if (is.null(r)) character() else dragon_logs(r, 40) }
     )
 
+    # How much room runs take, the largest first; archive or delete stays a person's call.
+    output$space <- shiny::renderUI({
+      sp <- tryCatch(runs_space(active_runs()), error = function(e) NULL)
+      if (is.null(sp) || !nrow(sp)) return(NULL)
+      top <- utils::head(sp, 3)
+      shiny::p(class = "hint small", sprintf("%s %s. Largest: %s.", if (nrow(sp) == 1) "1 run uses" else sprintf("All %d runs use", nrow(sp)), fmt_bytes(sum(sp$bytes)),
+                                             paste(sprintf("%s (%s)", top$id, vapply(top$bytes, fmt_bytes, "")), collapse = ", ")))
+    })
+
     output$facts <- shiny::renderUI({
       r <- run()
       st <- status()
@@ -376,6 +386,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
           else "fine-tune")),
         if (!is.null(cfg$model$base_run)) shiny::div(class = "kv", shiny::span("Continues"), shiny::code(cfg$model$base_run)),
         shiny::div(class = "kv", shiny::span("Device"), shiny::strong(st$device %||% "-")),
+        shiny::div(class = "kv", shiny::span("Size on disk"), shiny::strong(fmt_bytes(dir_bytes(r$dir)))),
         shiny::div(class = "kv", shiny::span("Step"), shiny::strong(sprintf("%d / %s", as.integer(step), st$total_steps %||% "?"))),
         shiny::div(class = "kv", shiny::span("Loss"), shiny::strong(last_loss)),
         shiny::div(class = "kv", shiny::span("ETA"), shiny::strong(eta)),

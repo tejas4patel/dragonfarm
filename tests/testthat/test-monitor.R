@@ -155,3 +155,19 @@ test_that("a running run with no progress for too long is called stalled", {
   expect_null(dragonfarm:::run_stalled(run, st, now = started + 20 * 60))          # loading a model: grace of 30 min
   expect_equal(dragonfarm:::run_stalled(run, st, now = started + 45 * 60), 45)
 })
+
+test_that("Monitor says how much room runs take, the largest first", {
+  dir <- copy_fixture_run()
+  runs <- data.frame(id = c("a", "b"), dir = c(dir, tempdir()))
+  writeLines(strrep("x", 5000), file.path(dir, "big.bin"))
+  sp <- dragonfarm:::runs_space(data.frame(id = "a", dir = dir))
+  expect_gt(sp$bytes, 5000)
+  expect_match(dragonfarm:::fmt_bytes(1.5e9), "1.5 GB")
+  expect_equal(nrow(dragonfarm:::runs_space(data.frame(id = character(), dir = character()))), 0)
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = dirname(dir)), {
+    session$setInputs(show_archived = FALSE, run = basename(dir))
+    expect_match(output$space$html, "1 run uses")
+    expect_match(output$facts$html, "Size on disk")
+  })
+})
