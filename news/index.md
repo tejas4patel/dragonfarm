@@ -210,9 +210,11 @@ a spreadsheet.
   of a named model, then approve, reject or retire it with a stated
   meaning), and “Run it again and compare” on recorded calls in
   Activity, and “Download the record (CSV)” for an auditor (the export
-  itself is recorded with a SHA-256 of the file). The Documents step has
-  “Check it re-reads the same”, which reads a set’s files again and says
-  whether they come back identical.
+  itself is recorded with a SHA-256 of the file). Activity opens with a
+  “Last 7 days” line: what happened, what was refused or failed, what
+  left the machine and to where, and how many approvals are waiting. The
+  Documents step has “Check it re-reads the same”, which reads a set’s
+  files again and says whether they come back identical.
 
 - The app has a Settings page for the keys of outside services (Hugging
   Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a
