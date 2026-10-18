@@ -46,6 +46,7 @@ Suggests:
     keyring,
     knitr,
     mcptools,
+    openssl,
     pkgload,
     rmarkdown,
     RPostgres,

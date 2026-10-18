@@ -211,3 +211,24 @@ store_sync_set <- function(con, name, dir) {
 }
 
 now_utc <- function() format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+
+# The whole record as a file for an auditor: every event, oldest first, as
+# CSV, with the export itself recorded (row count and a SHA-256 of the file)
+# so a copy can be shown to match what was exported.
+store_export <- function(file, since = NULL, runs_dir = dragon_runs_dir()) {
+  con <- store_open(runs_dir)
+  ev <- if (is.null(since)) store_get(con, "SELECT * FROM events ORDER BY id")
+        else store_get(con, "SELECT * FROM events WHERE at >= ? ORDER BY id", params = list(as.character(since)))
+  utils::write.csv(ev, file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
+  sha <- digest_sha256(file)
+  store_record_event("record_export", basename(file), ok = TRUE,
+                     detail = list(rows = nrow(ev), since = since, sha256 = sha), runs_dir = runs_dir)
+  invisible(list(file = file, rows = nrow(ev), sha256 = sha))
+}
+
+digest_sha256 <- function(file) {
+  if (requireNamespace("openssl", quietly = TRUE)) {
+    return(paste(sprintf("%02x", as.integer(unclass(openssl::sha256(file(file))))), collapse = ""))
+  }
+  unname(tools::md5sum(file))   # without openssl: MD5, which still shows a copy is unchanged
+}

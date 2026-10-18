@@ -166,7 +166,9 @@ PDF and as Word, live web pages, and a spreadsheet.
 * More of the record-keeping is in the app, not just in R: Monitor has a
   "Model versions" card (propose a finished, evaluated run as a version of a
   named model, then approve, reject or retire it with a stated meaning), and
-  "Run it again and compare" on recorded calls in Activity. The Documents step
+  "Run it again and compare" on recorded calls in Activity, and "Download the
+  record (CSV)" for an auditor (the export itself is recorded with a SHA-256
+  of the file). The Documents step
   has "Check it re-reads the same", which reads a set's files again and says
   whether they come back identical.
 

@@ -83,7 +83,8 @@ mod_monitor_ui <- function(id) {
       shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
       shiny::selectInput(ns("activity_pick"), "Details of", choices = c("Pick an entry" = ""), width = "100%"),
       shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE),
-      shiny::uiOutput(ns("replay_ui"))
+      shiny::uiOutput(ns("replay_ui")),
+      shiny::div(class = "btn-row", shiny::downloadButton(ns("export_record"), "Download the record (CSV)", class = "btn-outline-secondary btn-sm"))
     ),
     bslib::card(
       bslib::card_header("Model versions"),
@@ -174,6 +175,13 @@ mod_monitor_server <- function(id, state, runs_dir) {
       choices <- if (is.null(ev) || !nrow(ev)) character() else stats::setNames(as.character(ev$id), sprintf("#%s %s %s", ev$id, ev$kind, ev$name %||% ""))
       shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices))
     })
+    # The record as a file for an auditor; the export itself is recorded.
+    output$export_record <- shiny::downloadHandler(
+      filename = function() sprintf("dragonfarm-record-%s.csv", format(Sys.time(), "%Y%m%d-%H%M%S")),
+      content = function(file) store_export(file, runs_dir = runs_dir),
+      contentType = "text/csv"
+    )
+
     # Replay a recorded read-only call or agent task and say whether it matches.
     replay_result <- shiny::reactiveVal(NULL)
     output$replay_ui <- shiny::renderUI({
