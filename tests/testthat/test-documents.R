@@ -106,3 +106,22 @@ test_that("every read records the set's version in the catalogue", {
   suppressMessages(dragon_documents(src, name = "kb", runs_dir = runs_dir, index = FALSE))
   expect_equal(versions(), 1:2)                                 # changed chunks: a new version, the old one kept
 })
+
+test_that("re-reading a set through the read_documents tool adds a version only when it changed", {
+  skip_if_not(identical(Sys.getenv("DRAGONFARM_INTEGRATION"), "true"), "set DRAGONFARM_INTEGRATION=true")
+  skip_on_cran()
+  src <- tempfile("src-"); dir.create(src)
+  words <- paste(rep("Returns are accepted within thirty days of delivery when the item is unused.", 6), collapse = " ")
+  writeLines(c("# Returns", words), file.path(src, "returns.md"))
+  writeLines(c("# Warranty", "The warranty lasts two years.", words), file.path(src, "warranty.md"))
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  read <- function() dragonfarm:::tool_call("read_documents", list(paths = list(file.path(src, "returns.md"), file.path(src, "warranty.md")), name = "kb"))
+  expect_equal(read()$result$version, 1L)
+  expect_equal(read()$result$version, 1L)                   # same files: same version
+  writeLines(c("# Warranty", "The warranty lasts three years.", words), file.path(src, "warranty.md"))
+  expect_equal(read()$result$version, 2L)                   # one file changed: a new version
+  v <- dragonfarm:::store_get(dragonfarm:::store_open(runs), "SELECT version FROM set_versions WHERE set_name = 'kb'")
+  expect_equal(sort(v$version), 1:2)                        # the old version is kept
+})
