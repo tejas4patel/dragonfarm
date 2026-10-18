@@ -1,0 +1,19 @@
+{
+  "description": "Free-tier model providers dragonfarm can use when a person opts in. Each speaks the OpenAI chat API. Limits are the provider's and change; set your own daily cap when opting in.",
+  "providers": {
+    "openrouter": {
+      "title": "OpenRouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "key_env": "OPENROUTER_API_KEY",
+      "sign_up": "https://openrouter.ai/settings/keys",
+      "free_models_note": "Models whose id ends in :free cost nothing, within OpenRouter's daily limits."
+    },
+    "groq": {
+      "title": "Groq",
+      "base_url": "https://api.groq.com/openai/v1",
+      "key_env": "GROQ_API_KEY",
+      "sign_up": "https://console.groq.com/keys",
+      "free_models_note": "A free tier with per-minute and per-day limits."
+    }
+  }
+}

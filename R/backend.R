@@ -301,7 +301,9 @@ chat_completion_request <- function(backend, messages, max_new_tokens, temperatu
     model = backend$model, messages = messages,
     max_tokens = as.integer(max_new_tokens), temperature = temperature, top_p = top_p, stream = stream
   )
-  outbound_check(backend$url, "a model server", bytes = sum(nchar(unlist(messages), type = "bytes")))
+  if (!is.null(backend$provider)) provider_check(backend$provider, backend$runs_dir %||% dragon_runs_dir())
+  outbound_check(backend$url, if (!is.null(backend$provider)) paste("free tier:", backend$provider) else "a model server",
+                 bytes = sum(nchar(unlist(messages), type = "bytes")), runs_dir = backend$runs_dir %||% dragon_runs_dir())
   req <- httr2::request(paste0(backend$url, "/chat/completions")) |>
     httr2::req_headers(`content-type` = "application/json") |>
     httr2::req_body_json(body, auto_unbox = TRUE) |>
