@@ -102,6 +102,12 @@ supplied the facts. What changed is its voice. It now answers the way
 the practice answers were written: one direct sentence, four times
 shorter and a third faster.
 
+A smaller dragon is a different story. The 1.5B got 19 of 24 right and
+declined 7 of 8 before training; trained on the same kind of questions,
+it got 22 or 23 right and declined all 8 (two runs with different
+seeds). So train a small model to make it better, and a 3B or 7B to make
+it yours.
+
 Before training
 
 Which strategy restricts the observation time to before the intercurrent
