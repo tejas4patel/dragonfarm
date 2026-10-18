@@ -10,7 +10,13 @@ at it.
 ## Usage
 
 ``` r
-dragon_serve_ollama(run, name = NULL, quantize = NULL, ollama = ollama_path())
+dragon_serve_ollama(
+  run,
+  name = NULL,
+  quantize = NULL,
+  ollama = ollama_path(),
+  llama_cpp_dir = Sys.getenv("LLAMA_CPP_DIR", unset = "")
+)
 ```
 
 ## Arguments
@@ -25,12 +31,17 @@ dragon_serve_ollama(run, name = NULL, quantize = NULL, ollama = ollama_path())
 
 - quantize:
 
-  Optional Ollama quantization such as `"q8_0"` or `"q4_K_M"` to shrink
-  the served model.
+  Optional quantization such as `"q8_0"` to shrink the served model. On
+  the GGUF route it is the converter's output type (default `"q8_0"`).
 
 - ollama:
 
   Path to the `ollama` executable.
+
+- llama_cpp_dir:
+
+  A llama.cpp checkout; when it holds the converter, the GGUF route is
+  used.
 
 ## Value
 
@@ -38,13 +49,14 @@ A `dragon_backend` for the served model.
 
 ## Details
 
-Recent Ollama versions import safetensors through their MLX engine. With
-Ollama 0.40.5 on Windows the import worked but the model could not
-answer ("MLX runtime is not available"), for Qwen and SmolLM2 runs
-alike; other systems were not tested. When that happens the unusable
-copy is removed and the error says so. A GGUF file made with
+With a llama.cpp checkout (`LLAMA_CPP_DIR`), the merged model is first
+converted to GGUF with
 [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
-(which needs llama.cpp) is the other route into Ollama.
+and Ollama serves that file; this worked with Ollama 0.40.5 on Windows.
+Without one, Ollama is asked to import the safetensors directly. Recent
+Ollama versions do that through their MLX engine, which on Windows
+refused a Qwen run and could not run a SmolLM2 one ("MLX runtime is not
+available"); the unusable copy is then removed and the error says so.
 
 Needs Ollama installed and its service running. The `ollama` command is
 looked for on the PATH and then in Ollama's usual install folders.

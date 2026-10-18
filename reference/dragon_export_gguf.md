@@ -1,8 +1,12 @@
 # Export a merged model to GGUF
 
 Converts a merged model directory to GGUF for use with llama.cpp,
-Ollama, and similar runtimes. Requires a llama.cpp checkout; point the
-`LLAMA_CPP_DIR` environment variable at it.
+Ollama, and similar runtimes. Requires a llama.cpp checkout (only its
+Python converter is used; nothing is compiled); point the
+`LLAMA_CPP_DIR` environment variable at it. The converter runs in
+dragonfarm's own Python with the checkout's `gguf-py` package, so
+nothing else is installed: a merged Qwen2.5 0.5B converted to `q8_0`
+(531 MB) in about a minute.
 
 ## Usage
 

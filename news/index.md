@@ -705,15 +705,28 @@ a spreadsheet.
 
 ### Fixes
 
+- A chat with a server or Ollama that refused the request (an unknown
+  model, a bad key) recorded an empty reply as the assistant’s turn,
+  which could then be rated and exported for training. A refused stream,
+  or an error in the middle of one, is now an error, as it already was
+  without streaming, and the unanswered turn is dropped.
+
 - [`dragon_serve_ollama()`](https://dragonfarm.dev/reference/dragon_serve_ollama.md)
   finds Ollama in its usual install folder when R was started before
   Ollama was installed, and checks that Ollama can actually answer with
-  the model it registered. With Ollama 0.40.5 on Windows, safetensors
-  import goes through Ollama’s MLX engine, which refused a Qwen run and
-  could not run a SmolLM2 one; the error now says so plainly, removes
-  any unusable copy, and points to a GGUF file from
+  the model it registered. With a llama.cpp checkout (`LLAMA_CPP_DIR`)
+  it serves a GGUF file made by
+  [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md):
+  on Windows with Ollama 0.40.5, a trained Qwen2.5 0.5B was converted,
+  registered and checked in about a minute and then answered in under a
+  second. Without one, Ollama imports safetensors through its MLX
+  engine, which on Windows refused a Qwen run and could not run a
+  SmolLM2 one; the error now says so plainly and removes the unusable
+  copy.
   [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
-  instead. Other systems were not tested.
+  runs the converter in dragonfarm’s own Python with the checkout’s
+  `gguf-py`, so nothing else is installed (the converter’s requirements
+  file would pin an older torch).
 
 - Training, writing practice questions, evaluating, and merging now
   refuse to start while another of them is running on the GPU (in any R
