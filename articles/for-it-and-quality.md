@@ -85,6 +85,9 @@ The catalogue keeps an entry for each:
   model and its pinned version, the settings, every excerpt shown to the
   model, and the answer;
 - approval request and decision;
+- training run: who created it, the model and its pinned version, a
+  fingerprint of the training rows, the document set behind them, and
+  any personal-data approval;
 - policy version, model version and sign-off;
 - call that left the machine;
 - check for personal data (counts only, never the values).
@@ -111,6 +114,14 @@ SQLite and for Postgres.
   numbers, US social security numbers, card numbers, and labelled dates
   of birth and patient or record ids, by fixed patterns. Every hit is
   listed for a person to judge.
+- **Provenance.** Monitor downloads a short report for any run: who
+  started it, the base model, its revision and licence, the training
+  rows with fingerprints, which version of which document set they came
+  from (and whether the set has been re-read since), the approvals, the
+  evaluation and the sign-offs.
+- **Before deleting.** Deleting a run first says what depends on it:
+  runs that continue from it and model versions, with approved ones
+  called out.
 
 ## Setting it up for a team
 
