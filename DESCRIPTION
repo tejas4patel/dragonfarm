@@ -42,6 +42,7 @@ Imports:
 Suggests:
     arrow,
     ellmer,
+    htmltools,
     httr2,
     keyring,
     knitr,
