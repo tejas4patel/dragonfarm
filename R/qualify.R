@@ -83,6 +83,23 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
                         dragonfarm_error = function(e) identical(e$code, "NOT_ALLOWED"))
     list(ok = blocked, evidence = if (blocked) "refused with NOT_ALLOWED before sending" else "not refused")
   })
+  add("Operation", "Governed mode refuses an unapproved trained model", {
+    gov <- file.path(tmp, "governed"); dir.create(gov)
+    pol <- policy_default(); pol$registry$governed <- TRUE
+    policy_set(pol, set_by = "qualification", note = "probe", runs_dir = gov)
+    target <- list(model = "probe-base", adapter = file.path(gov, "probe-run", "adapter"))
+    code <- tryCatch({ serving_check(target, gov); "allowed" }, dragonfarm_error = function(e) e$code)
+    untrained <- tryCatch({ serving_check(list(model = "probe-base", adapter = NULL), gov); "allowed" }, dragonfarm_error = function(e) e$code)
+    list(ok = identical(code, "NOT_APPROVED") && identical(untrained, "allowed"),
+         evidence = sprintf("unapproved run: %s; untrained model: %s", code, untrained))
+  })
+  add("Operation", "A judge saved for a background job holds no key", {
+    old <- Sys.getenv("ANTHROPIC_API_KEY", unset = NA)
+    Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-QUALIFICATION-PROBE")
+    on.exit(if (is.na(old)) Sys.unsetenv("ANTHROPIC_API_KEY") else Sys.setenv(ANTHROPIC_API_KEY = old), add = TRUE)
+    leaked <- length(grepRaw("QUALIFICATION-PROBE", serialize(dragon_judge_anthropic(), NULL), fixed = TRUE)) > 0
+    list(ok = !leaked, evidence = if (leaked) "the saved judge contains the key" else "the saved judge contains no key")
+  })
   add("Operation", "Personal-data patterns", {
     planted <- c("mail jane.doe@hospital.org", "call (617) 555-0142", "SSN 123-45-6789", "Patient ID: AB-77231")
     lookalike <- c("version 4.12.2", "$249,625 million", "revised 2021-05-01", "DOI 10.1080/01621459.2021.1981338")
