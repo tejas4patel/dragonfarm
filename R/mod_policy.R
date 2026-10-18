@@ -5,7 +5,6 @@
 # options(dragonfarm.admin = FALSE), which a shared deployment sets for
 # everyone who is not an admin.
 
-policy_admin <- function() !isFALSE(getOption("dragonfarm.admin"))
 
 mod_policy_ui <- function(id) {
   ns <- shiny::NS(id)

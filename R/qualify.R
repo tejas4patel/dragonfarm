@@ -124,7 +124,7 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
 # Run the checks and write the report. Returns list(file, sha256, passed, failed).
 qualification_report <- function(file, runs_dir = dragon_runs_dir()) {
   checks <- qualification_checks(runs_dir)
-  who <- Sys.info()[["user"]] %||% "unknown"
+  who <- current_user() %||% "unknown"
   lines <- c(
     "# dragonfarm qualification report", "",
     sprintf("- Run by: %s", who), sprintf("- Run at: %s (UTC)", now_utc()),

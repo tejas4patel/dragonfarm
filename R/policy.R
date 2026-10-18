@@ -43,13 +43,19 @@ policy_problems <- function(policy) {
                                                !is.na(policy$registry$governed))) {
     p <- c(p, "registry governed must be true or false")
   }
+  for (f in c("admins", "admin_groups")) {
+    v <- policy[[f]]
+    if (!is.null(v) && !(is.list(v) || is.character(v)) || !all(vapply(as.list(v), function(x) is.character(x) && length(x) == 1 && nzchar(x), TRUE))) {
+      p <- c(p, sprintf("%s must be a list of names", f))
+    }
+  }
   bad <- setdiff(unlist(policy$approvals$side_effects), tool_side_effects)
   if (length(bad)) p <- c(p, sprintf("unknown side effect '%s'", bad))
   p
 }
 
 # Write a new policy version (an admin action; not a tool). Returns the version.
-policy_set <- function(policy, set_by = Sys.info()[["user"]], note = NULL, runs_dir = dragon_runs_dir()) {
+policy_set <- function(policy, set_by = current_user(), note = NULL, runs_dir = dragon_runs_dir()) {
   policy$version <- NULL
   problems <- policy_problems(policy)
   if (length(problems)) cli::cli_abort(c("This policy has problems:", stats::setNames(problems, rep("x", length(problems)))))

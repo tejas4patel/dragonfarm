@@ -152,7 +152,7 @@ store_record_event <- function(kind, name = NULL, ok = NA, code = NULL, detail =
     con <- store_open(runs_dir)
     id <- store_get(con, paste("INSERT INTO events (at, actor, kind, name, ok, code, detail, duration_ms)",
                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"),
-                    params = list(now_utc(), Sys.info()[["user"]] %||% NA_character_, kind, name %||% NA_character_,
+                    params = list(now_utc(), current_user(), kind, name %||% NA_character_,
                                   if (is.na(ok)) NA_integer_ else as.integer(ok), code %||% NA_character_,
                                   if (is.null(detail)) NA_character_ else as.character(jsonlite::toJSON(detail, auto_unbox = TRUE, null = "null")),
                                   if (is.null(duration_ms)) NA_integer_ else as.integer(duration_ms)))$id

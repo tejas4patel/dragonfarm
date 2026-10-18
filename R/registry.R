@@ -49,7 +49,7 @@ registry_propose <- function(run, name, proposed_by = NULL, runs_dir = dragon_ru
   cfg <- tryCatch(read_json(run_path(run, "config.json")), error = function(e) list())
   con <- store_open(runs_dir)
   v <- store_get(con, "SELECT COALESCE(MAX(version), 0) AS v FROM model_versions WHERE name = ?", params = list(name))$v + 1L
-  proposed_by <- proposed_by %||% Sys.info()[["user"]] %||% NA_character_
+  proposed_by <- proposed_by %||% current_user()
   store_exec(con, paste("INSERT INTO model_versions (name, version, run_id, run_dir, base_model, revision, data_md5,",
                             "evaluation, proposed_by, proposed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"),
                  params = list(name, v, run$id, run$dir, cfg$model$id %||% NA_character_, cfg$model$revision %||% NA_character_,
@@ -63,7 +63,7 @@ registry_propose <- function(run, name, proposed_by = NULL, runs_dir = dragon_ru
 # A person's decision on a version. `meaning` says what the signature means
 # (what the model is approved for, or why it is rejected or retired).
 registry_sign_off <- function(name, version, decision = c("approved", "rejected", "retired"), meaning,
-                              signer = Sys.info()[["user"]], runs_dir = dragon_runs_dir()) {
+                              signer = current_user(), runs_dir = dragon_runs_dir()) {
   decision <- match.arg(decision)
   check_string(meaning, "meaning")
   if (!nzchar(trimws(meaning))) {

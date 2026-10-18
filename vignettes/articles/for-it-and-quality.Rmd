@@ -117,9 +117,12 @@ files. A key set by an admin in the environment takes precedence.
 
 ## Not there yet
 
-- **Identity.** The record names the operating system user. There is no
-  link to single sign-on yet, so a sign-off is not an electronic signature in
-  the sense of 21 CFR Part 11.
+- **Identity.** On a server that signs people in, such as Posit Connect,
+  the record names the signed-in person, and the policy can name who may
+  change it; on a laptop it names the operating system user. This was
+  tested with a simulated sign-in, not yet on a real Connect server, and a
+  sign-off is still not an electronic signature in the sense of
+  21 CFR Part 11.
 - **Validation.** There is no validation pack yet. Settings can run a
   qualification report (installation and the controls above, on throwaway
   data, with evidence for each check), which a validation can build on.
