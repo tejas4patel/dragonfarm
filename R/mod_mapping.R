@@ -39,6 +39,18 @@ mod_mapping_ui <- function(id) {
         bslib::card_header("How the model will see it"),
         shiny::uiOutput(ns("preview"))
       )
+    ),
+    bslib::card(
+      bslib::card_header("Let a stronger model write the replies"),
+      shiny::p(class = "hint", "Thin or uneven replies? A bigger model answers your prompts instead, and you train the small one on its answers. Review them before training."),
+      bslib::layout_columns(col_widths = c(4, 4, 2, 2),
+        shiny::selectInput(ns("teacher_kind"), "Teacher", choices = c("A model on this machine" = "local", "Claude API" = "anthropic",
+                                                                     "OpenRouter (free tier)" = "openrouter", "Groq (free tier)" = "groq")),
+        shiny::textInput(ns("teacher_model"), "Model", value = "", placeholder = "Qwen/Qwen2.5-7B-Instruct", width = "100%"),
+        shiny::numericInput(ns("teacher_n"), "Prompts", value = 50, min = 1, max = 2000, step = 10),
+        shiny::div(class = "btn-row", shiny::actionButton(ns("teach"), "Write replies", class = "btn-outline-primary"))
+      ),
+      shiny::uiOutput(ns("teach_status"))
     )
   )
 }
@@ -53,6 +65,61 @@ mod_mapping_server <- function(id, state, nav_to) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     mode <- shiny::reactive(input$mode %||% "messages")
+
+    # D-16: a teacher writes the replies in the background; the result loads
+    # here as a new prompt-and-response set.
+    teach_job <- shiny::reactiveVal(NULL)
+    teach_state <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$teach, {
+      m <- state$mapped
+      if (is.null(m)) return(shiny::showNotification("Map the prompt column first.", type = "warning"))
+      prompts <- tryCatch(utils::head(unique(as_prompt_vector(m)), input$teacher_n %||% 50), error = function(e) character())
+      if (!length(prompts)) return(shiny::showNotification("No prompts to answer.", type = "warning"))
+      kind <- input$teacher_kind %||% "local"
+      model <- trimws(input$teacher_model %||% "")
+      teacher <- switch(kind,
+        local = list(kind = "local", model = if (nzchar(model)) model else state$hardware$tier$model %||% "Qwen/Qwen2.5-7B-Instruct"),
+        anthropic = list(kind = "anthropic", model = if (nzchar(model)) model else "claude-sonnet-5"),
+        list(kind = "provider", provider = kind, model = model))
+      if (identical(teacher$kind, "anthropic") && !nzchar(Sys.getenv("ANTHROPIC_API_KEY"))) {
+        return(shiny::showNotification("Add your Claude API key in Settings first.", type = "warning", duration = 10))
+      }
+      if (identical(teacher$kind, "provider")) {
+        p <- provider_info(kind)
+        if (!nzchar(model)) return(shiny::showNotification(sprintf("Name a %s model.", p$title), type = "warning"))
+        if (!nzchar(Sys.getenv(p$key_env)) || !isTRUE(provider_status(kind)$opted_in)) {
+          return(shiny::showNotification(sprintf("Add your %s key and turn it on under Free tiers in Settings first.", p$title), type = "warning", duration = 10))
+        }
+      }
+      sys <- if (!is.null(m$mapping$system)) tryCatch(unique(render_template(m$mapping$system, m$data))[1], error = function(e) NULL)
+      job <- tryCatch(synth_job_start(prompts, teacher, system = if (length(sys) && nzchar(sys)) sys), error = function(e) { notify_error(e); NULL })
+      if (is.null(job)) return()
+      teach_job(job); teach_state(list(state = "queued", n_prompts = length(prompts)))
+    })
+    shiny::observe({
+      job <- teach_job()
+      shiny::req(job)
+      st <- synth_job_status(job$status)
+      teach_state(st)
+      if (st$state %in% c("queued", "running")) return(shiny::invalidateLater(2000))
+      teach_job(NULL)
+      if (identical(st$state, "succeeded")) {
+        ds <- dragon_map(dragon_dataset(st$file, name = basename(st$file)), prompt = "prompt", response = "response")
+        state$dataset <- ds
+        state$mapped <- ds
+        shiny::showNotification(sprintf("%d replies written by %s. Review them, then train.", st$n_kept, st$teacher), type = "message", duration = 8)
+      }
+    })
+    output$teach_status <- shiny::renderUI({
+      st <- teach_state()
+      if (is.null(st)) return(NULL)
+      msg <- switch(st$state,
+        queued = , running = sprintf("Writing replies to %s prompts in the background.", st$n_prompts %||% "the"),
+        succeeded = sprintf("Done: %s replies kept of %s prompts (%s dropped by quality checks).", st$n_kept, st$n_prompts, st$dropped %||% 0),
+        failed = paste("Could not write the replies:", st$error %||% "no details"),
+        "")
+      shiny::p(class = paste("small", if (identical(st$state, "failed")) "text-warning"), msg)
+    })
 
     output$mode_help <- shiny::renderUI({
       if (identical(mode(), "pairs")) {
