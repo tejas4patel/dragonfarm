@@ -694,6 +694,16 @@ a spreadsheet.
 
 ### Fixes
 
+- [`dragon_serve_ollama()`](https://dragonfarm.dev/reference/dragon_serve_ollama.md)
+  finds Ollama in its usual install folder when R was started before
+  Ollama was installed, and checks that Ollama can actually answer with
+  the model it registered. With Ollama 0.40.5 on Windows, safetensors
+  import goes through Ollama’s MLX engine, which refused a Qwen run and
+  could not run a SmolLM2 one; the error now says so plainly, removes
+  any unusable copy, and points to a GGUF file from
+  [`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
+  instead. Other systems were not tested.
+
 - Training, writing practice questions, evaluating, and merging now
   refuse to start while another of them is running on the GPU (in any R
   session), saying which job is in the way. Two at once on an 8 GB card

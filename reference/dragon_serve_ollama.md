@@ -1,9 +1,7 @@
 # Serve a run's model with Ollama
 
-Merges the adapter into the base model (if not done already) and
-registers the result with Ollama, which imports safetensors directly for
-the Llama, Qwen2, Gemma, and related families. Ollama then serves it
-quickly on the CPU or GPU of whatever machine it runs on, and the
+Merges the adapter into the base model (if not done already), registers
+the result with Ollama, and checks that Ollama can answer with it. The
 returned backend points
 [`dragon_generate()`](https://dragonfarm.dev/reference/dragon_generate.md)
 and [`dragon_chat()`](https://dragonfarm.dev/reference/dragon_chat.md)
@@ -12,12 +10,7 @@ at it.
 ## Usage
 
 ``` r
-dragon_serve_ollama(
-  run,
-  name = NULL,
-  quantize = NULL,
-  ollama = Sys.which("ollama")
-)
+dragon_serve_ollama(run, name = NULL, quantize = NULL, ollama = ollama_path())
 ```
 
 ## Arguments
@@ -45,7 +38,16 @@ A `dragon_backend` for the served model.
 
 ## Details
 
-Needs the `ollama` command on the PATH and the Ollama service running.
+Recent Ollama versions import safetensors through their MLX engine. With
+Ollama 0.40.5 on Windows the import worked but the model could not
+answer ("MLX runtime is not available"), for Qwen and SmolLM2 runs
+alike; other systems were not tested. When that happens the unusable
+copy is removed and the error says so. A GGUF file made with
+[`dragon_export_gguf()`](https://dragonfarm.dev/reference/dragon_export_gguf.md)
+(which needs llama.cpp) is the other route into Ollama.
+
+Needs Ollama installed and its service running. The `ollama` command is
+looked for on the PATH and then in Ollama's usual install folders.
 
 ## Examples
 
