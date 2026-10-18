@@ -141,7 +141,7 @@ dragon_ask <- function(docs, question, model = NULL, k = 4, system = NULL, backe
   convo <- list(
     list(role = "system", content = documents_system(system, small = decline_note_for(target), full = full_answers_for(target),
                                                      compare = compare)),
-    list(role = "user", content = documents_prompt(question, hits, mark = datamark_for(target)))
+    list(role = "user", content = documents_prompt(question, hits, mark = datamark_for(target), listing = listing_for(docs, target)))
   )
   stage(sprintf("Answering with %s (the first question loads it, about a minute for a 7B)", model_label))
   reply <- backend_generate(backend, target, list(convo), max_new_tokens = as.integer(max_new_tokens),
@@ -323,15 +323,39 @@ compare_note <- paste(
   "with its citation, and say which is newer when the excerpts show dates."
 )
 
-documents_prompt <- function(question, hits, mark = FALSE) {
+documents_prompt <- function(question, hits, mark = FALSE, listing = NULL) {
   if (!nrow(hits)) return(paste0("No excerpts were found in the documents.\n\nQuestion: ", question))
   text <- if (isTRUE(mark)) gsub("[[:space:]]+", "^", hits$text) else hits$text
   parts <- vapply(seq_len(nrow(hits)), function(i) {
     sprintf("[%d] %s\n%s", hits$n[i], source_label(hits$source[i], hits$section[i], hits$page[i] %||% NA), text[i])
   }, character(1))
-  out <- paste0("Excerpts from the documents:\n\n", paste(parts, collapse = "\n\n"), "\n\nQuestion: ", question)
+  out <- paste0(if (length(listing) && nzchar(listing)) paste0(listing, "\n\n"),
+                "Excerpts from the documents:\n\n", paste(parts, collapse = "\n\n"), "\n\nQuestion: ", question)
   if (isTRUE(mark)) out <- paste0(out, "\n\n", datamark_note)
   out
+}
+
+# The set's documents, by name and length, ahead of the excerpts, so whole-set
+# questions ("which is the oldest?", "what is in this set?") can be answered
+# though four excerpts rarely cover every document. Measured on the FDA set
+# (4 documents), same chunks: 10 whole-set questions, 7B 6 -> 9 right (model
+# written overviews as extra excerpts: 7, and lossy); FDA 24+8 unchanged for
+# the 7B, 1.5B 19/24 both, declines 7 -> 8 of 8, 3B 24 -> 23 (one arithmetic
+# slip); 7B policies suite 18/18 both. Untrained local models only: tuned
+# runs learned another prompt, and servers were not measured. At most 20
+# documents are named.
+listing_for <- function(docs, target, max_docs = 20L) {
+  if (is.null(target) || !is.null(target$adapter)) return(NULL)
+  srcs <- Filter(function(s) is.null(s$error) && (s$n_words %||% 0) > 0, docs$manifest$sources %||% list())
+  if (length(srcs) < 2) return(NULL)
+  shown <- utils::head(srcs, max_docs)
+  names <- vapply(shown, function(s) {
+    w <- s$n_words %||% 0
+    sprintf("%s (about %s words)", s$name, format(if (w >= 100) round(w, -2) else w, big.mark = ",", scientific = FALSE))
+  }, "")
+  more <- length(srcs) - length(shown)
+  sprintf("This document set holds %d documents: %s%s.", length(srcs), paste(names, collapse = "; "),
+          if (more > 0) sprintf("; and %d more", more) else "")
 }
 
 # Datamarking ("spotlighting"): the words of each excerpt are joined with ^ so

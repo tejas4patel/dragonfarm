@@ -109,6 +109,14 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Asking documents
 
+* Questions about a whole set ("which document is the oldest?", "what is in
+  this set?") get better answers: an untrained model now sees the set's
+  documents listed by name and length before the excerpts. On ten such
+  questions over the four FDA guidances, a 7B went from 6 to 9 right. The
+  same 7B still got all 24 known FDA questions right and declined all 8
+  others; a 1.5B and a 3B moved by one question each way. Model-written
+  overviews of each document were tried too, and lost facts.
+
 * Answers stream as they are written: `dragon_ask(on_token = )` and the Ask
   step in the app show the first words while the rest is still coming. With
   full answers from a 7B (often 150 words or more), the first words arrived

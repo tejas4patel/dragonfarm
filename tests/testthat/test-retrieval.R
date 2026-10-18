@@ -401,3 +401,21 @@ test_that("the Ask step says where an answer's trace is", {
   expect_null(dragonfarm:::trace_note(NA_integer_))
   expect_match(as.character(dragonfarm:::trace_note(42L)), "#42.*Activity")
 })
+
+test_that("untrained local models see the set's documents listed before the excerpts", {
+  f <- write_fake_set()
+  docs <- dragon_documents_load(f$dir)
+  lf <- dragonfarm:::listing_for
+  l <- lf(docs, list(model = "Qwen/Qwen2.5-7B-Instruct"))
+  expect_equal(l, "This document set holds 2 documents: policy.pdf (about 300 words); NEWS.md (about 100 words).")   # bad.docx failed to read
+  expect_null(lf(docs, list(model = "x", adapter = "some/adapter")))   # tuned runs learned another prompt
+  expect_null(lf(docs, NULL))                                           # model servers: not measured
+  docs$manifest$sources <- rep(docs$manifest$sources[1], 25)
+  expect_match(lf(docs, list(model = "m")), "holds 25 documents: .*; and 5 more[.]$")
+  docs$manifest$sources <- docs$manifest$sources[1]
+  expect_null(lf(docs, list(model = "m")))                              # one document: nothing to list
+  hits <- data.frame(n = 1, source = "policy.pdf", section = "Returns", page = NA, text = "Thirty days.")
+  p <- dragonfarm:::documents_prompt("How long?", hits, listing = l)
+  expect_true(startsWith(p, "This document set holds 2 documents"))
+  expect_false(grepl("holds", dragonfarm:::documents_prompt("How long?", hits)))
+})
