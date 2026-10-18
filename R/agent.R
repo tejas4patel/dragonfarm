@@ -36,15 +36,20 @@ agent_min_model_b <- function(agent = NULL, policy = policy_current()) {
 }
 
 # Whether agents are on for this machine, and one plain sentence saying so.
-agent_mode <- function(info = the$hardware) {
-  model <- info$tier$model %||% default_answer_model()
+# A model server, when one is set, is what drives agents; otherwise the model
+# recommended for this machine's hardware (a CPU-only machine gets a small
+# one, so agents are off there unless a server or larger model is chosen).
+agent_mode <- function(info = the$hardware, backend = tryCatch(dragon_backend(), error = function(e) NULL)) {
+  server <- !is.null(backend) && is_server_backend(backend)
+  model <- if (server) backend$model else info$tier$model %||% default_answer_model()
   on <- agent_model_ok(model)
-  list(on = on, model = model, message = if (on) {
-    sprintf("Agents: on, driven by %s.", model)
+  list(on = on, model = model, server = server, message = if (on) {
+    sprintf("Agents: on, driven by %s%s.", model, if (server) " on a model server" else "")
   } else {
-    paste0("Agents: off. They need a model of 3B or larger, and the one recommended for this machine is ", model,
-           ". Everything still works through the fixed workflows. To turn agents on, pass a 3B or larger model, ",
-           "connect a model server with dragon_backend_server(), or allow an outside model.")
+    paste0("Agents: off. They need a model of 3B or larger, and ", if (server) "the model server runs " else
+             "the one recommended for this machine is ", model,
+           ". Everything still works through the fixed workflows. To turn agents on, choose a 3B or larger model, ",
+           "connect a model server, or allow an outside model in Settings.")
   })
 }
 
@@ -115,6 +120,9 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   # Routing: the caller's model, else the one the policy names for this
   # agent, else the model recommended for this machine.
   target <- resolve_target(model %||% policy$agents[[agent]]$model %||% default_answer_model())
+  # On a model server, the server's model is what answers, so that is the
+  # one whose size counts.
+  if (is_server_backend(backend)) target$model <- backend$model
   min_b <- agent_min_model_b(agent, policy)
   if (!agent_model_ok(target$model, min_b)) {
     store_record_event("agent_run", agent, ok = FALSE, code = "AGENT_MODEL_TOO_SMALL",
@@ -137,7 +145,8 @@ agent_resume <- function(id, backend = dragon_backend(), max_result_chars = 6000
   if (is.null(task)) return(list(answer = NA_character_, steps = list(), stopped = "NOT_FOUND"))
   if (!identical(task$status, "running")) return(list(answer = task$answer %||% NA_character_, steps = task$steps, stopped = task$status, task = task$id))
   store_record_event("agent_resume", task$agent, ok = TRUE, detail = list(task = task$id, from_step = length(task$steps) + 1L))
-  agent_loop(task, resolve_target(task$model), backend, max_result_chars)
+  target <- if (is_server_backend(backend)) list(model = backend$model) else resolve_target(task$model)
+  agent_loop(task, target, backend, max_result_chars)
 }
 
 agent_loop <- function(task, target, backend, max_result_chars) {

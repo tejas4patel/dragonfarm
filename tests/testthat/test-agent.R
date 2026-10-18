@@ -53,6 +53,7 @@ test_that("only models of 3B and up drive agents, and the mode is said plainly",
   expect_true(on$on); expect_match(on$message, "Agents: on")
   off <- dragonfarm:::agent_mode(list(tier = list(model = "Qwen/Qwen2.5-1.5B-Instruct")))
   expect_false(off$on); expect_match(off$message, "fixed workflows")
+  expect_no_match(off$message, "dragon_")                             # no function names in the app's badge
 
   runs <- tempfile("runs-")
   withr::local_options(dragonfarm.runs_dir = runs)
@@ -167,4 +168,33 @@ test_that("agent_route falls back to the fixed workflow and records why", {
   expect_equal(rate$fell_back, 3)
   expect_equal(sort(names(rate$reasons)), c("AGENT_MODEL_TOO_SMALL", "BUDGET_EXHAUSTED", "ERROR"))
   expect_equal(dragonfarm:::store_summary(7, runs)$agents$fell_back, 3)
+})
+
+test_that("the agent mode is right on GPU, CPU-only and model-server setups", {
+  local <- dragonfarm:::dragon_backend_local()
+  gpu <- list(device = "cuda", tier = list(model = "Qwen/Qwen2.5-7B-Instruct"))
+  cpu <- list(device = "cpu", tier = list(model = "Qwen/Qwen2.5-0.5B-Instruct"))
+  expect_true(dragonfarm:::agent_mode(gpu, local)$on)
+  expect_false(dragonfarm:::agent_mode(cpu, local)$on)
+  big <- dragon_backend_server("http://localhost:8000/v1", "Qwen/Qwen2.5-14B-Instruct")
+  small <- dragon_backend_server("http://localhost:8000/v1", "Qwen/Qwen2.5-1.5B-Instruct")
+  unknown <- dragon_backend_server("http://localhost:11434/v1", "llama3")
+  on <- dragonfarm:::agent_mode(cpu, big)                              # a CPU laptop with a server: on
+  expect_true(on$on); expect_true(on$server); expect_match(on$message, "14B.*model server")
+  expect_false(dragonfarm:::agent_mode(gpu, small)$on)                 # the server's model is what counts
+  expect_true(dragonfarm:::agent_mode(cpu, unknown)$on)                # unknown size: the user's choice
+  expect_true(dragonfarm:::agent_mode(NULL, NULL)$on %in% c(TRUE, FALSE))   # never errors without a hardware check
+})
+
+test_that("on a model server, the server's model must be big enough to drive an agent", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  testthat::local_mocked_bindings(resolve_target = function(x) list(model = "Qwen/Qwen2.5-7B-Instruct"),
+                                  backend_generate = function(...) list("Done."))
+  small <- dragon_backend_server("http://localhost:8000/v1", "Qwen/Qwen2.5-1.5B-Instruct")
+  r <- dragonfarm:::agent_run("Hi", agent = "ops", backend = small)
+  expect_equal(r$stopped, "AGENT_MODEL_TOO_SMALL")
+  big <- dragon_backend_server("http://localhost:8000/v1", "Qwen/Qwen2.5-14B-Instruct")
+  expect_equal(dragonfarm:::agent_run("Hi", agent = "ops", backend = big)$stopped, "answered")
 })
