@@ -9,6 +9,10 @@ Two kinds of questions are used, both optional:
   written from. Skipped for a set that was re-read after the questions were
   written (the chunk ids no longer line up), which the script detects from
   the chunks_md5 the question file's metadata records.
+* Paraphrased questions (retrieval_eval_paraphrased.json, made by
+  retrieval_paraphrased_make.R): 127 questions a 7B wrote in its own words
+  from sampled passages, kept only when checked against them. Harder than
+  the hand set (hybrid hit@4 87% against 98%); pass it with --hand.
 * Hand-written questions from a JSON file (see retrieval_eval_questions.json):
   a list of {"set": name, "question": text, "answer_contains": text}; the
   target is any chunk whose text contains answer_contains.

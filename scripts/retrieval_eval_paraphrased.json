@@ -1,0 +1,891 @@
+[
+  {
+    "set": "r-manuals",
+    "question": "Who originally wrote these notes about the programming environment?",
+    "answer_contains": "Bill Venables and David M. Smith",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What kind of organization is the R Foundation and what are its main purposes?",
+    "answer_contains": "not for profit organization working in the public interest",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What are the different versions of R mentioned in the passage?",
+    "answer_contains": "r-release",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I create an incidence matrix N using two separate matrices?",
+    "answer_contains": "N <- crossprod(Xb, Xv)",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I submit a suggestion for an enhancement to R?",
+    "answer_contains": "Suggestions can be submitted in the same ways as bugs",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What book provides the basic reference for understanding R?",
+    "answer_contains": "The New S Language: A Programming Environment for Data Analysis and Graphics",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does the dot symbol mean in the update function?",
+    "answer_contains": "the corresponding part of the old model formula",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What is the difference between how R and S handle character vector indexing?",
+    "answer_contains": "In S, [ allows partial matches",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What are some other types of objects in R besides vectors?",
+    "answer_contains": "matrices or more generally arrays",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How does R handle regression models with powers of variables differently from S?",
+    "answer_contains": "you have to insulate powers of numeric vectors (using I())",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What happens if the order of including terms in the model matters?",
+    "answer_contains": "Hence only for orthogonal experiments will the order of inclusion be inconsequential",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What operating systems does the R binary for Windows support?",
+    "answer_contains": "64-bit versions of Windows 10 and later",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I correctly compute the dot product of a vector with itself in R without ambiguity?",
+    "answer_contains": "xT x",
+    "overlap": 0.12,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "Why does the memory usage reported by ps or top not match what R reports after cleaning up memory?",
+    "answer_contains": "In general such tools do not report the actual memory usage of the process but rather what the OS is reserving for that process",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I permanently update a variable within a data frame after using attach()?",
+    "answer_contains": "lentils$u <- v+w",
+    "overlap": 0.44,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I select and replace specific elements in a 4x5 array using a matrix?",
+    "answer_contains": "an index matrix may be given",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does the term \"mai\" refer to in R graphics?",
+    "answer_contains": "Widths of the bottom, left, top and right margins, respectively, measured in inches",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I remove characters from a recalled command in R?",
+    "answer_contains": "with the DEL key",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does the number 1 represent for fonts?",
+    "answer_contains": "plain text",
+    "overlap": 0,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How long can I copy and distribute this manual without needing permission from anyone else?",
+    "answer_contains": "Copyright c© 1999–2026 R Core Team",
+    "overlap": 0.44,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I convert a factor into numeric values in R without using as.character() first?",
+    "answer_contains": "as.numeric(levels(f))[as.integer(f)]",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How do I exit the R program?",
+    "answer_contains": "q()",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I organize my workspace when dealing with multiple problems that might use the same variable names?",
+    "answer_contains": "gather together all variables for any well defined and separate problem in a data frame under a suitably informative name",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How does the logical vector indexing work in R?",
+    "answer_contains": "Values corresponding to TRUE in the index vector are selected and those corresponding to FALSE are omitted",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What kind of errors might occur when converting between numeric and character types?",
+    "answer_contains": "roundoff errors in the character representation",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What can cause an error when trying to plot colors in R using X11?",
+    "answer_contains": "Error: color allocation error",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does using negative numbers in indexing do to a vector?",
+    "answer_contains": "Such an index vector specifies the values to be excluded rather than included",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What are the main components of the R distribution?",
+    "answer_contains": "Base R functions (and datasets before R 2.0.0)",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How many out of every 20 matrices of this kind are likely to be singular?",
+    "answer_contains": "about 1 in 20",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What function is used for creating histograms?",
+    "answer_contains": "hist 34, 63",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does a[2,,] represent in an array?",
+    "answer_contains": "a[2,,] is a 4× 2 array",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "Where can I find most of these R packages?",
+    "answer_contains": "from CRAN (https://CRAN.R-project.org/ and its mirrors)",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What does R do differently when removing elements from a list compared to S?",
+    "answer_contains": "x[i] <- NULL and x[[i]] <- NULL",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What happens when you use seq(2,10) instead of the colon operator?",
+    "answer_contains": "seq(2,10) is the same vector as 2:10",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What kind of symbols can be used to create binary operators in R?",
+    "answer_contains": "%anything%",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What happens when you use locator() without arguments?",
+    "answer_contains": "It is particularly useful for interactively selecting positions for graphic elements such as legends or labels when it is difficult to calculate in advance where the graphic should be placed",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What do you need to ensure the function works correctly in both environments?",
+    "answer_contains": "the function closure",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "How can I tell if an unexpected result in R is due to a bug or just my misunderstanding?",
+    "answer_contains": "show the problem to someone who knows for certain",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-manuals",
+    "question": "What kind of special characters can Hershey fonts provide that might not be in regular fonts?",
+    "answer_contains": "zodiac signs, cartographic symbols and astronomical symbols",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "Why might the effect of a treatment vary between subgroups and the overall population?",
+    "answer_contains": "non-collapsibility",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What needs to be done with missing data in relation to an estimand?",
+    "answer_contains": "Missing data should be defined and considered",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "Where can I find guidance documents for drugs?",
+    "answer_contains": "https://www.fda.gov/drugs/guidance-compliance-regulatory-information/guidances-drugs",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What should be done to ensure the main estimator's results are reliable even if some assumptions aren't perfectly met?",
+    "answer_contains": "Sensitivity analysis should be planned",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "When is it appropriate to consider hypothetical conditions in assessing the effectiveness of a treatment?",
+    "answer_contains": "The hypothetical conditions described should therefore be justified for the quantification of an interpretable treatment effect that is relevant to inform the decisions to be taken by regulators, and the use of the medicine in clinical practice",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "Can I follow a different method than what is suggested?",
+    "answer_contains": "To discuss an alternative approach, contact the FDA office responsible for this guidance as listed on the title page",
+    "overlap": 0,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What can happen if certain measurements are eliminated from the analysis set?",
+    "answer_contains": "that the initial randomization is not fully preserved",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What factors should be considered when defining the clinical relevance of an estimand?",
+    "answer_contains": "the disease under study",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "When can exploratory endpoints be analyzed without adjusting for multiple comparisons?",
+    "answer_contains": "Exploratory endpoints do not need multiplicity adjustment",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What kind of endpoints are often collected and analyzed even if they don't happen very frequently in a trial?",
+    "answer_contains": "mortality or major morbidity events",
+    "overlap": 0.27,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What happens to the event counts when a subject experiences multiple types of events?",
+    "answer_contains": "would not be counted",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What does the term \"principal stratum\" refer to in this context?",
+    "answer_contains": "any of the strata (or combination of strata) defined by principal stratification",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What can lead to misalignment in clinical trials if not properly addressed?",
+    "answer_contains": "misalignment between trial objectives, trial design, data collection, and method of analysis",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "Can data that become unavailable after an event still be considered useful?",
+    "answer_contains": "the measures may not be relevant",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What kind of clinical trials are particularly concerned with multiplicity issues?",
+    "answer_contains": "clinical trials intended to demonstrate effectiveness",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "Do we need to increase the sample size if some participants drop out of the study?",
+    "answer_contains": "it is not usually necessary to additionally inflate the calculated sample size",
+    "overlap": 0.22,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "How does the ICH contribute to reducing the number of animal studies?",
+    "answer_contains": "prevented unnecessary animal studies",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What happens to the study's ability to detect an effect when using multiple endpoints?",
+    "answer_contains": "decrease study power",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What is the address of the FDA office mentioned in the passage?",
+    "answer_contains": "Silver Spring, MD 20993-0002",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What does the term \"treatment\" refer to in this document?",
+    "answer_contains": "treatment through the remainder of this document",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What might prevent a subject from being included in the primary set of subjects?",
+    "answer_contains": "Protocol violations and deviations",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "When analyzing multi-component endpoints, what should researchers consider regarding the presentation of individual component analyses?",
+    "answer_contains": "should not be presented in FDA-approved labeling",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What does this guidance focus on regarding multiplicity?",
+    "answer_contains": "the analysis and interpretation of multiple endpoints within a single clinical trial",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What kind of clinical trials does this guidance apply to when it comes to using covariates?",
+    "answer_contains": "both superiority trials and noninferiority trials",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What should regulators and sponsors discuss regarding the run-in period in clinical trials?",
+    "answer_contains": "Dialogue between regulator and sponsor should consider",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "fda-stats",
+    "question": "What happens when a trial has too few events for a key outcome measure?",
+    "answer_contains": "generally the endpoint with inadequate power for detection is classified as a secondary endpoint",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What is the company's biggest expense after buying merchandise?",
+    "answer_contains": "Compensation and benefits for employees",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How do you ensure your company's valuable intellectual assets are protected?",
+    "answer_contains": "We rely on trademark and copyright laws, trade-secret protection, and confidentiality, license and other agreements with our suppliers, employees and others to protect our intellectual property",
+    "overlap": 0.17,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much did the gross margin percentage increase in 2024 compared to the previous years?",
+    "answer_contains": "increased 35 basis points",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How do you decide whether to raise prices when costs go up?",
+    "answer_contains": "passing cost increases on to our members",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What kind of risks does the company still bear despite having insurance?",
+    "answer_contains": "Such losses could materially impact our cash flows and results of operations",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What does reclassifying the cash flows help with?",
+    "answer_contains": "to conform with current year presentation",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What standard did you follow when conducting the audits?",
+    "answer_contains": "in accordance with the standards of the PCAOB",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Who was the former Secretary of the Interior mentioned in the list?",
+    "answer_contains": "Sally Jewell(a)(b)",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much did the company earn from interest income in 2024?",
+    "answer_contains": "$624",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Where can I find Costco's annual reports without paying?",
+    "answer_contains": "free of charge",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much money and plastic were saved by changing the packaging of KS nut items?",
+    "answer_contains": "save over $8 million and eliminate over 4 million pounds of plastic",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How are the costs related to removing leasehold improvements treated when a lease begins?",
+    "answer_contains": "with an offsetting asset",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Where does the company's primary cash flow from operations come from?",
+    "answer_contains": "net sales and membership fees",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What are some of the types of businesses that compete with the company in terms of merchandise retail?",
+    "answer_contains": "gasoline stations",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What is the I.R.S. Employer Identification Number of the company?",
+    "answer_contains": "Washington 91-1223280",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What did the auditors involve to help assess the actuarial models?",
+    "answer_contains": "actuarial professionals with specialized skills and knowledge",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much did the company invest in certificates of deposit?",
+    "answer_contains": "Certificates of deposit 901",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How many warehouses did Costco operate in 2024?",
+    "answer_contains": "890",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What could negatively impact the supply chain and lead to delays?",
+    "answer_contains": "disruptions due to extreme weather",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Are the financial statements prepared according to U.S. standards?",
+    "answer_contains": "in conformity with U.S. generally accepted accounting principles",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much money was left for buying back stocks by the end of 2024?",
+    "answer_contains": "$2,865",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What could happen if the company fails to comply with laws and regulations?",
+    "answer_contains": "damage awards, fines, penalties, and remediation costs",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "When does the new standard for segment disclosure take effect?",
+    "answer_contains": "fiscal years beginning after December 15, 2023",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What kind of attacks are becoming more common and complex?",
+    "answer_contains": "Attempts to gain unauthorized access to systems, networks and data",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much did the company pay in interest in 2024?",
+    "answer_contains": "$129",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Where can I get a copy of the code of ethics for senior financial officers without paying?",
+    "answer_contains": "Copies of the code are available free of charge by writing to Secretary, Costco Wholesale Corporation, 999 Lake Drive, Issaquah, WA 98027",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "When did the plaintiffs file their motion for conditional certification?",
+    "answer_contains": "April 5, 2024",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What risks are associated with selling certain types of products?",
+    "answer_contains": "reputational harm",
+    "overlap": 0.17,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What could happen if we don't protect personal and business information properly?",
+    "answer_contains": "could damage our business",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How does the company report ownership interests in companies it controls but doesn't fully own?",
+    "answer_contains": "as a component of equity separate from the Company’s equity",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much did the company agree to pay in the settlement?",
+    "answer_contains": "an immaterial amount",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How many new warehouses did the company open in total, including relocations?",
+    "answer_contains": "30 new warehouses",
+    "overlap": 0.44,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "Did the company's internal control over financial reporting work well enough according to their assessment?",
+    "answer_contains": "our internal control over financial reporting was effective",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How much was the net income including non-controlling interests for the most recent fiscal year?",
+    "answer_contains": "$7,367",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "How many leases are land-only leases?",
+    "answer_contains": "134 ofthe 187 leases are land-onlyleases",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "costco-2024",
+    "question": "What did the auditors find about the company's internal controls?",
+    "answer_contains": "expressed an unqualified opinion",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What should I check to ensure the setup is correct?",
+    "answer_contains": "It is also possible to use the TeX Live distribution",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What happens when a specific translation doesn't have a needed term?",
+    "answer_contains": "the less specific catalogues are consulted",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What should I use if I want to install R to a temporary location first?",
+    "answer_contains": "DESTDIR should be used",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Where does R look for configuration settings besides the config.site file?",
+    "answer_contains": "in the area (exemplified by /usr/local) where R would be installed",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What happens when you stop using a connection and leave an R session?",
+    "answer_contains": "at the end of an R session",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What additional flags were used for building R with GCC?",
+    "answer_contains": "CFLAGS=\"-g -O2 -Wall -pedantic -Wstrict-prototypes\" C17FLAGS=\"-g -O2 -Wall -pedantic -Wno-strict-prototypes\" C90FLAGS=$C17FLAGS C99FLAGS=$C17FLAGS",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What is PL/R and what does it allow you to do with PostgreSQL?",
+    "answer_contains": "PL/R (https://github.com/postgres-plr/plr)",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Where are the results of the basic tests written when using the second method?",
+    "answer_contains": "in the tests folder of the R home directory",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Where should I put the R.app after building it?",
+    "answer_contains": "in the /Applications folder",
+    "overlap": 0.4,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What are some common data types used in databases?",
+    "answer_contains": "integer 32-bit integer",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What is the desired configuration for the FreeBSD port of R?",
+    "answer_contains": "Use of ICU for collation and the configure option --with-internal-tzcode",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Where can I find the daily tarballs for R?",
+    "answer_contains": "https://cran.r-project.org/src/base-prerelease/",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What might cause problems for applications needing full FFTW3 functionality?",
+    "answer_contains": "MKL includes a partial implementation of FFTW3",
+    "overlap": 0.38,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What kind of issues might arise when using an external version of LAPACK?",
+    "answer_contains": "potential problems with other bugs",
+    "overlap": 0.25,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Where should I install R to ensure the tests folder is writable?",
+    "answer_contains": "to a directory other than the default C:\\Program Files",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "How should the data be formatted before using it in R's modeling functions?",
+    "answer_contains": "observations in a single column",
+    "overlap": 0.33,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "Which state has the highest murder rate among those with more than 30 rape cases?",
+    "answer_contains": "Alabama",
+    "overlap": 0.29,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What files can be edited to change the compiler settings for R?",
+    "answer_contains": "~/.R/Makevars",
+    "overlap": 0.2,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What method can I use to transfer data from S-PLUS to R more reliably?",
+    "answer_contains": "dump(..., oldStyle=T)",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What should I use to figure out the encoding of a file when tools won't recognize it?",
+    "answer_contains": "the command-line utility od or a hex editor",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "How does the code ensure that the state names are stored in lowercase in the database?",
+    "answer_contains": "case=\"tolower",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What function can I use to check if a connection can be moved to a different position?",
+    "answer_contains": "Function isSeekable reports if seek can change the position",
+    "overlap": 0.43,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What should I do if my Fortran compiler is not in a common place?",
+    "answer_contains": "set the environment variable PATH accordingly",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What additional packages might I need to install if 'readline' is missing during configuration?",
+    "answer_contains": "ncurses",
+    "overlap": 0.44,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What can I use to check if the number of elements in a line matches the number of columns expected?",
+    "answer_contains": "count.fields",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  },
+  {
+    "set": "r-heldout",
+    "question": "What does a library in R refer to?",
+    "answer_contains": "a directory containing installed packages",
+    "overlap": 0.5,
+    "kind": "paraphrase"
+  }
+]
