@@ -174,6 +174,14 @@ a spreadsheet.
   right, 0.5B and 1.5B models 13 and 15. On smaller machines everything
   still works through the fixed workflows.
 
+- The app has a Settings page for the keys of outside services (Hugging
+  Face, the Claude API, Kaggle, Lightning AI, OpenRouter, Groq): paste a
+  key once, and it is checked and kept in the computer’s own keychain
+  (through the ‘keyring’ package), never in scripts or files. Kaggle’s
+  downloaded kaggle.json is picked up from Downloads with one click.
+  Free tiers are turned on there too, with a daily cap. Messages that
+  used to say “set HF_TOKEN in the R session” now point to Settings.
+
 - Training on a free cloud GPU from the app takes fewer steps. One
   button packs the run, saves it to your Downloads folder and opens the
   notebook, which now asks Colab and Kaggle for a GPU by itself. In
