@@ -75,3 +75,35 @@ test_that("the stored default policy still allows any host (null survives the ro
   dragonfarm:::policy_set(pol, set_by = "admin", runs_dir = runs)
   expect_null(dragonfarm:::policy_current(runs)$outbound$allowed_hosts)
 })
+
+test_that("with outbound set to none, every path that sends data refuses before sending", {
+  run_dir <- copy_fixture_run()
+  runs <- dirname(run_dir)
+  withr::local_options(dragonfarm.runs_dir = runs)
+  withr::local_envvar(HF_TOKEN = "hf_test", KAGGLE_USERNAME = "u", KAGGLE_KEY = "k")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  no_outbound(runs)
+  reached <- character()
+  zip <- tempfile(fileext = ".zip"); writeLines("x", zip)
+  testthat::local_mocked_bindings(
+    bundle_paths = function(run) list(zip = zip, bundle_dir = dirname(zip)),
+    kaggle_dataset_metadata = function(run) list(id = "u/x"),
+    kaggle_cli = function(...) { reached <<- c(reached, "kaggle"); list(ok = TRUE, out = "") },
+    lightning_python = function(...) { reached <<- c(reached, "lightning"); list(ok = TRUE, out = "") },
+    hf_token_present = function() { reached <<- c(reached, "huggingface"); TRUE }
+  )
+  code <- function(expr) tryCatch({ force(expr); "SENT" }, dragonfarm_error = function(e) e$code)
+  server <- dragon_backend_server("https://models.example.com/v1", "m")
+  expect_equal(code(dragonfarm:::chat_completion_request(server, list(list(role = "user", content = "hi")), 8, 0, 1)), "NOT_ALLOWED")
+  expect_equal(code(dragon_publish(run_dir, "me/model")), "NOT_ALLOWED")
+  expect_equal(code(dragonfarm:::kaggle_round_trip(run_dir)), "NOT_ALLOWED")
+  expect_equal(code(dragonfarm:::lightning_round_trip(run_dir)), "NOT_ALLOWED")
+  expect_equal(code(dragon_documents("https://example.com/page", name = "web", runs_dir = runs)), "NOT_ALLOWED")
+  expect_equal(code(dragon_llm_anthropic(api_key = "sk-test")("hello")), "NOT_ALLOWED")
+  for (svc in c("huggingface", "anthropic", "openrouter", "groq", "kaggle")) {
+    expect_match(dragonfarm:::secret_check(svc)$message, "not checked", info = svc)   # a key is saved, not checked
+  }
+  expect_equal(reached, character())                                  # nothing got as far as the network
+  ev <- dragonfarm:::store_events(100, kind = "outbound", runs_dir = runs)
+  expect_true(nrow(ev) >= 11 && all(ev$code == "NOT_ALLOWED"))       # each refusal is in the record
+})

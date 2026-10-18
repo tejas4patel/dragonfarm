@@ -111,18 +111,22 @@ kaggle_json_download <- function(dir = downloads_dir()) {
 # its keys are tested on the first training run.
 secret_check <- function(service) {
   get <- function(v) Sys.getenv(v)
-  r <- switch(service,
+  # A key check contacts the service, so it passes the outbound check like
+  # everything else; when the policy blocks it, the key is saved unchecked.
+  r <- tryCatch(switch(service,
     huggingface = http_ok("https://huggingface.co/api/whoami-v2", list(Authorization = paste("Bearer", get("HF_TOKEN")))),
     anthropic = http_ok("https://api.anthropic.com/v1/models", list(`x-api-key` = get("ANTHROPIC_API_KEY"), `anthropic-version` = "2023-06-01")),
     openrouter = http_ok("https://openrouter.ai/api/v1/key", list(Authorization = paste("Bearer", get("OPENROUTER_API_KEY")))),
     groq = http_ok("https://api.groq.com/openai/v1/models", list(Authorization = paste("Bearer", get("GROQ_API_KEY")))),
     kaggle = {
+      outbound_check("https://www.kaggle.com", "check that a saved key works")
       k <- kaggle_cli(c("kernels", "list", "--mine", "--page-size", "1"))
       list(ok = k$ok, status = if (k$ok) 200L else 401L)
     },
     lightning = return(list(ok = NA, message = "Saved. Lightning checks the keys when you first train there.")),
     return(list(ok = NA, message = "Saved."))
-  )
+  ), dragonfarm_error = function(e) if (identical(e$code, "NOT_ALLOWED")) list(blocked = TRUE) else stop(e))
+  if (isTRUE(r$blocked)) return(list(ok = NA, message = "Saved, not checked: the outbound policy does not allow contacting this service."))
   list(ok = isTRUE(r$ok), message = if (isTRUE(r$ok)) "Connected." else if (identical(r$status, 401L) || identical(r$status, 403L))
     "The service did not accept this key." else sprintf("Could not reach the service (%s).", r$status %||% "no answer"))
 }

@@ -275,7 +275,8 @@ PDF and as Word, live web pages, and a spreadsheet.
   behind it with their text (while the set is unchanged).
 
 * Everything that sends data off the machine (the Claude API, fetching web
-  pages as documents, publishing to Hugging Face, a model server elsewhere)
+  pages as documents, publishing to Hugging Face, a model server elsewhere,
+  free tiers, cloud GPUs, and checking a saved key)
   now passes one check and is recorded in the runs folder's catalogue with
   where it went and why. An admin can limit the hosts in the policy, down to
   none at all.
