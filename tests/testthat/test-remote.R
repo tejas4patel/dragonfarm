@@ -197,3 +197,80 @@ test_that("the train module can prepare a cloud bundle", {
     expect_true(file.exists(state$cloud$bundle))
   })
 })
+
+test_that("steps shown in the app never ask for code, and Colab needs no runtime change", {
+  run <- structure(list(dir = "C:/runs/r1", id = "r1"), class = "dragon_run")
+  paths <- list(zip = "C:/runs/r1/remote/bundle/dragonfarm-r1.zip", bundle_dir = "b", dir = "d")
+  for (p in c("colab", "kaggle", "lightning", "runpod")) {
+    s <- dragonfarm:::remote_steps(p, run, paths, app = TRUE, saved = TRUE)
+    expect_false(any(grepl("dragon_import|kaggle datasets|kaggle kernels|[(][)]", s)), info = p)
+    expect_true(any(grepl("Downloads", s)), info = p)
+  }
+  colab <- dragonfarm:::remote_steps("colab", run, paths, app = TRUE, saved = TRUE)
+  expect_length(colab, 4)
+  expect_false(any(grepl("Change runtime type", colab)))
+  expect_true(any(grepl("dragon_import", dragonfarm:::remote_steps("colab", run, paths))))   # the R console keeps its line
+})
+
+test_that("results that land in Downloads are found; unfinished downloads are not", {
+  d <- withr::local_tempdir()
+  withr::local_options(dragonfarm.downloads_dir = d)
+  run <- structure(list(dir = d, id = "20261017-r1"), class = "dragon_run")
+  expect_null(dragonfarm:::find_results(run))
+  file.create(file.path(d, "dragonfarm-results-20261017-r1.zip.crdownload"))
+  file.create(file.path(d, "dragonfarm-results-other.zip"))
+  expect_null(dragonfarm:::find_results(run))
+  file.create(file.path(d, "dragonfarm-results-20261017-r1 (1).zip"))
+  expect_match(dragonfarm:::find_results(run), "r1 [(]1[)][.]zip$")
+  expect_null(dragonfarm:::find_results(run, since = Sys.time() + 3600))
+  src <- withr::local_tempfile(fileext = ".zip"); writeLines("x", src)
+  expect_equal(dragonfarm:::save_to_downloads(src), file.path(d, basename(src)))
+  withr::local_options(dragonfarm.downloads_dir = file.path(d, "missing"))
+  expect_null(dragonfarm:::save_to_downloads(src))
+})
+
+test_that("only a browser on this machine counts as local", {
+  s <- function(h) list(clientData = list(url_hostname = h))
+  expect_true(dragonfarm:::is_local_session(s("127.0.0.1")))
+  expect_true(dragonfarm:::is_local_session(s("localhost")))
+  expect_false(dragonfarm:::is_local_session(s("connect.example.com")))
+})
+
+test_that("the notebook asks Colab and Kaggle for a GPU itself", {
+  nb <- jsonlite::read_json(system.file("remote", "dragonfarm_remote.ipynb", package = "dragonfarm"))
+  expect_equal(nb$metadata$accelerator, "GPU")
+  expect_equal(nb$metadata$colab$gpuType, "T4")
+  expect_true(nb$metadata$kaggle$isGpuEnabled); expect_true(nb$metadata$kaggle$isInternetEnabled)
+})
+
+test_that("one click on this machine saves the run to Downloads, opens the notebook, and imports the results", {
+  runs <- withr::local_tempdir()
+  dl <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs, dragonfarm.downloads_dir = dl)
+  opened <- NULL; imported <- NULL
+  testthat::local_mocked_bindings(
+    is_local_session = function(session) TRUE,
+    open_in_browser = function(url) opened <<- url,
+    dragon_import = function(run, results) { imported <<- results; invisible(run) }
+  )
+  ds <- dragon_dataset(toy_df())
+  state <- shiny::reactiveValues(dataset = ds, mapped = dragon_map(ds, "subject", "reply"),
+                                 model = list(id = "HuggingFaceTB/SmolLM2-135M-Instruct", trust_remote_code = FALSE),
+                                 run = NULL, hardware = NULL, cloud = NULL)
+  shiny::testServer(dragonfarm:::mod_train_server, args = list(state = state, nav_to = function(p) NULL), {
+    session$setInputs(epochs = 1, learning_rate = 2e-4, rank = 8, max_seq_len = 256, batch_size = 2, grad_accum = 1,
+                      alpha = 16, dropout = 0.05, max_steps = NA, eval_frac = 0.1, save_steps = 10, seed = 1,
+                      device = "auto", dtype = "auto", grad_ckpt = FALSE, name = "", provider = "colab")
+    session$setInputs(bundle = 1)
+    expect_true(file.exists(file.path(dl, basename(state$cloud$bundle))))     # saved where the file picker opens
+    expect_match(opened, "colab.research.google.com")
+    expect_false(any(grepl("dragon_import", state$cloud$steps)))
+    expect_match(output$cloud_ready$html, "Waiting for the results")
+    results <- file.path(dl, sprintf("dragonfarm-results-%s.zip", state$run$id))
+    writeLines("zip", results)
+    session$elapse(6000)
+    expect_equal(normalizePath(imported), normalizePath(results))
+    expect_true(state$cloud$imported)
+    expect_match(output$cloud_ready$html, "Results imported")
+  })
+})

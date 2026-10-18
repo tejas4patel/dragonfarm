@@ -268,46 +268,94 @@ kaggle_kernel_metadata <- function(run) {
 
 # Plain-text steps for one provider. Used by dragon_remote(), the bundle
 # README, and the Shiny app.
-remote_steps <- function(provider, run, paths = bundle_paths(run)) {
+remote_steps <- function(provider, run, paths = bundle_paths(run), app = FALSE, saved = FALSE) {
   check_provider(provider)
   zipname <- basename(paths$zip)
   results <- results_name(run)
   import_line <- sprintf('dragon_import(dragon_run("%s"), "%s")', run$dir, results)
   url <- remote_url(provider)
-  back_in_r <- sprintf("Back in R: %s", import_line)
+  # In the app nobody types code: results are picked up from Downloads, or
+  # imported with a button in Monitor.
+  back <- if (app) "dragonfarm imports the results as soon as they land in your Downloads folder (or import them in Monitor)."
+          else sprintf("Back in R: %s", import_line)
+  where <- if (saved) sprintf("%s (in your Downloads folder)", zipname) else zipname
   switch(provider,
     colab = c(
-      sprintf("Open the notebook in Colab: %s", url),
-      "Runtime > Change runtime type > T4 GPU (the free tier).",
-      sprintf("Runtime > Run all. The first cell asks you to upload %s.", zipname),
-      sprintf("Colab downloads %s automatically when the last cell finishes.", results),
-      back_in_r
+      if (app) "dragonfarm opens the notebook in Colab, with a free T4 GPU already chosen." else sprintf("Open the notebook in Colab: %s", url),
+      sprintf("Press Runtime > Run all, and pick %s when it asks for a file.", where),
+      sprintf("When it finishes, Colab downloads %s by itself.", results),
+      back
     ),
     kaggle = c(
-      sprintf("Open the notebook in Kaggle: %s (if Kaggle opens without it, use File > Import Notebook > Link and paste %s).", url, notebook_github_url()),
+      if (app) "dragonfarm opens the notebook in Kaggle." else
+        sprintf("Open the notebook in Kaggle: %s (if Kaggle opens without it, use File > Import Notebook > Link and paste %s).", url, notebook_github_url()),
       "Session options (right sidebar): Accelerator = GPU T4 x2 or GPU P100, Internet = On. Kaggle asks for phone verification the first time.",
-      sprintf("Input > Upload > New Dataset: upload %s. It lands under /kaggle/input, where the notebook looks for it.", zipname),
+      sprintf("Input > Upload > New Dataset: upload %s. It lands under /kaggle/input, where the notebook looks for it.", where),
       "Run All.",
       sprintf("%s appears under Output when the notebook finishes. Download it.", results),
-      back_in_r,
-      sprintf("Or from a terminal with the Kaggle CLI, using the metadata already written: kaggle datasets create -p \"%s\" then kaggle kernels push -p \"%s\" then kaggle kernels output %s -p .",
-              paths$bundle_dir, paths$dir, kaggle_kernel_metadata(run)$id)
+      back,
+      if (!app) sprintf("Or from a terminal with the Kaggle CLI, using the metadata already written: kaggle datasets create -p \"%s\" then kaggle kernels push -p \"%s\" then kaggle kernels output %s -p .",
+                        paths$bundle_dir, paths$dir, kaggle_kernel_metadata(run)$id)
     ),
     lightning = c(
-      sprintf("Open a Studio from the dragonfarm repository: %s", url),
+      sprintf("Open a Studio from the dragonfarm repository%s", if (app) " (dragonfarm opens it)." else paste0(": ", url)),
       "Switch the Studio to a GPU machine (machine picker, top right). A T4 is enough for models up to 1.5B parameters.",
-      sprintf("Drag %s into the Studio file browser, open %s, and run all cells.", zipname, remote_notebook_repo_path),
+      sprintf("Drag %s into the Studio file browser, open %s, and run all cells.", where, remote_notebook_repo_path),
       sprintf("Download %s from the file browser when the last cell finishes.", results),
-      back_in_r
+      back
     ),
     runpod = c(
-      sprintf("Open the RunPod console: %s and deploy a pod from the \"RunPod PyTorch\" template on a GPU with 16 GB or more.", url),
-      sprintf("Connect > Jupyter Lab. Upload %s and %s (both in %s), then run all cells.", zipname, remote_notebook_file, paths$dir),
+      sprintf("Deploy a pod from the \"RunPod PyTorch\" template on a GPU with 16 GB or more%s", if (app) " (dragonfarm opens the RunPod console)." else paste0(": ", url)),
+      sprintf("Connect > Jupyter Lab. Upload %s and %s (both in %s), then run all cells.", where, remote_notebook_file, paths$dir),
       sprintf("Download %s from the Jupyter file browser when the last cell finishes.", results),
       "Stop the pod so billing stops.",
-      back_in_r
+      back
     )
   )
+}
+
+# Is the app's browser on this machine? Then files can go straight to its
+# Downloads folder and links can open in the system browser.
+is_local_session <- function(session) {
+  host <- session$clientData$url_hostname %||% ""
+  host %in% c("localhost", "127.0.0.1", "::1", "[::1]")
+}
+
+# Open a link in the system browser (a function of its own so tests can
+# stand in for it).
+open_in_browser <- function(url) invisible(try(utils::browseURL(url), silent = TRUE))
+
+# Copy a file into Downloads; returns the new path, or NULL if there is no
+# Downloads folder or the copy failed.
+save_to_downloads <- function(path) {
+  d <- downloads_dir()
+  if (is.null(d)) return(NULL)
+  to <- file.path(d, basename(path))
+  if (isTRUE(file.copy(path, to, overwrite = TRUE))) to
+}
+
+# Where the browser saves downloads on this machine; NULL when there is no
+# such folder. options(dragonfarm.downloads_dir) overrides it.
+downloads_dir <- function() {
+  d <- getOption("dragonfarm.downloads_dir")
+  if (!is.null(d)) return(if (dir.exists(d)) d)
+  home <- if (is_windows()) Sys.getenv("USERPROFILE", unset = path.expand("~")) else path.expand("~")
+  d <- file.path(home, "Downloads")
+  if (dir.exists(d)) d
+}
+
+# A run's results zip that has landed in a folder, newest first. Browsers
+# write to a temporary name (.crdownload, .part) until the download is
+# complete, so a file with the final name is whole. Repeats get " (1)".
+find_results <- function(run, dir = downloads_dir(), since = NULL) {
+  if (is.null(dir) || !dir.exists(dir)) return(NULL)
+  base <- sub("[.]zip$", "", results_name(run))
+  f <- list.files(dir, full.names = TRUE)
+  b <- basename(f)
+  f <- f[startsWith(b, base) & endsWith(b, ".zip")]
+  if (!is.null(since)) f <- f[file.mtime(f) >= since]
+  if (!length(f)) return(NULL)
+  f[which.max(file.mtime(f))]
 }
 
 remote_readme <- function(run, paths = bundle_paths(run)) {

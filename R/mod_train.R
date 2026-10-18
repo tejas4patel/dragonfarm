@@ -47,9 +47,9 @@ mod_train_ui <- function(id) {
         id = ns("cloud_acc"), open = FALSE,
         bslib::accordion_panel(
           "No GPU here? Train on a cloud GPU", value = "cloud",
-          shiny::p(class = "hint", "Same run, different machine: package it as a zip, open a free or rented GPU notebook, upload the zip, run all cells, then import the results in Monitor."),
+          shiny::p(class = "hint", "Same run, on a free cloud GPU. One click packs the run, saves it to your Downloads folder and opens the notebook; there you press Run all and pick the file. The results come back by themselves."),
           shiny::selectInput(ns("provider"), "Provider", choices = cloud_provider_choices(), width = "100%"),
-          shiny::actionButton(ns("bundle"), "Prepare cloud bundle", class = "btn-outline-primary"),
+          shiny::actionButton(ns("bundle"), "Train on the cloud GPU", class = "btn-primary"),
           shiny::uiOutput(ns("cloud_ready"))
         )
       )
@@ -295,10 +295,17 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
         list(run = run, info = info)
       }, error = function(e) { notify_error(e); NULL })
       if (!is.null(res)) {
+        # On this machine: save the zip where the notebook's file picker
+        # opens, and open the provider in the system browser. On a server
+        # the user downloads the zip and follows the link instead.
+        local <- is_local_session(session)
+        saved <- if (local) save_to_downloads(res$info$bundle)
+        if (local) open_in_browser(res$info$url)
         state$run <- res$run
-        state$cloud <- list(run_id = res$run$id, provider = provider, url = res$info$url,
-                            bundle = res$info$bundle, steps = res$info$steps)
-        shiny::showNotification(sprintf("Bundle ready for %s.", provider_name(provider)), type = "message")
+        state$cloud <- list(run_id = res$run$id, run_dir = res$run$dir, provider = provider, url = res$info$url,
+                            bundle = res$info$bundle, saved = saved, local = local, since = Sys.time(),
+                            steps = remote_steps(provider, res$run, app = TRUE, saved = !is.null(saved)), imported = FALSE)
+        shiny::showNotification(sprintf("Sent to %s. Press Run all there.", provider_name(provider)), type = "message")
       }
     })
 
@@ -308,18 +315,39 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       contentType = "application/zip"
     )
 
+    # Watch Downloads for the results and import them as soon as they land.
+    shiny::observe({
+      cl <- state$cloud
+      if (is.null(cl) || isTRUE(cl$imported) || !isTRUE(cl$local)) return()
+      shiny::invalidateLater(5000)
+      run <- tryCatch(dragon_run(cl$run_dir), error = function(e) NULL)
+      if (is.null(run)) return()
+      f <- find_results(run, since = cl$since - 60)
+      if (is.null(f)) return()
+      ok <- tryCatch({ dragon_import(run, f); TRUE }, error = function(e) { notify_error(e); FALSE })
+      cl$imported <- ok
+      state$cloud <- cl
+      if (ok) {
+        state$run <- dragon_run(cl$run_dir)
+        shiny::showNotification(sprintf("Results for %s are back from %s. See Monitor.", cl$run_id, provider_name(cl$provider)),
+                                type = "message", duration = NULL)
+      }
+    })
+
     output$cloud_ready <- shiny::renderUI({
       cl <- state$cloud
       if (is.null(cl)) return(NULL)
       shiny::div(class = "cloud-ready",
-        shiny::p(class = "small", "Run ", shiny::code(cl$run_id), " is bundled (", file_size_label(cl$bundle), ")."),
+        if (isTRUE(cl$imported)) shiny::p(class = "text-success small", "Results imported. The run is ready in Monitor.")
+        else if (!is.null(cl$saved)) shiny::p(class = "small", "Saved ", shiny::code(basename(cl$saved)), " to your Downloads folder (",
+                                               file_size_label(cl$saved), "). Waiting for the results...")
+        else shiny::p(class = "small", "Run ", shiny::code(cl$run_id), " is packed (", file_size_label(cl$bundle), ")."),
         shiny::div(class = "cloud-actions",
-          shiny::downloadButton(ns("bundle_zip"), "Download bundle", class = "btn-primary"),
+          if (is.null(cl$saved)) shiny::downloadButton(ns("bundle_zip"), "Download the run", class = "btn-primary"),
           shiny::tags$a(href = cl$url, target = "_blank", rel = "noopener", class = "btn btn-outline-primary",
-                        paste("Open", provider_name(cl$provider)))
+                        paste("Open", provider_name(cl$provider), if (isTRUE(cl$local)) "again"))
         ),
-        shiny::tags$ol(class = "cloud-steps", lapply(cl$steps, shiny::tags$li)),
-        shiny::p(class = "hint", "When the notebook finishes, import the results zip in the Monitor panel.")
+        if (!isTRUE(cl$imported)) shiny::tags$ol(class = "cloud-steps", lapply(cl$steps, shiny::tags$li))
       )
     })
 
