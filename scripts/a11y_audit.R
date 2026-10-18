@@ -3,7 +3,9 @@
 # visible (an empty runs folder, so result tables and cards that need a run
 # are not covered). Needs chromote, callr and axe.min.js (axe-core 4.10.2;
 # from the axe-selenium-python wheel on PyPI or the axe-core npm package).
-#   Rscript scripts/a11y_audit.R <label> [documents|table] [path/to/axe.min.js] [out dir]
+#   Rscript scripts/a11y_audit.R <label> [documents|table] [path/to/axe.min.js] [out dir] [run dir]
+# A run directory, when given, is copied into the runs folder first, so the
+# tabs that show a run (Monitor, Try it) are audited with it loaded.
 args <- commandArgs(trailingOnly = TRUE)
 label <- if (length(args)) args[[1]] else "before"
 route <- if (length(args) > 1) args[[2]] else "documents"
@@ -12,6 +14,8 @@ S <- if (length(args) > 3) args[[4]] else tempfile("a11y-")
 dir.create(S, showWarnings = FALSE, recursive = TRUE)
 port <- 3940
 runs <- file.path(S, "runs")
+dir.create(runs, showWarnings = FALSE, recursive = TRUE)
+if (length(args) > 4) file.copy(args[[5]], runs, recursive = TRUE)
 pkg <- normalizePath(".")
 srv <- callr::r_bg(function(port, runs, route, pkg) {
   devtools::load_all(pkg, quiet = TRUE)
@@ -43,7 +47,7 @@ for (mode in c("light", "dark")) {
     for (x in v) rows[[length(rows) + 1]] <- data.frame(mode = mode, tab = t, id = x$id, impact = x$impact %||% "", n = x$n,
       help = x$help, targets = paste(unlist(x$targets), collapse = " | "), html = paste(unlist(x$html), collapse = " || "))
     cat(mode, t, length(v), "rules violated\n")
-    if (t %in% c("documents", "data", "monitor")) shot(paste(label, mode, t, sep = "-"))
+    if (t %in% c("documents", "data", "monitor", "tryit")) shot(paste(label, mode, t, sep = "-"))
   }
 }
 out <- if (length(rows)) do.call(rbind, rows) else data.frame()

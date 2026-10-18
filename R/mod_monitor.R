@@ -38,11 +38,11 @@ mod_monitor_ui <- function(id) {
       col_widths = c(6, 6),
       bslib::card(
         bslib::card_header("Trainer log"),
-        shiny::verbatimTextOutput(ns("log"), placeholder = TRUE)
+        scroll_box(shiny::verbatimTextOutput(ns("log"), placeholder = TRUE), "Trainer log")
       ),
       bslib::card(
         bslib::card_header("R code for this run"),
-        shiny::verbatimTextOutput(ns("code"), placeholder = TRUE)
+        scroll_box(shiny::verbatimTextOutput(ns("code"), placeholder = TRUE), "R code for this run")
       )
     ),
     bslib::layout_columns(
@@ -84,7 +84,7 @@ mod_monitor_ui <- function(id) {
       shiny::div(class = "table-wrap", shiny::tableOutput(ns("activity"))),
       shiny::selectInput(ns("activity_pick"), "Details of", choices = c("Pick an entry" = ""), width = "100%"),
       shiny::uiOutput(ns("activity_trace")),
-      shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE),
+      scroll_box(shiny::verbatimTextOutput(ns("activity_detail"), placeholder = TRUE), "Details of the selected entry"),
       shiny::uiOutput(ns("replay_ui")),
       shiny::div(class = "btn-row", shiny::downloadButton(ns("export_record"), "Download the record (CSV)", class = "btn-outline-secondary btn-sm"))
     ),
@@ -563,4 +563,9 @@ run_actions_ui <- function(state, ns = identity) {
     if (state %in% c("failed", "cancelled"))
       shiny::actionButton(ns("resume"), "Resume from checkpoint", class = "btn-outline-secondary", width = "100%")
   )
+}
+
+# A scrolling text box keyboard users can reach and scroll (WCAG 2.1.1).
+scroll_box <- function(tag, label) {
+  shiny::tagAppendAttributes(tag, tabindex = "0", role = "region", `aria-label` = label)
 }

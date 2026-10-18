@@ -33,3 +33,12 @@ test_that("the label check catches a missing label", {
   html <- as.character(htmltools::tagList(shiny::textInput("a", NULL), shiny::textInput("b", "Name")))
   expect_equal(unlabelled_controls(html), "a")
 })
+
+test_that("scrolling text boxes can be reached with the keyboard and are named", {
+  html <- as.character(dragonfarm:::mod_monitor_ui("monitor"))
+  for (id in c("monitor-log", "monitor-code", "monitor-activity_detail")) {
+    tag <- regmatches(html, regexpr(sprintf('<pre[^>]*id="%s"[^>]*>', id), html))
+    expect_match(tag, 'tabindex="0"', info = id)
+    expect_match(tag, 'aria-label="[^"]+"', info = id)
+  }
+})
