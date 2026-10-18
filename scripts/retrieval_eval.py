@@ -18,7 +18,9 @@ Run from the repository root with the package's Python environment:
     python scripts/retrieval_eval.py                      # all sets in ~/dragonfarm_runs/documents
     python scripts/retrieval_eval.py --runs D:/runs --hand scripts/retrieval_eval_questions.json
 
-Prints hit@1, hit@4, and hit@8 per set and mode. No data is written.
+Prints hit@1, hit@4, hit@8 and MRR (mean reciprocal rank of the first
+right chunk in the top 20; 0 when it is not there) per set and mode, then a
+total over all sets weighted by questions. No data is written.
 """
 import argparse
 import hashlib
@@ -32,6 +34,7 @@ sys.path.insert(0, str(HERE.parent / "inst" / "python"))
 from dragonfarm.retrieval import Encoder, LoadedIndex  # noqa: E402
 
 KS = (1, 4, 8)
+MRR_DEPTH = 20
 
 
 def generated_questions(set_dir):
@@ -81,7 +84,13 @@ def score(idx, enc, items, mode):
         hits = idx.search(vecs, k=k, queries=qs, mode=mode)
         for (_, targets), found in zip(items, hits):
             res[k] += any(h["id"] in targets for h in found)
-    return {k: res[k] / len(items) for k in KS}
+    out = {k: res[k] / len(items) for k in KS}
+    rr = 0.0
+    for (_, targets), found in zip(items, idx.search(vecs, k=MRR_DEPTH, queries=qs, mode=mode)):
+        rank = next((i + 1 for i, h in enumerate(found) if h["id"] in targets), None)
+        rr += 1.0 / rank if rank else 0.0
+    out["mrr"] = rr / len(items)
+    return out
 
 
 def main(argv=None):
@@ -100,7 +109,8 @@ def main(argv=None):
         return 1
     hand = a.hand if a.hand and Path(a.hand).exists() else None
     encoders = {}
-    print(f"{'set':<22} {'questions':<34} {'mode':<7} " + " ".join(f"hit@{k:<3}" for k in KS))
+    print(f"{'set':<22} {'questions':<34} {'mode':<7} " + " ".join(f"hit@{k:<3}" for k in KS) + "  MRR")
+    totals = {}
     for set_dir in sets:
         idx = LoadedIndex(set_dir)
         model = idx.info["model"]
@@ -114,7 +124,14 @@ def main(argv=None):
             desc = f"{label} ({len(items)})"
             for mode in ("dense", "hybrid"):
                 r = score(idx, enc, items, mode)
-                print(f"{set_dir.name:<22} {desc:<34} {mode:<7} " + " ".join(f"{r[k]:6.1%}" for k in KS))
+                print(f"{set_dir.name:<22} {desc:<34} {mode:<7} " + " ".join(f"{r[k]:6.1%}" for k in KS) + f"  {r['mrr']:.3f}")
+                t = totals.setdefault((label, mode), {"n": 0, **{k: 0.0 for k in (*KS, "mrr")}})
+                t["n"] += len(items)
+                for k in (*KS, "mrr"):
+                    t[k] += r[k] * len(items)
+    for (label, mode), t in totals.items():
+        desc = f"{label} ({t['n']})"
+        print(f"{'TOTAL':<22} {desc:<34} {mode:<7} " + " ".join(f"{t[k] / t['n']:6.1%}" for k in KS) + f"  {t['mrr'] / t['n']:.3f}")
     return 0
 
 
