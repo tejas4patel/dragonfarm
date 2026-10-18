@@ -114,11 +114,15 @@ point everyone at one Postgres database instead, with one setting.</p>
 <li>a free-tier model provider, after a person has opted in, with a
 daily cap;</li>
 <li>training on a cloud GPU (Kaggle, Lightning AI), with the user’s own
-key.</li>
+key;</li>
+<li>checking that a saved key works.</li>
 </ul>
 <p>Every one of these goes through one check first. It is written to the
 record (where, why, how much), and an admin can limit the hosts it may
-reach, down to none at all.</p>
+reach, down to none at all. With none, a test tries every one of them
+and each is refused before anything is sent. Downloading the open models
+themselves is separate: it sends no data of yours, and an offline
+install needs no downloads at all.</p>
 </div>
 <div class="section level2">
 <h2 id="who-decides">Who decides<a class="anchor" aria-label="anchor" href="#who-decides"></a>
@@ -135,6 +139,11 @@ readable.</p>
 a person signs it off, with what the approval means (“approved for
 answering questions on our SOPs”). The policy can require that the
 signer is not the person who proposed it.</p>
+<p>An admin can also switch on governed mode. Then a trained model
+answers people only once it is an approved version; until then it is
+refused before it runs. Untrained models are not affected, and a
+candidate can still be tried and evaluated before anyone signs it
+off.</p>
 </div>
 <div class="section level2">
 <h2 id="what-the-record-shows">What the record shows<a class="anchor" aria-label="anchor" href="#what-the-record-shows"></a>
@@ -164,7 +173,15 @@ older versions of the reader, they came back byte for byte.</li>
 <li>
 <strong>Replay.</strong> A recorded search, answer or agent task can
 be run again and compared with the original. When it differs, the record
-says whether the documents were re-read or the model changed.</li>
+says whether the documents were re-read or the model changed. Eight
+recorded answers from a 3B model on FDA guidance came back identical:
+the same excerpts, the same prompt, the same words.</li>
+<li>
+<strong>Figures.</strong> Every answer is checked, without a model,
+for figures that appear in none of its excerpts and for citations that
+point nowhere; the app flags them under the answer. On 224 recorded
+answers it flagged one, a real mistake, and nothing else. It cannot tell
+whether the words are right.</li>
 <li>
 <strong>Personal data.</strong> A set can be checked for email
 addresses, phone numbers, US social security numbers, card numbers, and
@@ -198,9 +215,11 @@ validation can build on.</li>
 national identifiers are not detected.</li>
 <li>
 <strong>Planted instructions.</strong> Text inside a document can
-still steer an answer now and then. Our larger models resist it better
-than our smaller ones, and no helper can act outside its policy, but
-answers should be read with their sources.</li>
+still steer an answer now and then: on our two test sets the 7B was
+steered on 4 of 12 and 1 of 12 questions. The test sets ship with
+dragonfarm, so you can measure your own model the same way. No helper
+can act outside its policy, but answers should be read with their
+sources.</li>
 <li>
 <strong>Encryption.</strong> Files are protected by the machine’s
 own disk encryption and permissions; dragonfarm adds none of its
