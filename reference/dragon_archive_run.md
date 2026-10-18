@@ -44,9 +44,10 @@ The run id, invisibly.
 
 ``` r
 if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
 dragon_archive_run(run)
 dragon_archived_runs()
 dragon_unarchive_run(run$id)
-dragon_delete_run("20260101-000000-old-experiment")
+# dragon_delete_run(run) removes it for good
 }
 ```
