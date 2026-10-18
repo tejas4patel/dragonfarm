@@ -169,7 +169,10 @@ a spreadsheet.
   says is worth reading first: a licence with terms of its own, training
   rows with personal data (and who approved them, or that nobody did), a
   document set re-read since training, remote code, or no evaluation.
-  The list is kept with the signature. Nothing here blocks a sign-off.
+  The list is kept with the signature. Two of them hold an approval
+  until the signer ticks that they reviewed them, and the tick is
+  recorded: a document set re-read since training, and personal data
+  that nobody approved. Rejecting or retiring never needs the tick.
 
 ### Asking documents
 
