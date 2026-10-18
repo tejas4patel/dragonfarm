@@ -182,7 +182,9 @@ a spreadsheet.
   include any code. With a Kaggle key (kaggle.json), Kaggle needs no
   clicks at all: the app uploads the run as a private dataset, starts
   the notebook on a GPU, waits, and imports the results, showing where
-  it is as it goes.
+  it is as it goes. Lightning AI works the same way with your Lightning
+  keys: the app starts a GPU Studio, trains, brings the results back and
+  stops the Studio, even if something fails.
 
 - Every answer from documents
   ([`dragon_ask()`](https://dragonfarm.dev/reference/dragon_ask.md), the
