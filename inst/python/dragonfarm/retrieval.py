@@ -29,8 +29,18 @@ import time
 from pathlib import Path
 
 DEFAULT_MODEL = "BAAI/bge-small-en-v1.5"
-# bge models were trained with this instruction on the query side only.
-QUERY_PREFIX = {"bge": "Represent this sentence for searching relevant passages: "}
+# bge models were trained with this instruction on the query side only; e5
+# models (multilingual-e5) with a prefix on both sides.
+QUERY_PREFIX = {"bge": "Represent this sentence for searching relevant passages: ", "e5": "query: "}
+PASSAGE_PREFIX = {"e5": "passage: "}
+
+
+def prefixes(model_id):
+    """(query prefix, passage prefix) the model was trained with."""
+    m = model_id.lower()
+    q = next((p for key, p in QUERY_PREFIX.items() if key in m), "")
+    d = next((p for key, p in PASSAGE_PREFIX.items() if key in m), "")
+    return q, d
 
 
 def chunk_signature(ids):
@@ -49,7 +59,7 @@ class Encoder:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.tok = AutoTokenizer.from_pretrained(model_id)
         self.model = AutoModel.from_pretrained(model_id).to(self.device).eval()
-        self.query_prefix = next((p for key, p in QUERY_PREFIX.items() if key in model_id.lower()), "")
+        self.query_prefix, self.passage_prefix = prefixes(model_id)
 
     def encode(self, texts, batch_size=32, prefix=""):
         import torch
@@ -68,6 +78,9 @@ class Encoder:
 
     def encode_queries(self, texts):
         return self.encode(texts, prefix=self.query_prefix)
+
+    def encode_passages(self, texts):
+        return self.encode(texts, prefix=self.passage_prefix)
 
 
 def _read_manifest(set_dir):
@@ -108,7 +121,8 @@ def build_index(set_dir, encoder=None, model_id=DEFAULT_MODEL, force=False, log=
         return existing
     enc = encoder or Encoder(model_id)
     t0 = time.time()
-    vectors = enc.encode([chunk_text_for_index(c) for c in chunks]).numpy().astype("float16")
+    encode = getattr(enc, "encode_passages", enc.encode)   # stand-in encoders in tests have encode() only
+    vectors = encode([chunk_text_for_index(c) for c in chunks]).numpy().astype("float16")
     (set_dir / "index").mkdir(exist_ok=True)
     np.save(set_dir / "index" / "embeddings.npy", vectors)
     with open(set_dir / "index" / "ids.json", "w", encoding="utf-8") as f:

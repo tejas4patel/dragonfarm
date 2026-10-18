@@ -296,3 +296,11 @@ def test_extra_chunks_add_what_the_top_k_repeats_leave_out():
     assert more[:4] == plain and more[4] == "6"        # the top 4 is unchanged; the different one is added
     assert len(idx.search(q, k=4, mode="dense", extra=2)[0]) == 6
     assert len(idx.search(q, k=4, mode="dense", extra=99)[0]) == len(texts)   # never more than there is
+
+
+def test_prefixes_follow_how_each_model_was_trained():
+    from dragonfarm.retrieval import prefixes
+    q, d = prefixes("BAAI/bge-small-en-v1.5")
+    assert q.startswith("Represent this sentence") and d == ""
+    assert prefixes("intfloat/multilingual-e5-small") == ("query: ", "passage: ")
+    assert prefixes("sentence-transformers/all-MiniLM-L6-v2") == ("", "")
