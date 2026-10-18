@@ -10,9 +10,9 @@ skipped on CRAN.
 
 ## R CMD check results
 
-Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1):
-0 errors | 0 warnings | 1 note. The note is the incoming check's "Days since
-last update", from a run made three days after 0.3.4; this release is
+Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1,
+2026-10-17): 0 errors | 0 warnings | 1 note. The note is the incoming check's
+"Days since last update", from a run made five days after 0.3.4; this release is
 submitted at least a month after 0.3.4, so it should not appear.
 
 The "detritus in the temp directory" NOTE reported with 0.3.4 is fixed: a
@@ -24,13 +24,20 @@ from a script file.
 ## Changes that touch the check
 
 * New imports 'DBI' and 'RSQLite' for a small catalog of document sets,
-  runs, and an append-only event log, kept in one SQLite file in the user's
-  runs folder (never in the package or home directory unless the user points
-  the runs folder there). Tests use temporary folders.
+  runs, model versions, and an append-only event log (including a record of
+  each answer and of anything sent off the machine), kept in one SQLite file
+  in the user's runs folder (never in the package or home directory unless
+  the user points the runs folder there). Tests use temporary folders.
+* New suggested packages 'S7' and 'mcptools' for `dragon_ellmer_tools()` and
+  `dragon_mcp_server()`, which hand the package's tools to other agents; the
+  examples and tests that need them are skipped when they are absent.
+* New file `inst/python/requirements.lock` (about 100 KB): the 'Python'
+  packages pinned with hashes, for administrators who install without the
+  internet. Nothing reads it during the check.
 
 * New 'Python' requirements for the document readers ('pypdf',
-  'cryptography' for encrypted PDFs, 'python-docx', 'openpyxl') and for 4-bit loading ('bitsandbytes', skipped
-  on macOS). They are declared with `reticulate::py_require()` and installed
+  'cryptography' for encrypted PDFs, 'python-docx', 'openpyxl') and for
+  4-bit loading ('bitsandbytes', skipped on macOS). They are declared with `reticulate::py_require()` and installed
   only when a user first runs a function that needs 'Python'.
 * New import: 'commonmark', already a dependency of 'shiny', used to show
   model replies in the app as formatted text.
