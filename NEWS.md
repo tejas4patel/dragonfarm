@@ -150,7 +150,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   imports them. The steps the app shows no longer include any code. With a
   Kaggle key (kaggle.json), Kaggle needs no clicks at all: the app uploads
   the run as a private dataset, starts the notebook on a GPU, waits, and
-  imports the results, showing where it is as it goes.
+  imports the results, showing where it is as it goes. Lightning AI works
+  the same way with your Lightning keys: the app starts a GPU Studio,
+  trains, brings the results back and stops the Studio, even if something
+  fails.
 
 * Every answer from documents (`dragon_ask()`, the Ask step, and chats with
   documents) is recorded in the runs folder's catalogue with what it came

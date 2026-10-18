@@ -55,7 +55,7 @@ test_that("an existing dataset gets a new version, and failures stop with the re
   expect_true("datasets version" %in% k$calls())
   st <- jsonlite::read_json(file.path(run$dir, "status.json"))
   expect_equal(st$remote$stage, "failed"); expect_match(st$remote$detail, "phone verification")
-  expect_match(dragonfarm:::kaggle_stage_label("failed"), "went wrong")
+  expect_match(dragonfarm:::remote_stage_label("failed", "kaggle"), "went wrong on Kaggle")
 })
 
 test_that("Kaggle statuses are read plainly", {

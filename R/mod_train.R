@@ -293,15 +293,15 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
                              rewards = s$rewards, group_size = s$group_size,
                              temperature = s$rl_temperature, max_new_tokens = s$rl_max_new_tokens)
         info <- dragon_remote(run, provider, open = FALSE)
-        # Kaggle with a key: the whole round trip runs in the background.
-        if (identical(provider, "kaggle") && kaggle_ready()) info$auto <- kaggle_start(run)
+        # Kaggle or Lightning with keys: the whole round trip runs in the background.
+        if (auto_ready(provider)) info$auto <- auto_start(provider, run)
         list(run = run, info = info)
       }, error = function(e) { notify_error(e); NULL })
       if (!is.null(res) && !is.null(res$info$auto)) {
         state$run <- res$run
         state$cloud <- list(run_id = res$run$id, run_dir = res$run$dir, provider = provider, url = res$info$url,
                             bundle = res$info$bundle, auto = TRUE, local = FALSE, since = Sys.time(), imported = FALSE)
-        shiny::showNotification("Sent to Kaggle. Training runs there by itself; follow it here.", type = "message")
+        shiny::showNotification(sprintf("Sent to %s. Training runs there by itself; follow it here.", provider_name(provider)), type = "message")
         return()
       }
       if (!is.null(res)) {
@@ -345,9 +345,12 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
     })
 
     output$provider_hint <- shiny::renderUI({
-      if (!identical(input$provider, "kaggle")) return(NULL)
-      if (kaggle_ready()) shiny::p(class = "hint", "Your Kaggle key is set up: dragonfarm does everything on Kaggle for you.")
-      else shiny::p(class = "hint", "Tip: with a Kaggle key (kaggle.com, Settings > API > Create New Token, saved as kaggle.json in your .kaggle folder) dragonfarm runs Kaggle for you, with no clicks there.")
+      p <- input$provider %||% ""
+      if (!p %in% c("kaggle", "lightning")) return(NULL)
+      if (auto_ready(p)) return(shiny::p(class = "hint", sprintf("Your %s key is set up: dragonfarm does everything there for you.", provider_name(p))))
+      shiny::p(class = "hint", switch(p,
+        kaggle = "Tip: with a Kaggle key (kaggle.com, Settings > API > Create New Token, saved as kaggle.json in your .kaggle folder) dragonfarm runs Kaggle for you, with no clicks there.",
+        lightning = "Tip: with your Lightning AI keys (your profile's Keys page: user id and API key) dragonfarm starts a GPU Studio, trains and brings the results back for you."))
     })
 
     # The automatic Kaggle round trip reports its stage in status.json.
@@ -365,7 +368,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       cl$imported <- TRUE
       state$cloud <- cl
       state$run <- dragon_run(cl$run_dir)
-      shiny::showNotification(sprintf("Results for %s are back from Kaggle. See Monitor.", cl$run_id), type = "message", duration = NULL)
+      shiny::showNotification(sprintf("Results for %s are back from %s. See Monitor.", cl$run_id, provider_name(cl$provider)), type = "message", duration = NULL)
     })
 
     output$cloud_ready <- shiny::renderUI({
@@ -375,9 +378,9 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
         r <- kaggle_progress()
         return(shiny::div(class = "cloud-ready",
           shiny::p(class = if (identical(r$stage, "failed")) "text-danger small" else if (identical(r$stage, "imported")) "text-success small" else "small",
-                   kaggle_stage_label(r$stage)),
+                   remote_stage_label(r$stage, cl$provider)),
           if (identical(r$stage, "failed") && !is.null(r$detail)) shiny::tags$pre(class = "small", r$detail),
-          shiny::p(class = "hint", "You can close this tab; training carries on at Kaggle and the results are imported when it ends.")
+          shiny::p(class = "hint", sprintf("You can close this tab; training carries on at %s and the results are imported when it ends.", provider_name(cl$provider)))
         ))
       }
       shiny::div(class = "cloud-ready",

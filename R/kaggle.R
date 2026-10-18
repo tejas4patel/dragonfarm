@@ -21,14 +21,33 @@ kaggle_cli <- function(args) {
   list(ok = is.null(attr(out, "status")) || identical(as.integer(attr(out, "status")), 0L), out = as.character(out))
 }
 
-# Where a Kaggle round trip stands, kept in the run's status.json so the app
+# Where a cloud round trip stands, kept in the run's status.json so the app
 # (or another R session) can show it.
-kaggle_stage <- function(run, stage, detail = NULL) {
+remote_stage <- function(run, provider, stage, detail = NULL) {
   st <- read_json(run_path(run, "status.json"))
-  st$remote <- utils::modifyList(st$remote %||% list(), list(provider = "kaggle", stage = stage, stage_at = now_iso(),
+  st$remote <- utils::modifyList(st$remote %||% list(), list(provider = provider, stage = stage, stage_at = now_iso(),
                                                              detail = detail))
   write_json(st, run_path(run, "status.json"))
   invisible(stage)
+}
+
+kaggle_stage <- function(run, stage, detail = NULL) remote_stage(run, "kaggle", stage, detail)
+
+# Run a round trip in a background R process that outlives the app.
+remote_launch <- function(run, provider, call) {
+  script <- run_path(run, "remote", paste0(provider, ".R"))
+  writeLines(sprintf("%s; %s", package_loader(), call), script)
+  launch_rscript(script, run_path(run, "remote", paste0(provider, ".log")))
+}
+
+# Which providers can run with no clicks on this machine, and starting them.
+auto_ready <- function(provider) {
+  switch(provider, kaggle = kaggle_ready(), lightning = lightning_ready(), FALSE)
+}
+
+auto_start <- function(provider, run) {
+  switch(provider, kaggle = kaggle_start(run), lightning = lightning_start(run),
+         cli::cli_abort("{provider} cannot be run automatically."))
 }
 
 kaggle_status_of <- function(out) {
@@ -108,17 +127,17 @@ kaggle_start <- function(run) {
   }
   bundle_run(run)   # again, so the Kaggle metadata carries the user's name
   kaggle_stage(run, "queued")
-  script <- run_path(run, "remote", "kaggle.R")
-  writeLines(sprintf("%s; dragonfarm:::kaggle_round_trip('%s')", package_loader(), normalizePath(run$dir, winslash = "/")), script)
-  launch_rscript(script, run_path(run, "remote", "kaggle.log"))
+  remote_launch(run, "kaggle", sprintf("dragonfarm:::kaggle_round_trip('%s')", normalizePath(run$dir, winslash = "/")))
 }
 
 # One plain line for the app.
-kaggle_stage_label <- function(stage) {
+remote_stage_label <- function(stage, provider = "kaggle") {
+  where <- provider_name(provider)
   switch(stage %||% "",
-    queued = "Getting ready...", uploading = "Uploading the run to Kaggle (private)...",
-    preparing = "Kaggle is preparing the upload...", starting = "Starting the notebook on a Kaggle GPU...",
-    running = "Training on Kaggle...", downloading = "Downloading the results...",
-    imported = "Done: the results are imported.", failed = "Something went wrong on Kaggle.",
+    queued = "Getting ready...", uploading = sprintf("Uploading the run to %s (private)...", where),
+    preparing = sprintf("%s is preparing the upload...", where), starting = sprintf("Starting a GPU on %s...", where),
+    running = sprintf("Training on %s...", where), downloading = "Downloading the results...",
+    downloaded = "Importing the results...",
+    imported = "Done: the results are imported.", failed = sprintf("Something went wrong on %s.", where),
     "")
 }
