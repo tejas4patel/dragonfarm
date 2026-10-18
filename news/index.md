@@ -227,6 +227,12 @@ a spreadsheet.
   as on a laptop. Without it, nothing changes: each runs folder keeps
   its own SQLite file.
 
+- On a server that signs people in, such as Posit Connect, the record,
+  proposals, sign-offs and policy changes name the signed-in person, not
+  the server’s account. The policy can name admins and admin groups;
+  then only they may change it. Tested with a simulated sign-in, not yet
+  on a real Connect server.
+
 - Governed mode: an admin can tick “Only approved model versions answer
   questions” in Settings. Then a trained run answers in Ask, Chat and
   the answer tool only once a person has approved it as a model version
