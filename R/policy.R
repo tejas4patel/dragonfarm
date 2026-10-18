@@ -35,6 +35,10 @@ policy_problems <- function(policy) {
       p <- c(p, sprintf("min_model_b for '%s' must be a number of billions of parameters", n))
     }
   }
+  for (a in names(policy$agents)) {
+    m <- policy$agents[[a]]$model
+    if (!is.null(m) && !(is.character(m) && length(m) == 1 && nzchar(m))) p <- c(p, sprintf("model for '%s' must be a model id or run id", a))
+  }
   bad <- setdiff(unlist(policy$approvals$side_effects), tool_side_effects)
   if (length(bad)) p <- c(p, sprintf("unknown side effect '%s'", bad))
   p

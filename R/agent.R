@@ -112,7 +112,9 @@ agent_run <- function(goal, agent = "answer", model = NULL, max_steps = NULL, ba
   policy <- policy_current()
   if (is.null(policy$agents[[agent]])) cli::cli_abort("The policy has no agent called {.val {agent}}.")
   max_steps <- as.integer(max_steps %||% policy$budgets$max_steps %||% 10L)
-  target <- resolve_target(model %||% default_answer_model())
+  # Routing: the caller's model, else the one the policy names for this
+  # agent, else the model recommended for this machine.
+  target <- resolve_target(model %||% policy$agents[[agent]]$model %||% default_answer_model())
   min_b <- agent_min_model_b(agent, policy)
   if (!agent_model_ok(target$model, min_b)) {
     store_record_event("agent_run", agent, ok = FALSE, code = "AGENT_MODEL_TOO_SMALL",
@@ -171,4 +173,34 @@ agent_loop <- function(task, target, backend, max_result_chars) {
     agent_checkpoint_save(task)
   }
   finish(NA_character_, "BUDGET_EXHAUSTED")
+}
+
+# Run an agent, and when it cannot do the job, its fixed workflow instead.
+# playbook is a function of no arguments returning the answer text (for the
+# answer agent, dragon_ask() on the set). The agent is skipped when its
+# model is too small; it falls back when it runs out of steps, answers
+# nothing, or fails. Each fallback is recorded with its reason, so the
+# fallback rate can be tracked (store_summary()).
+agent_route <- function(goal, agent = "answer", playbook, model = NULL, ...) {
+  r <- tryCatch(agent_run(goal, agent = agent, model = model, ...),
+                error = function(e) list(answer = NA_character_, steps = list(), stopped = "ERROR", error = conditionMessage(e)))
+  if (identical(r$stopped, "answered") && !is.na(r$answer) && nzchar(trimws(r$answer))) {
+    return(list(answer = r$answer, path = "agent", reason = NULL, steps = r$steps, task = r$task))
+  }
+  reason <- if (identical(r$stopped, "answered")) "EMPTY_ANSWER" else r$stopped
+  store_record_event("fallback", agent, ok = TRUE, code = reason,
+                     detail = list(goal = goal, task = r$task, error = r$error))
+  list(answer = playbook(), path = "playbook", reason = reason, steps = r$steps, task = r$task)
+}
+
+# Of the agent tasks routed in the last `days`, how many fell back.
+agent_fallback_rate <- function(days = 7, runs_dir = dragon_runs_dir()) {
+  con <- store_open(runs_dir)
+  since <- format(Sys.time() - days * 86400, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  ev <- store_get(con, "SELECT kind, code FROM events WHERE at >= ? AND kind IN ('agent_run', 'fallback')", params = list(since))
+  fell <- sum(ev$kind == "fallback")
+  # Every agent run leaves an agent_run event, finished or not, except one
+  # that failed with an error; those count from their fallback.
+  ran <- sum(ev$kind == "agent_run") + sum(ev$kind == "fallback" & ev$code %in% "ERROR")
+  list(routed = ran, fell_back = fell, reasons = table(ev$code[ev$kind == "fallback"]))
 }

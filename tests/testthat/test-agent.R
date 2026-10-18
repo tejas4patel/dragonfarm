@@ -118,3 +118,53 @@ test_that("a task killed mid-way resumes from its checkpoint without repeating t
   expect_true(all(c("agent_resume", "agent_run") %in% ev$kind))
   expect_equal(dragonfarm:::agent_resume("nope")$stopped, "NOT_FOUND")
 })
+
+test_that("the policy can route an agent to its own model", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  pol <- dragonfarm:::policy_default()
+  pol$agents$answer$model <- "Qwen/Qwen2.5-14B-Instruct"
+  dragonfarm:::policy_set(pol, set_by = "test", runs_dir = runs)
+  used <- NULL
+  testthat::local_mocked_bindings(
+    resolve_target = function(x) { used <<- x; list(model = x) },
+    backend_generate = function(...) list("Done.")
+  )
+  dragonfarm:::agent_run("Hi", agent = "answer")
+  expect_equal(used, "Qwen/Qwen2.5-14B-Instruct")
+  dragonfarm:::agent_run("Hi", agent = "answer", model = "Qwen/Qwen2.5-7B-Instruct")   # the caller's choice wins
+  expect_equal(used, "Qwen/Qwen2.5-7B-Instruct")
+  pol$agents$answer$model <- 7
+  expect_match(dragonfarm:::policy_problems(pol), "model for 'answer'")
+})
+
+test_that("agent_route falls back to the fixed workflow and records why", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  replies <- list("Thirty days [1].")
+  testthat::local_mocked_bindings(
+    resolve_target = function(x) list(model = x),
+    backend_generate = function(...) { out <- replies[[1]]; replies <<- replies[-1]; if (identical(out, "BOOM")) stop("worker died"); list(out) }
+  )
+  pb <- function() "From the playbook."
+  r <- dragonfarm:::agent_route("How long?", "answer", pb, model = "Qwen/Qwen2.5-7B-Instruct")
+  expect_equal(r$path, "agent")
+  expect_equal(r$answer, "Thirty days [1].")
+  small <- dragonfarm:::agent_route("How long?", "answer", pb, model = "Qwen/Qwen2.5-1.5B-Instruct")
+  expect_equal(small$path, "playbook")
+  expect_equal(small$reason, "AGENT_MODEL_TOO_SMALL")
+  expect_equal(small$answer, "From the playbook.")
+  replies <- list("BOOM")
+  err <- dragonfarm:::agent_route("How long?", "answer", pb, model = "Qwen/Qwen2.5-7B-Instruct")
+  expect_equal(err$reason, "ERROR")
+  replies <- as.list(rep('<tool_call>{"name": "list_document_sets", "arguments": {}}</tool_call>', 3))
+  out <- dragonfarm:::agent_route("How long?", "answer", pb, model = "Qwen/Qwen2.5-7B-Instruct", max_steps = 2)
+  expect_equal(out$reason, "BUDGET_EXHAUSTED")
+  rate <- dragonfarm:::agent_fallback_rate(7, runs)
+  expect_equal(rate$routed, 4)
+  expect_equal(rate$fell_back, 3)
+  expect_equal(sort(names(rate$reasons)), c("AGENT_MODEL_TOO_SMALL", "BUDGET_EXHAUSTED", "ERROR"))
+  expect_equal(dragonfarm:::store_summary(7, runs)$agents$fell_back, 3)
+})

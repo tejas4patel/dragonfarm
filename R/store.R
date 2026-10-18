@@ -251,6 +251,7 @@ store_summary <- function(days = 7, runs_dir = dragon_runs_dir()) {
     problems = sort(table(ev$code[!is.na(ev$code) & nzchar(ev$code)]), decreasing = TRUE),
     outbound = if (nrow(out)) stats::aggregate(list(calls = rep(1L, nrow(out)), bytes = unname(bytes)),
                                                by = list(host = out$name), FUN = sum) else data.frame(host = character(), calls = integer(), bytes = numeric()),
-    waiting = nrow(approvals_pending(runs_dir))
+    waiting = nrow(approvals_pending(runs_dir)),
+    agents = agent_fallback_rate(days, runs_dir)
   )
 }

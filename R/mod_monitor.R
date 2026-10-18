@@ -188,6 +188,9 @@ mod_monitor_server <- function(id, state, runs_dir) {
         if (nrow(sm$outbound)) shiny::p(shiny::strong("Left this machine: "),
           paste(sprintf("%s (%d calls, %s)", sm$outbound$host, sm$outbound$calls,
                         format(structure(sm$outbound$bytes, class = "object_size"), units = "auto")), collapse = "; ")),
+        if (isTRUE(sm$agents$routed > 0)) shiny::p(shiny::strong("Agents: "),
+          sprintf("%d task%s, %d handed to the fixed workflow", sm$agents$routed, if (sm$agents$routed == 1) "" else "s",
+                  sm$agents$fell_back)),
         if (sm$waiting) shiny::p(shiny::strong(sprintf("Waiting for you: %d", sm$waiting))))
     })
 

@@ -144,7 +144,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows. An agent's task keeps
   a checkpoint after every step; if R stops mid-task, it carries on from
-  there without repeating the tool calls it already made.
+  there without repeating the tool calls it already made. The policy can
+  name a model per agent, and when an agent cannot finish (its model is too
+  small, it runs out of steps, or it fails) the fixed workflow answers
+  instead; Monitor's "Last 7 days" counts how often that happened.
 
 * Settings can run a qualification report: checks that the installation
   matches what is specified (Python packages against the lock, models pinned
