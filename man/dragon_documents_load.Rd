@@ -18,3 +18,10 @@ A \code{dragon_documents} object.
 \description{
 Reopen a saved document set
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+docs <- dragon_documents_load("policies")
+docs
+}
+}

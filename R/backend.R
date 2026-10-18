@@ -215,6 +215,10 @@ worker_alive <- function() {
 #'
 #' @param all Also stop dragonfarm processes started by other R sessions.
 #' @return `TRUE` invisibly.
+#' @examples
+#' if (interactive()) {
+#' dragon_worker_stop()
+#' }
 #' @export
 dragon_worker_stop <- function(all = FALSE) {
   if (worker_alive()) {

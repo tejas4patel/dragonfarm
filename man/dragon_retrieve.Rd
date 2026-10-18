@@ -35,3 +35,9 @@ ranking, so it need not decrease), \code{similarity}, and \code{weight}.
 \description{
 Find the chunks most relevant to a question
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+dragon_retrieve(docs, "How long is the return window?", k = 3)
+}
+}

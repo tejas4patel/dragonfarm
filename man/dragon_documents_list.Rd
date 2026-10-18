@@ -16,3 +16,6 @@ A data frame with one row per set: \code{name}, \code{sources}, \code{chunks},
 \description{
 List saved document sets
 }
+\examples{
+dragon_documents_list(tempdir())
+}

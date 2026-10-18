@@ -26,3 +26,8 @@ question generators, and trainers alike, so check \code{\link[=dragon_runs]{drag
 a run might be in progress. \code{\link[=dragon_check]{dragon_check()}} lists them without stopping
 anything.
 }
+\examples{
+if (interactive()) {
+dragon_worker_stop()
+}
+}

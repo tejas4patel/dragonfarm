@@ -97,6 +97,9 @@ dragon_train_args <- function(epochs = 3, learning_rate = 2e-4, batch_size = 4,
 #'   For generation, prefer the `load_in_4bit` argument of
 #'   [dragon_backend_local()], which decides per model.
 #' @return A `dragon_hardware` object.
+#' @examples
+#' dragon_hardware()
+#' dragon_hardware(device = "cpu")
 #' @export
 dragon_hardware <- function(device = c("auto", "cuda", "mps", "cpu"),
                             dtype = c("auto", "bfloat16", "float16", "float32"),

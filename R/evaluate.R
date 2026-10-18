@@ -19,6 +19,11 @@
 #'   Preference runs report `pref_accuracy` (how often the model scores the
 #'   chosen reply above the rejected one), `reward_margin`, and `eval_pairs`
 #'   instead of perplexity, and their samples also carry `rejected`.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dragon_evaluate(run, n_samples = 5)
+#' }
 #' @export
 dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE, metrics = NULL) {
   run <- dragon_run(run)

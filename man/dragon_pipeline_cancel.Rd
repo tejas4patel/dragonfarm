@@ -31,3 +31,12 @@ first; a judging, synthesis, or merge step finishes before the pipeline
 stops. With \code{wait = TRUE} the call returns once the pipeline has stopped,
 killing the pipeline process if it is still going after \code{timeout} seconds.
 }
+\examples{
+if (interactive()) {
+p <- dragon_pipeline("HuggingFaceTB/SmolLM2-135M-Instruct",
+  list(dragon_step_train(dragon_map(dragon_dataset(dragon_example_data()),
+                                  prompt = "{subject}\n\n{body}", response = "reply"))),
+  background = TRUE)
+dragon_pipeline_cancel(p)
+}
+}

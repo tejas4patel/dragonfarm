@@ -20,3 +20,9 @@ The dataset with the split attached.
 If you do not call this, \code{\link[=dragon_train]{dragon_train()}} holds out 5 percent of rows
 (and none when the dataset has fewer than 20 rows).
 }
+\examples{
+ds <- dragon_map(dragon_dataset(dragon_example_data()),
+                 prompt = "{subject}\n\n{body}", response = "reply")
+ds <- dragon_split(ds, eval_frac = 0.1)
+ds$split
+}

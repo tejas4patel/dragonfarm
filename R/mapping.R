@@ -116,6 +116,10 @@ dataset_messages <- function(dataset, idx = NULL) {
 #' @param dataset A mapped `dragon_dataset`.
 #' @param n Number of rows to show.
 #' @return Invisibly, a list of message lists.
+#' @examples
+#' ds <- dragon_map(dragon_dataset(dragon_example_data()),
+#'                  prompt = "{subject}\n\n{body}", response = "reply")
+#' dragon_preview(ds, n = 2)
 #' @export
 dragon_preview <- function(dataset, n = 3) {
   check_dataset(dataset, mapped = TRUE)
@@ -140,6 +144,11 @@ dragon_preview <- function(dataset, n = 3) {
 #' @param eval_frac Fraction of rows to hold out.
 #' @param seed Random seed for the split.
 #' @return The dataset with the split attached.
+#' @examples
+#' ds <- dragon_map(dragon_dataset(dragon_example_data()),
+#'                  prompt = "{subject}\n\n{body}", response = "reply")
+#' ds <- dragon_split(ds, eval_frac = 0.1)
+#' ds$split
 #' @export
 dragon_split <- function(dataset, eval_frac = 0.05, seed = 42) {
   check_dataset(dataset)

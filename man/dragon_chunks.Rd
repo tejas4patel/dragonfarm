@@ -17,3 +17,9 @@ A data frame with one row per chunk: \code{id}, \code{source}, \code{section},
 \description{
 The chunks of a document set
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+head(dragon_chunks(docs))
+}
+}

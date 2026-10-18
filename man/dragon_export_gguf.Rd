@@ -28,3 +28,9 @@ Converts a merged model directory to GGUF for use with llama.cpp, Ollama,
 and similar runtimes. Requires a llama.cpp checkout; point the
 \code{LLAMA_CPP_DIR} environment variable at it.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_export_gguf(dragon_merge(run))
+}
+}

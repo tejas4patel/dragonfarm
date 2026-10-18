@@ -77,6 +77,11 @@ as_prompt_vector <- function(prompts) {
 #' @param n Maximum number of prompts. `Inf` for all.
 #' @param seed Seed used when sampling down to `n`.
 #' @return A character vector.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' head(dragon_prompts(run, split = "eval", n = 5))
+#' }
 #' @export
 dragon_prompts <- function(run, split = c("eval", "train"), n = Inf, seed = 42) {
   run <- dragon_run(run)

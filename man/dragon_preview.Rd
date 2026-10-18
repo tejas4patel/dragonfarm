@@ -17,3 +17,8 @@ Invisibly, a list of message lists.
 \description{
 Preview mapped rows as chat turns
 }
+\examples{
+ds <- dragon_map(dragon_dataset(dragon_example_data()),
+                 prompt = "{subject}\n\n{body}", response = "reply")
+dragon_preview(ds, n = 2)
+}

@@ -23,3 +23,9 @@ The user turns of a run's training or held-out rows, for feeding
 \code{\link[=dragon_synthesize_pairs]{dragon_synthesize_pairs()}} or \code{\link[=dragon_judge]{dragon_judge()}}. Works for prompt/response
 and preference-pair runs alike.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+head(dragon_prompts(run, split = "eval", n = 5))
+}
+}

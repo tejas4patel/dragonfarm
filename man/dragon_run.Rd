@@ -16,3 +16,9 @@ A \code{dragon_run} object.
 Runs live entirely on disk, so any run can be picked up from a new R
 session by its directory.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_status(run)
+}
+}

@@ -33,3 +33,9 @@ Training already evaluates on the held-out rows and writes the result into
 the run directory. This function reads that result, or recomputes it with
 the saved adapter when \code{recompute = TRUE} or nothing was saved.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_evaluate(run, n_samples = 5)
+}
+}

@@ -17,3 +17,10 @@ A \code{dragon_run} object.
 \description{
 Useful after a cancel or a crash. Continues with the same configuration.
 }
+\examples{
+if (interactive()) {
+# A run that was cancelled or stopped carries on from its last checkpoint
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_resume(run)
+}
+}

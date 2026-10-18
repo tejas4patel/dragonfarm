@@ -32,3 +32,9 @@ preference runs \code{pref_acc}, \code{reward_margin}, \code{eval_pref_acc},
 \code{dragon_status()} reads the run's state. \code{dragon_progress()} returns one
 row per logged step. \code{dragon_logs()} returns the tail of the trainer log.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dragon_status(run)$state
+}
+}

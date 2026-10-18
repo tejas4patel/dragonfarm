@@ -6,6 +6,11 @@
 #' @param run A `dragon_run`.
 #' @return `dragon_status()`: a list with at least `state`, one of
 #'   `"queued"`, `"running"`, `"succeeded"`, `"failed"`, `"cancelled"`.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dragon_status(run)$state
+#' }
 #' @export
 dragon_status <- function(run) {
   check_run(run)
@@ -82,6 +87,13 @@ dragon_logs <- function(run, n = 50) {
 #' @param timeout Seconds to wait before giving up (the run keeps going).
 #' @param poll Seconds between checks.
 #' @return The run, invisibly. Errors if the run failed.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_dataset(dragon_example_data()) |>
+#'   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+#'   dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct")
+#' dragon_wait(run)
+#' }
 #' @export
 dragon_wait <- function(run, timeout = Inf, poll = 2) {
   check_run(run)
@@ -160,6 +172,13 @@ dragon_wait <- function(run, timeout = Inf, poll = 2) {
 #' @param run A `dragon_run`.
 #' @param timeout Seconds to wait for a clean stop.
 #' @return The run, invisibly.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_dataset(dragon_example_data()) |>
+#'   dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+#'   dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct")
+#' dragon_cancel(run)
+#' }
 #' @export
 dragon_cancel <- function(run, timeout = 120) {
   check_run(run)

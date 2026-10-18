@@ -6,6 +6,11 @@
 #'
 #' @param run A `dragon_run` or run directory.
 #' @return A single string of R code.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' cat(dragon_code(run))
+#' }
 #' @export
 dragon_code <- function(run) {
   run <- dragon_run(run)

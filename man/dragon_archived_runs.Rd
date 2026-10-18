@@ -16,3 +16,6 @@ A data frame, one row per archived run.
 Runs that \code{\link[=dragon_archive_run]{dragon_archive_run()}} moved out of the way. Same columns as
 \code{\link[=dragon_runs]{dragon_runs()}}.
 }
+\examples{
+dragon_archived_runs(tempdir())
+}

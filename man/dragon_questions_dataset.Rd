@@ -42,3 +42,11 @@ is the response. This is the setup that beat a plain fine-tune in the
 prototypes: the model learns to use excerpts, and the documents stay the
 source of truth and can change later without retraining.
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+qa <- dragon_questions(docs)
+ds <- dragon_questions_dataset(qa)
+dragon_preview(ds, n = 1)
+}
+}

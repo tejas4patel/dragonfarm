@@ -19,3 +19,11 @@ The run, invisibly. Errors if the run failed.
 \description{
 Blocks with a progress bar until the run reaches a terminal state.
 }
+\examples{
+if (interactive()) {
+run <- dragon_dataset(dragon_example_data()) |>
+  dragon_map(prompt = "{subject}\n\n{body}", response = "reply") |>
+  dragon_train("HuggingFaceTB/SmolLM2-135M-Instruct")
+dragon_wait(run)
+}
+}

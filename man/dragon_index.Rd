@@ -23,3 +23,9 @@ about 130 MB, downloaded once) and stores the vectors next to the chunks.
 after editing files, or to switch encoders. Nothing is re-embedded when the
 chunks have not changed.
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies", index = FALSE)
+docs <- dragon_index(docs)
+}
+}

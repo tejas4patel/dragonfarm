@@ -27,3 +27,7 @@ A \code{dragon_hardware} object.
 \description{
 Hardware settings
 }
+\examples{
+dragon_hardware()
+dragon_hardware(device = "cpu")
+}

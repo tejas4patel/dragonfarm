@@ -125,6 +125,12 @@ dragon_example_documents <- function() {
 #'   set name under `runs_dir/documents/`.
 #' @param runs_dir Where to look when `dir` is a bare name.
 #' @return A `dragon_documents` object.
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' docs <- dragon_documents_load("policies")
+#' docs
+#' }
 #' @export
 dragon_documents_load <- function(dir, runs_dir = dragon_runs_dir()) {
   check_string(dir, "dir")
@@ -147,6 +153,8 @@ dragon_documents_load <- function(dir, runs_dir = dragon_runs_dir()) {
 #' @param runs_dir Parent directory, as for [dragon_documents()].
 #' @return A data frame with one row per set: `name`, `sources`, `chunks`,
 #'   `indexed`, `updated_at`, `dir`.
+#' @examples
+#' dragon_documents_list(tempdir())
 #' @export
 dragon_documents_list <- function(runs_dir = dragon_runs_dir()) {
   root <- file.path(runs_dir, "documents")
@@ -174,6 +182,11 @@ dragon_documents_list <- function(runs_dir = dragon_runs_dir()) {
 #' @return A data frame with one row per chunk: `id`, `source`, `section`,
 #'   `text`, `n_words`, `quoted` (a block quote), `code` (a code block), and
 #'   `weight` (0.7 for changelog-like sources, else 1).
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' head(dragon_chunks(docs))
+#' }
 #' @export
 dragon_chunks <- function(docs) {
   docs <- as_documents(docs)

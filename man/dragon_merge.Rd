@@ -19,3 +19,9 @@ The output path, invisibly.
 Produces a standalone model directory that loads with plain transformers
 and needs neither peft nor dragonfarm.
 }
+\examples{
+if (interactive()) {
+run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+dir <- dragon_merge(run)
+}
+}

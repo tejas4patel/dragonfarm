@@ -7,6 +7,11 @@
 #' @param out_dir Where to write the merged model. Defaults to `merged/`
 #'   inside the run directory.
 #' @return The output path, invisibly.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dir <- dragon_merge(run)
+#' }
 #' @export
 dragon_merge <- function(run, out_dir = NULL) {
   run <- dragon_run(run)
@@ -34,6 +39,11 @@ dragon_merge <- function(run, out_dir = NULL) {
 #' @param quant Output type passed to the converter, such as `"q8_0"`, `"f16"`, or `"bf16"`.
 #' @param llama_cpp_dir Path to a llama.cpp checkout containing `convert_hf_to_gguf.py`.
 #' @return The output path, invisibly.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dragon_export_gguf(dragon_merge(run))
+#' }
 #' @export
 dragon_export_gguf <- function(merged_dir, out_file = NULL, quant = "q8_0",
                                llama_cpp_dir = Sys.getenv("LLAMA_CPP_DIR", unset = "")) {

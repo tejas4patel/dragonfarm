@@ -33,6 +33,11 @@ new_run <- function(dir, process = NULL) {
 #'
 #' @param dir Path to a run directory (one containing `config.json`).
 #' @return A `dragon_run` object.
+#' @examples
+#' if (interactive()) {
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dragon_status(run)
+#' }
 #' @export
 dragon_run <- function(dir) {
   if (inherits(dir, "dragon_run")) return(dir)
@@ -60,6 +65,9 @@ make_run_id <- function(name) {
 #'
 #' @param runs_dir Directory holding run directories.
 #' @return A data frame with one row per run, newest first.
+#' @examples
+#' # A folder with no runs yet gives an empty table
+#' dragon_runs(tempdir())
 #' @export
 dragon_runs <- function(runs_dir = dragon_runs_dir()) {
   runs_table(list_run_dirs(runs_dir))
@@ -72,6 +80,8 @@ dragon_runs <- function(runs_dir = dragon_runs_dir()) {
 #'
 #' @param runs_dir Where runs live.
 #' @return A data frame, one row per archived run.
+#' @examples
+#' dragon_archived_runs(tempdir())
 #' @export
 dragon_archived_runs <- function(runs_dir = dragon_runs_dir()) {
   runs_table(list_run_dirs(file.path(runs_dir, "archived")))

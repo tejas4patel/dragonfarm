@@ -215,6 +215,12 @@ log_target <- function(log, resume, append_ok = utils::packageVersion("processx"
 #' @param run A `dragon_run`.
 #' @param wait Block until training finishes.
 #' @return A `dragon_run` object.
+#' @examples
+#' if (interactive()) {
+#' # A run that was cancelled or stopped carries on from its last checkpoint
+#' run <- dragon_run(file.path(dragon_runs_dir(), dragon_runs()$id[1]))
+#' dragon_resume(run)
+#' }
 #' @export
 dragon_resume <- function(run, wait = FALSE) {
   run <- dragon_run(run)

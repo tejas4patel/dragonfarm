@@ -164,6 +164,12 @@ report_questions <- function(qa) {
 #' @return `dragon_questions_load()` and `dragon_questions_save()` return the
 #'   `dragon_questions` data frame; `dragon_questions_list()` a data frame of
 #'   the set's question files with counts.
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' qa <- dragon_questions(docs)
+#' qa <- dragon_questions_load(attr(qa, "path"))
+#' }
 #' @export
 dragon_questions_load <- function(path) {
   check_string(path, "path")
@@ -244,6 +250,13 @@ dragon_questions_list <- function(docs) {
 #'   `0` turns them off.
 #' @return A mapped `dragon_dataset` ready for [dragon_train()]. Its data has a
 #'   `negative` column marking the "not covered" rows.
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' qa <- dragon_questions(docs)
+#' ds <- dragon_questions_dataset(qa)
+#' dragon_preview(ds, n = 1)
+#' }
 #' @export
 dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE, negatives = 0.15) {
   check_number(negatives, "negatives", min = 0, max = 1)

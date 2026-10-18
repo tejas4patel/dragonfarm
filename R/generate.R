@@ -18,6 +18,10 @@
 #' @param backend Where to run inference. See [dragon_backend]. Server
 #'   backends serve a fixed model and ignore `x`.
 #' @return A character vector, one reply per prompt.
+#' @examples
+#' if (interactive()) {
+#' dragon_generate("HuggingFaceTB/SmolLM2-135M-Instruct", "Say hello in five words.")
+#' }
 #' @export
 dragon_generate <- function(x, prompt, system = NULL, max_new_tokens = 256,
                             temperature = 0.7, top_p = 0.9, base = FALSE, backend = dragon_backend()) {

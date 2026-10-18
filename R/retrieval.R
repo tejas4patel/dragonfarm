@@ -10,6 +10,11 @@
 #' @param model Hugging Face id of a sentence-embedding model.
 #' @param force Re-embed even if the index already matches the chunks.
 #' @return The `dragon_documents` object, reloaded, invisibly.
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies", index = FALSE)
+#' docs <- dragon_index(docs)
+#' }
 #' @export
 dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) {
   docs <- as_documents(docs)
@@ -41,6 +46,11 @@ dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) 
 #'   (rank), `id`, `source`, `section`, `page` (PDFs), `text`, `score` (cosine
 #'   similarity times the chunk's weight; rows are ordered by the combined
 #'   ranking, so it need not decrease), `similarity`, and `weight`.
+#' @examples
+#' if (interactive()) {
+#' docs <- dragon_documents(dragon_example_documents(), name = "policies")
+#' dragon_retrieve(docs, "How long is the return window?", k = 3)
+#' }
 #' @export
 dragon_retrieve <- function(docs, query, k = 4, method = c("hybrid", "dense"), extra = 0) {
   method <- match.arg(method)

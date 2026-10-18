@@ -385,6 +385,14 @@ run_step <- function(step, state, runs_dir) {
 #' @param runs_dir Where the pipeline record lives, when `x` is an id.
 #' @return The pipeline record as a list: `status`, `steps` (each with a
 #'   state and, when finished, a summary), and timestamps.
+#' @examples
+#' if (interactive()) {
+#' p <- dragon_pipeline("HuggingFaceTB/SmolLM2-135M-Instruct",
+#'   list(dragon_step_train(dragon_map(dragon_dataset(dragon_example_data()),
+#'                                   prompt = "{subject}\n\n{body}", response = "reply"))),
+#'   background = TRUE)
+#' dragon_pipeline_status(p)
+#' }
 #' @export
 dragon_pipeline_status <- function(x, runs_dir = dragon_runs_dir()) {
   path <- pipeline_record_path(x, runs_dir)
@@ -419,6 +427,14 @@ pipeline_record_path <- function(x, runs_dir) {
 #' @param wait Wait for the pipeline to stop.
 #' @param timeout Seconds to wait before killing the pipeline process.
 #' @return The pipeline status, invisibly.
+#' @examples
+#' if (interactive()) {
+#' p <- dragon_pipeline("HuggingFaceTB/SmolLM2-135M-Instruct",
+#'   list(dragon_step_train(dragon_map(dragon_dataset(dragon_example_data()),
+#'                                   prompt = "{subject}\n\n{body}", response = "reply"))),
+#'   background = TRUE)
+#' dragon_pipeline_cancel(p)
+#' }
 #' @export
 dragon_pipeline_cancel <- function(x, runs_dir = dragon_runs_dir(), wait = TRUE, timeout = 120) {
   path <- pipeline_record_path(x, runs_dir)

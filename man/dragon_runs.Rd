@@ -15,3 +15,7 @@ A data frame with one row per run, newest first.
 \description{
 List runs
 }
+\examples{
+# A folder with no runs yet gives an empty table
+dragon_runs(tempdir())
+}

@@ -45,3 +45,8 @@ worker that keeps the last models loaded, so only the first call pays the
 load. Pass a server backend to generate from Ollama or any
 OpenAI-compatible endpoint instead. See \link{dragon_backend}.
 }
+\examples{
+if (interactive()) {
+dragon_generate("HuggingFaceTB/SmolLM2-135M-Instruct", "Say hello in five words.")
+}
+}

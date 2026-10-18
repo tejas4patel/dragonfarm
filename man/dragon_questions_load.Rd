@@ -28,3 +28,10 @@ the set's question files with counts.
 \description{
 Load, save, and list question sets
 }
+\examples{
+if (interactive()) {
+docs <- dragon_documents(dragon_example_documents(), name = "policies")
+qa <- dragon_questions(docs)
+qa <- dragon_questions_load(attr(qa, "path"))
+}
+}
