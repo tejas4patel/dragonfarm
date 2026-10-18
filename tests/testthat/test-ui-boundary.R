@@ -63,3 +63,15 @@ test_that("chat transcripts round-trip, and other files are refused", {
   expect_null(dragonfarm:::chat_transcript_read(g))
   expect_null(dragonfarm:::chat_transcript_read(withr::local_tempfile()))
 })
+
+test_that("R sources are ASCII (R CMD check warns otherwise)", {
+  dir <- test_path("..", "..", "R")
+  skip_if_not(dir.exists(dir), "package sources not available")
+  bad <- character()
+  for (f in list.files(dir, pattern = "[.]R$", full.names = TRUE)) {
+    lines <- readLines(f, warn = FALSE, encoding = "UTF-8")
+    at <- which(grepl("[^\x01-\x7F]", lines, perl = TRUE, useBytes = TRUE))
+    if (length(at)) bad <- c(bad, sprintf("%s:%d", basename(f), at))
+  }
+  expect_equal(bad, character())
+})

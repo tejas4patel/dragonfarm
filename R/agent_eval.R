@@ -20,7 +20,7 @@ decline_pattern <- paste0(
 # full, correct answers were taken for declines.
 answer_declines <- function(answer) {
   if (is.null(answer) || is.na(answer) || !nzchar(answer)) return(FALSE)
-  text <- gsub("\"[^\"]*\"|“[^”]*”", " ", answer)                 # quoted passages
+  text <- gsub("\"[^\"]*\"|\u201c[^\u201d]*\u201d", " ", answer)                 # quoted passages
   sentences <- unlist(strsplit(text, "(?<=[.!?])\\s+|\\n+", perl = TRUE))
   about_sources <- "(document|excerpt|source|passage|context|information|guidance|material)"
   hit <- grepl(decline_pattern, sentences, ignore.case = TRUE, perl = TRUE)
