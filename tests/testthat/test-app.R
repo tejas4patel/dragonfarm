@@ -70,3 +70,26 @@ test_that("the header badge shows the device and whether agents are on", {
   expect_match(small, "fixed workflows"); expect_match(small, "3B or larger")
   expect_match(as.character(dragonfarm:::hw_badge(NULL)), "not checked")
 })
+
+test_that("the Data step loads chat-format JSONL as conversations, ready to train", {
+  f <- withr::local_tempfile(fileext = ".jsonl")
+  writeLines(c(
+    '{"messages": [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]}',
+    '{"messages": [{"role": "user", "content": "Reset?"}, {"role": "assistant", "content": "Hold 10 s."}, {"role": "user", "content": "Which button?"}, {"role": "assistant", "content": "The back one."}]}'
+  ), f)
+  table <- withr::local_tempfile(fileext = ".jsonl")
+  writeLines('{"subject": "a", "reply": "b"}', table)
+  expect_true(dragonfarm:::looks_like_conversations(f))
+  expect_false(dragonfarm:::looks_like_conversations(table))
+  state <- shiny::reactiveValues(dataset = NULL, mapped = NULL)
+  shiny::testServer(dragonfarm:::mod_data_server, args = list(state = state, nav_to = function(p) NULL), {
+    session$setInputs(file = list(name = "chats.jsonl", datapath = f))
+    expect_equal(dragonfarm:::mapping_kind(state$mapped), "conversations")
+    expect_equal(state$mapped$data$turns, c(2L, 4L))
+    expect_no_match(output$preview, "list(", fixed = TRUE)   # no raw R lists in the preview
+    expect_match(output$preview, "Which button?")
+    session$setInputs(file = list(name = "tickets.jsonl", datapath = table))
+    expect_null(state$mapped)                           # an ordinary table still goes through Map
+    expect_equal(names(state$dataset$data), c("subject", "reply"))
+  })
+})

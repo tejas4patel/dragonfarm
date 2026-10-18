@@ -10,7 +10,7 @@ mod_data_ui <- function(id) {
                          accept = c(".csv", ".tsv", ".jsonl", ".ndjson", ".json", ".parquet"), width = "100%")
       ),
       shiny::p(class = "text-muted small",
-        "One row per training example. You will pick which columns form the prompt and the reply in the next step."),
+        "One row per training example. You will pick which columns form the prompt and the reply in the next step. Chat-format JSONL (a messages list per row) loads as whole conversations."),
       shiny::actionButton(ns("example"), "Load the example tickets", class = "btn-outline-primary"),
       shiny::uiOutput(ns("summary")),
       shiny::p(class = "hint mt-3", shiny::actionLink(ns("documents_route"), "Have documents instead of a table?"))
@@ -32,8 +32,19 @@ mod_data_server <- function(id, state, nav_to) {
 
     shiny::observeEvent(input$file, {
       f <- input$file
+      ext <- tolower(tools::file_ext(f$name))
+      # Chat-format JSONL (rows of {"messages": [...]}, as Chat exports) is
+      # already in training shape: load it as conversations, no mapping.
+      if (ext %in% c("jsonl", "ndjson") && looks_like_conversations(f$datapath)) {
+        ds <- tryCatch(dragon_conversations(f$datapath, name = f$name), error = function(e) { notify_error(e); NULL })
+        if (is.null(ds)) return()
+        state$dataset <- ds
+        state$mapped <- ds
+        return(shiny::showNotification(sprintf("Loaded %d conversations from %s. They are ready to train; no mapping needed.",
+                                               nrow(ds$data), ds$name), type = "message", duration = 6))
+      }
       ds <- tryCatch(
-        dragon_dataset(f$datapath, format = tolower(tools::file_ext(f$name)), name = f$name),
+        dragon_dataset(f$datapath, format = ext, name = f$name),
         error = function(e) { notify_error(e); NULL }
       )
       if (!is.null(ds)) set_dataset(ds)
@@ -69,6 +80,7 @@ mod_data_server <- function(id, state, nav_to) {
       ds <- state$dataset
       shiny::req(ds)
       head_df <- utils::head(ds$data, 8)
+      head_df <- head_df[, !vapply(head_df, is.list, TRUE), drop = FALSE]   # e.g. a conversation's messages
       head_df[] <- lapply(head_df, function(col) {
         col <- as.character(col)
         ifelse(nchar(col) > 120, paste0(substr(col, 1, 117), "..."), col)
@@ -76,4 +88,18 @@ mod_data_server <- function(id, state, nav_to) {
       head_df
     }, striped = TRUE, spacing = "xs", width = "100%")
   })
+}
+
+# TRUE when the first non-empty line of a JSONL file is an object with a
+# "messages" list (the chat format).
+looks_like_conversations <- function(path) {
+  con <- file(path, open = "r", encoding = "UTF-8")
+  on.exit(close(con))
+  repeat {
+    line <- readLines(con, n = 1, warn = FALSE)
+    if (!length(line)) return(FALSE)
+    if (nzchar(trimws(line))) break
+  }
+  x <- tryCatch(jsonlite::fromJSON(line, simplifyVector = FALSE), error = function(e) NULL)
+  is.list(x) && is.list(x$messages) && length(x$messages) > 0
 }
