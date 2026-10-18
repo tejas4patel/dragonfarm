@@ -14,7 +14,7 @@ policy_current <- function(runs_dir = dragon_runs_dir()) {
   if (!nrow(row)) {
     body <- policy_default()
     DBI::dbExecute(con, "INSERT INTO policies (version, body, set_by, set_at) VALUES (1, ?, 'dragonfarm default', ?)",
-                   params = list(as.character(jsonlite::toJSON(body, auto_unbox = TRUE)), now_utc()))
+                   params = list(as.character(jsonlite::toJSON(body, auto_unbox = TRUE, null = "null")), now_utc()))
     return(c(body, list(version = 1L)))
   }
   c(jsonlite::fromJSON(row$body, simplifyVector = FALSE), list(version = as.integer(row$version)))
@@ -49,7 +49,7 @@ policy_set <- function(policy, set_by = Sys.info()[["user"]], runs_dir = dragon_
   con <- store_open(runs_dir)
   v <- current$version + 1L
   DBI::dbExecute(con, "INSERT INTO policies (version, body, set_by, set_at) VALUES (?, ?, ?, ?)",
-                 params = list(v, as.character(jsonlite::toJSON(policy, auto_unbox = TRUE)), set_by, now_utc()))
+                 params = list(v, as.character(jsonlite::toJSON(policy, auto_unbox = TRUE, null = "null")), set_by, now_utc()))
   store_record_event("policy_set", paste0("version ", v), ok = TRUE, detail = list(set_by = set_by), runs_dir = runs_dir)
   invisible(v)
 }

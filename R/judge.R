@@ -191,6 +191,9 @@ dragon_llm_anthropic <- function(model = "claude-opus-5", system = NULL, api_key
     if (!nzchar(api_key)) {
       cli::cli_abort(c("No Anthropic API key.", "i" = "Set {.envvar ANTHROPIC_API_KEY} or pass {.arg api_key}."))
     }
+    outbound_check("https://api.anthropic.com", sprintf("Claude API (%s): %d prompt%s", model, length(prompts),
+                                                       if (length(prompts) == 1) "" else "s"),
+                   bytes = sum(nchar(unlist(prompts), type = "bytes")))
     reqs <- lapply(prompts, function(p) {
       anthropic_request(p, model = model, api_key = api_key, max_tokens = max_tokens, schema = schema,
                         system = system, temperature = temperature)

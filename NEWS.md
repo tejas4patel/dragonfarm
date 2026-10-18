@@ -143,6 +143,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   17 and 18 right, 0.5B and 1.5B models 13 and 15. On smaller machines
   everything still works through the fixed workflows.
 
+* Everything that sends data off the machine (the Claude API, fetching web
+  pages as documents, publishing to Hugging Face, a model server elsewhere)
+  now passes one check and is recorded in the runs folder's catalogue with
+  where it went and why. An admin can limit the hosts in the policy, down to
+  none at all.
+
 * For servers and machines without the internet, the package ships a lock
   of its Python packages (`inst/python/requirements.lock`, pinned with
   hashes, all platforms, from PyPI) and a new article, "Install without the

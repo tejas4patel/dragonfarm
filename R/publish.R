@@ -29,6 +29,8 @@ dragon_publish <- function(run, repo, what = c("merged", "adapter"), private = F
   if (!grepl("^[^/[:space:]]+/[^/[:space:]]+$", repo)) {
     cli::cli_abort("{.arg repo} must look like {.val username/name}.")
   }
+  outbound_check("https://huggingface.co", sprintf("publish the %s model to %s (%s)", what, repo,
+                                                  if (isTRUE(private)) "private" else "public"))
   if (!hf_token_present()) {
     cli::cli_abort(c(
       "No Hugging Face token found.",

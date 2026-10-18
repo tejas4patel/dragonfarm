@@ -52,6 +52,7 @@ dragon_documents <- function(paths, name = NULL, runs_dir = dragon_runs_dir(),
   check_number(max_words, "max_words", min = 20, integer = TRUE)
   check_number(min_words, "min_words", min = 1, max = max_words, integer = TRUE)
   local <- paths[!is_url(paths)]
+  for (u in paths[is_url(paths)]) outbound_check(u, "fetch a web page as a document", runs_dir = runs_dir)
   missing <- local[!file.exists(local)]
   if (length(missing)) cli::cli_abort("{cli::qty(length(missing))}Path{?s} not found: {.path {missing}}.",
                                        class = "dragonfarm_error", code = "FILE_NOT_FOUND")
