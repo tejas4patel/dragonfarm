@@ -15,7 +15,7 @@ answer_sentences <- function(answer) {
   a <- gsub("[[:space:]]+", " ", a)
   s <- trimws(unlist(strsplit(a, "(?<=[.!?])\\s+(?=[A-Z0-9\"(])", perl = TRUE)))
   s <- s[nchar(s) >= 12]
-  s[!grepl(decline_pattern, s, ignore.case = TRUE, perl = TRUE)]
+  s[!vapply(s, answer_declines, TRUE)]
 }
 
 yes_no <- function(x) {

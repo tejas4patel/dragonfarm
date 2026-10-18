@@ -50,7 +50,7 @@ figure_in <- function(fig, text) {
 # figures, ungrounded (figures found in no cited excerpt nor the question).
 answer_check <- function(answer, sources, question = "") {
   answer <- answer %||% ""
-  declined <- grepl(decline_pattern, answer, ignore.case = TRUE, perl = TRUE)
+  declined <- answer_declines(answer)
   cites <- answer_citations(answer)
   bad <- setdiff(cites, sources$n)
   used <- if (length(intersect(cites, sources$n))) sources$text[sources$n %in% cites] else sources$text

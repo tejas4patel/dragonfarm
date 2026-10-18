@@ -12,6 +12,22 @@ decline_pattern <- paste0(
   "|none of the (provided |found |retrieved )?(documents|excerpts|sources|passages)( found| provided| retrieved)? (directly )?(mention|address|cover|contain|provide|say|state)"
 )
 
+# Whether an answer declines. Text inside quotation marks is the source
+# speaking, not the model ("[1] states that 'This guidance does not address
+# ...'"), and a declining sentence is about the sources ("the documents do
+# not cover this"), not any "does not include" ("when the model does not
+# include interactions"). Both used to count: on 30 graded FDA answers, two
+# full, correct answers were taken for declines.
+answer_declines <- function(answer) {
+  if (is.null(answer) || is.na(answer) || !nzchar(answer)) return(FALSE)
+  text <- gsub("\"[^\"]*\"|“[^”]*”", " ", answer)                 # quoted passages
+  sentences <- unlist(strsplit(text, "(?<=[.!?])\\s+|\\n+", perl = TRUE))
+  about_sources <- "(document|excerpt|source|passage|context|information|guidance|material)"
+  hit <- grepl(decline_pattern, sentences, ignore.case = TRUE, perl = TRUE)
+  short <- length(strsplit(trimws(text), "\\s+")[[1]]) <= 25          # "I cannot answer that."
+  any(hit & grepl(about_sources, sentences, ignore.case = TRUE, perl = TRUE)) || (short && any(hit))
+}
+
 # Read a suite: a bundled name ("policies") or a path to a JSON file.
 eval_suite <- function(suite) {
   if (is.list(suite)) return(check_eval_suite(suite))
@@ -54,7 +70,7 @@ eval_grade <- function(expect, answer, tools = NULL) {
   answer <- if (length(answer) && !is.na(answer)) answer else ""
   ok <- nzchar(answer)
   for (p in unlist(expect$all)) ok <- ok && grepl(p, answer, ignore.case = TRUE, perl = TRUE)
-  if (isTRUE(expect$declines)) ok <- ok && grepl(decline_pattern, answer, ignore.case = TRUE, perl = TRUE)
+  if (isTRUE(expect$declines)) ok <- ok && answer_declines(answer)
   if (length(expect$tools) && !is.null(tools)) ok <- ok && all(unlist(expect$tools) %in% tools)
   ok
 }

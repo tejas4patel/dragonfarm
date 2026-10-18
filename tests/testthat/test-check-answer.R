@@ -65,3 +65,20 @@ test_that("check_answer is a tool that reads the excerpts from the set by id", {
   r2 <- dragonfarm:::tool_call("check_answer", list(set = f$dir, answer = "Thirty days [1]."))
   expect_equal(r2$code, "INVALID_ARGUMENTS")
 })
+
+test_that("a decline is the model speaking about its sources, not a quotation or any 'does not'", {
+  d <- dragonfarm:::answer_declines
+  expect_true(d("The documents do not cover this."))
+  expect_true(d("The provided excerpts do not mention the enrolment count."))
+  expect_true(d("I cannot answer that."))                               # short, no source named
+  expect_true(d("None of the passages found mention ggplot2."))
+  # From 30 graded FDA answers: full, correct answers that used to count as declines.
+  expect_false(d(paste("FDA suggests the Huber-White sandwich standard error [1], which states that sponsors should consider",
+                       "a robust standard error method when the model does not include treatment by covariate interactions.",
+                       "This applies to linear models fitted to continuous outcomes in randomised trials.")))
+  expect_false(d(paste("[1] states that \"This guidance does not address use of covariates to control for confounding in",
+                       "non-randomized trials\". Covariate adjustment is recommended for prognostic baseline covariates [2].",
+                       "Sponsors should prespecify the covariates and the model before unblinding the data.")))
+  expect_false(d(""))
+  expect_false(d(NA_character_))
+})
