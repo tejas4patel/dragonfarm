@@ -12,6 +12,11 @@ Everything below also happens in the app:
 on the Documents tab, and the Teach card at the bottom is the review
 step.
 
+The file names and outputs below are illustrations of a support team’s
+own documents. For one real run from start to finish, on the documents
+that ship with the package, see the
+[quickstart](https://dragonfarm.dev/articles/quickstart.md).
+
 ## 1. Read the documents
 
 PDF, HTML, Markdown, plain text, Word, spreadsheets, whole folders, and
