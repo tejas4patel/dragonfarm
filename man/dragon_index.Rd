@@ -4,12 +4,13 @@
 \alias{dragon_index}
 \title{Index a document set for retrieval}
 \usage{
-dragon_index(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE)
+dragon_index(docs, model = NULL, force = FALSE)
 }
 \arguments{
 \item{docs}{A \code{dragon_documents} object or its directory.}
 
-\item{model}{Hugging Face id of a sentence-embedding model.}
+\item{model}{Hugging Face id of a sentence-embedding model, or \code{NULL} to
+choose by the set's language as described above.}
 
 \item{force}{Re-embed even if the index already matches the chunks.}
 }
@@ -17,8 +18,13 @@ dragon_index(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE)
 The \code{dragon_documents} object, reloaded, invisibly.
 }
 \description{
-Embeds every chunk with a small encoder (by default \code{BAAI/bge-small-en-v1.5},
-about 130 MB, downloaded once) and stores the vectors next to the chunks.
+Embeds every chunk with a small encoder and stores the vectors next to the
+chunks. By default the encoder is \code{BAAI/bge-small-en-v1.5} (about 130 MB,
+downloaded once); a set whose text is mostly not English is indexed with
+\code{intfloat/multilingual-e5-small} instead. On German medicine product
+information (8 documents, 58 questions) it put the passage a question came
+from in the top four results for 55 percent of questions, against 45
+percent for the English model.
 \code{\link[=dragon_documents]{dragon_documents()}} does this for you unless \code{index = FALSE}; call this
 after editing files, or to switch encoders. Nothing is re-embedded when the
 chunks have not changed.

@@ -1,13 +1,19 @@
 #' Index a document set for retrieval
 #'
-#' Embeds every chunk with a small encoder (by default `BAAI/bge-small-en-v1.5`,
-#' about 130 MB, downloaded once) and stores the vectors next to the chunks.
+#' Embeds every chunk with a small encoder and stores the vectors next to the
+#' chunks. By default the encoder is `BAAI/bge-small-en-v1.5` (about 130 MB,
+#' downloaded once); a set whose text is mostly not English is indexed with
+#' `intfloat/multilingual-e5-small` instead. On German medicine product
+#' information (8 documents, 58 questions) it put the passage a question came
+#' from in the top four results for 55 percent of questions, against 45
+#' percent for the English model.
 #' [dragon_documents()] does this for you unless `index = FALSE`; call this
 #' after editing files, or to switch encoders. Nothing is re-embedded when the
 #' chunks have not changed.
 #'
 #' @param docs A `dragon_documents` object or its directory.
-#' @param model Hugging Face id of a sentence-embedding model.
+#' @param model Hugging Face id of a sentence-embedding model, or `NULL` to
+#'   choose by the set's language as described above.
 #' @param force Re-embed even if the index already matches the chunks.
 #' @return The `dragon_documents` object, reloaded, invisibly.
 #' @examples
@@ -16,8 +22,14 @@
 #' docs <- dragon_index(docs)
 #' }
 #' @export
-dragon_index <- function(docs, model = "BAAI/bge-small-en-v1.5", force = FALSE) {
+dragon_index <- function(docs, model = NULL, force = FALSE) {
   docs <- as_documents(docs)
+  if (is.null(model)) {
+    model <- embedding_model_for(docs)
+    if (!identical(model, english_embedding_model)) {
+      cli::cli_alert_info("Most of {.strong {docs$name}} is not in English, so it is indexed with the multilingual model {.val {model}}.")
+    }
+  }
   check_string(model, "model")
   worker_start()
   res <- worker_request(list(op = "index", dir = docs$dir, model = model, force = isTRUE(force)))
@@ -426,4 +438,40 @@ parse_citations <- function(text, n_max) {
   nums <- as.integer(unlist(lapply(groups, function(g) as.integer(strsplit(gsub("[^0-9,]", "", g), ",")[[1]]))))
   nums <- nums[!is.na(nums) & nums >= 1 & nums <= n_max]
   sort(unique(nums))
+}
+
+english_embedding_model <- "BAAI/bge-small-en-v1.5"
+multilingual_embedding_model <- "intfloat/multilingual-e5-small"
+
+# Share of words in some text that are common English function words. English
+# prose runs at about a quarter to a third; German, French or Spanish at a few
+# percent (words such as "in" or "an" overlap).
+english_share <- function(text) language_shares(text)[["english"]]
+
+# Shares of common function words, English and other European languages
+# (German, French, Spanish, Italian, Dutch, Portuguese). A table of names and
+# numbers has few of either, so it needs both to decide.
+language_shares <- function(text) {
+  words <- unlist(strsplit(tolower(paste(text, collapse = " ")), "[^a-z\u00df\u00e0-\u00ff]+"))
+  words <- words[nchar(words) > 0]
+  if (length(words) < 50) return(c(english = NA_real_, other = NA_real_))
+  english <- c("the", "and", "of", "to", "is", "for", "that", "with", "as", "on", "be", "are", "by", "this", "or",
+               "not", "it", "from", "was", "which", "should", "can", "have", "has", "will", "if", "you", "your")
+  other <- c("der", "die", "das", "und", "ist", "nicht", "ein", "eine", "mit", "von", "den", "dem", "zu", "auf", "sich", "werden",
+             "le", "la", "les", "et", "des", "une", "est", "pour", "dans", "que", "du", "sur", "par", "pas",
+             "el", "los", "las", "y", "por", "con", "para", "una", "del", "es",
+             "il", "di", "che", "per", "della", "non", "het", "een", "van", "zijn", "niet", "do", "da", "os", "uma", "em")
+  c(english = mean(words %in% english), other = mean(words %in% other))
+}
+
+# The embedding model for a set: multilingual when its text is mostly not
+# English (judged on up to 200 chunks spread over the set).
+embedding_model_for <- function(docs) {
+  ch <- tryCatch(dragon_chunks(docs), error = function(e) NULL)
+  if (is.null(ch) || !nrow(ch)) return(english_embedding_model)
+  at <- unique(round(seq(1, nrow(ch), length.out = min(200, nrow(ch)))))
+  s <- language_shares(ch$text[at])
+  # Measured: German product information 0.001 English / 0.19 other; English
+  # prose 0.21 to 0.31 / under 0.01; an English spreadsheet 0.002 / 0.07.
+  if (!anyNA(s) && s[["english"]] < 0.08 && s[["other"]] >= 0.12) multilingual_embedding_model else english_embedding_model
 }

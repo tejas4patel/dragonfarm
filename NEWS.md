@@ -10,6 +10,16 @@ PDF and as Word, live web pages, and a spreadsheet.
 
 ## Documents
 
+* A document set that is mostly not in English is now indexed with a
+  multilingual model (`intfloat/multilingual-e5-small`) instead of the
+  English one, and the set's summary says so. On German product
+  information for eight medicines (3,125 chunks, 58 questions), the
+  passage a question came from reached the top four for 55 percent of
+  questions, against 45 percent; six questions were found only by the
+  multilingual model, none only by the English one. English sets, and
+  tables with few words, keep the English model; naming a `model` in
+  `dragon_index()` still wins.
+
 * Numbered headings in PDFs ("6.4 Updating packages") start their section
   even when the line before them was a long one that ended a sentence;
   they used to be glued on to the end of the previous paragraph, so the
