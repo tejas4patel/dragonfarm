@@ -23,9 +23,9 @@ dplyr
 DPO
 dragonfarm's
 ellmer
+estimands
 ESTIMANDS
 Estimands
-estimands
 fallbacks
 fda
 Gemma
@@ -39,8 +39,8 @@ Instruc
 io
 json
 JSONL
-Kaggle
 kaggle
+Kaggle
 Kaggle's
 Keychain
 keychain
@@ -73,8 +73,8 @@ PyPI's
 pytest
 PyTorch
 QLoRA
-Quickstart
 quickstart
+Quickstart
 Qwen
 R's
 regex
@@ -104,5 +104,6 @@ TSV
 uncited
 uv
 vLLM
+WCAG
 Wi
 Wyvern
