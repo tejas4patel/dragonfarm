@@ -1,0 +1,68 @@
+{
+  "name": "deletion_impact",
+  "title": "Say what deleting something would affect",
+  "description": "Before a run or a document set is deleted, list what depends on it: runs that continue from the run or were trained from the set, question files in the set, and model versions, with approved ones counted. Nothing is deleted or changed; deleting stays a person's decision.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "NOT_A_RUN",
+    "NOT_A_SET",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "run": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Run id or folder. Give this or set, not both."
+      },
+      "set": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Document set name or folder. Give this or run, not both."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "kind",
+      "target",
+      "runs",
+      "approved_versions",
+      "note"
+    ],
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "run",
+          "set"
+        ]
+      },
+      "target": {
+        "type": "string"
+      },
+      "question_files": {
+        "type": "integer"
+      },
+      "runs": {
+        "type": "array"
+      },
+      "versions": {
+        "type": "array"
+      },
+      "approved_versions": {
+        "type": "integer"
+      },
+      "note": {
+        "type": "string"
+      }
+    }
+  }
+}

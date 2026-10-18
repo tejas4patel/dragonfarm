@@ -1,0 +1,69 @@
+{
+  "name": "check_licence",
+  "title": "Check a base model's licence",
+  "description": "Say which licence a base model has and whether it is a permissive open licence, has terms of its own to read, or is unknown. Looks in the preset list and a local model card; with lookup true, also asks the Hugging Face Hub when the policy allows it. Nothing is changed.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "model"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "model": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A Hugging Face model id or a local model folder."
+      },
+      "revision": {
+        "type": "string",
+        "description": "A commit of the model, when known."
+      },
+      "lookup": {
+        "type": "boolean",
+        "default": false,
+        "description": "Ask the Hugging Face Hub when the model is not in the preset list."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "model",
+      "kind",
+      "note"
+    ],
+    "properties": {
+      "model": {
+        "type": "string"
+      },
+      "licence": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "permissive",
+          "check_terms",
+          "unknown"
+        ]
+      },
+      "from": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      }
+    }
+  }
+}

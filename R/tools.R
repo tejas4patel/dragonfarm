@@ -285,5 +285,21 @@ tool_impl <- list(
     st <- dragon_status(run)
     list(id = run$id, state = st$state %||% "unknown", total_steps = st$total_steps, eval_loss = st$eval_loss,
          error = if (!is.null(st$error)) error_message(st$error, st$error_code), error_code = st$error_code)
+  },
+  check_licence = function(args) {
+    model_licence(args$model, revision = args$revision, lookup = isTRUE(args$lookup))
+  },
+  provenance_report = function(args) {
+    p <- provenance_report(args$run)
+    drop_na <- function(x) lapply(x, function(v) if (length(v) == 1 && is.atomic(v) && is.na(v)) NULL else v)
+    list(run = p$run, started_by = if (!is.na(p$started_by)) p$started_by, model = drop_na(p$model), licence = p$licence,
+         data = drop_na(p$data), documents = if (!is.null(p$documents)) drop_na(p$documents),
+         versions = rows_as_list(p$registry, c("name", "version", "status")), report = provenance_text(p))
+  },
+  deletion_impact = function(args) {
+    d <- deletion_impact(run = args$run, set = args$set)
+    d$versions <- rows_as_list(d$versions, c("name", "version", "run_id", "status"))
+    d$approved_versions <- as.integer(d$approved_versions)
+    d
   }
 )

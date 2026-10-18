@@ -293,7 +293,10 @@ dragon_questions_dataset <- function(qa, docs = NULL, k = 4, cite = TRUE, negati
                    stringsAsFactors = FALSE)
   df <- rbind(df, not_covered_rows(df, kept, chunks, negatives))
   ds <- dragon_dataset(df, name = paste0(docs$name, " questions"))
-  dragon_map(ds, prompt = "Documentation excerpts:\n{context}\n\nQuestion: {question}", response = "answer")
+  ds <- dragon_map(ds, prompt = "Documentation excerpts:\n{context}\n\nQuestion: {question}", response = "answer")
+  # Lineage: a run trained on this records the set and its version.
+  ds$documents <- list(set = docs$name, dir = docs$dir, chunks_md5 = now, questions = attr(qa, "path"))
+  ds
 }
 
 not_covered_answer <- "The documents do not cover this."

@@ -126,6 +126,18 @@ PDF and as Word, live web pages, and a spreadsheet.
   list such public contacts in Settings ("*@fda.hhs.gov, 301-796-3400"),
   and with FDA's listed the same set has none.
 
+* Every run now records who created it and from what. A run trained on
+  questions from a document set remembers the set and its version, and a
+  "Train anyway" approval for personal data travels with the run. Monitor's
+  "Provenance" download gives the whole story of the selected run: who
+  started it and when, the base model, its revision and licence, the
+  training data with fingerprints, the document set version (and whether
+  the set has been re-read since), the approval, the evaluation and any
+  sign-offs. Deleting a run first says what depends on it: runs that
+  continue from it and model versions, with approved ones called out.
+  Agents can ask the same through three read-only tools: `check_licence`,
+  `provenance_report` and `deletion_impact`.
+
 ## Asking documents
 
 * Questions about a whole set ("which document is the oldest?", "what is in

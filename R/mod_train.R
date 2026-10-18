@@ -292,9 +292,12 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
     shiny::observeEvent(input$pii_ok, {
       shiny::removeModal()
       hits <- pii_hits()
-      store_record_event("approval_decision", "train_with_personal_data", ok = TRUE,
-                         detail = list(found = as.list(table(hits$type)), rows = length(unique(hits$row))))
-      start_training()
+      rows <- length(unique(hits$row))
+      id <- store_record_event("approval_decision", "train_with_personal_data", ok = TRUE,
+                               detail = list(found = as.list(table(hits$type)), rows = rows))
+      # The run records this approval, so its provenance shows who allowed it.
+      withr::with_options(list(dragonfarm.approval = list(event = id, rows = rows, approved_by = current_user())),
+                          start_training())
     })
 
     # Cloud GPU path: the same settings, but the run is zipped instead of launched.

@@ -114,10 +114,17 @@ prepare_run <- function(dataset, model, lora, args, hardware, name, run_dir, run
   write_json(cfg, file.path(run_dir, "config.json"))
   write_json(
     list(source = dataset$source, name = dataset$name, mapping = dataset$mapping,
-         split = list(eval_frac = dataset$split$eval_frac, seed = dataset$split$seed)),
+         split = list(eval_frac = dataset$split$eval_frac, seed = dataset$split$seed),
+         documents = dataset$documents),
     file.path(run_dir, "dataset.json")
   )
   write_json(list(state = state, created_at = now_iso(), pid = NULL), file.path(run_dir, "status.json"))
+  # Who created the run, from what; a personal-data approval given in the app
+  # travels with it (option set around the launch).
+  store_record_event("run_created", basename(run_dir), ok = TRUE, runs_dir = runs_dir,
+                     detail = list(state = state, model = model, revision = revision,
+                                   train_md5 = file_md5(file.path(run_dir, files$train)),
+                                   documents = dataset$documents$set, personal_data = getOption("dragonfarm.approval")))
   writeLines(character(), file.path(run_dir, "log.txt"))
   list(run_dir = run_dir, files = files)
 }

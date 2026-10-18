@@ -1,0 +1,70 @@
+{
+  "name": "provenance_report",
+  "title": "Say where a run came from",
+  "description": "Report who started a training run and when, its base model, revision and licence, the exact training data with fingerprints, the document set and version behind it, any personal-data approval, its evaluation and its model versions. Nothing is changed.",
+  "side_effect": "read_only",
+  "cost": {
+    "gpu": false,
+    "typical_seconds": 1
+  },
+  "errors": [
+    "NOT_A_RUN",
+    "INVALID_ARGUMENTS"
+  ],
+  "input": {
+    "type": "object",
+    "required": [
+      "run"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "run": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Run id or folder."
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": [
+      "run",
+      "model",
+      "data",
+      "report"
+    ],
+    "properties": {
+      "run": {
+        "type": "string"
+      },
+      "started_by": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "model": {
+        "type": "object"
+      },
+      "licence": {
+        "type": "object"
+      },
+      "data": {
+        "type": "object"
+      },
+      "documents": {
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "versions": {
+        "type": "array"
+      },
+      "report": {
+        "type": "string",
+        "description": "The same, as a short Markdown report for a person."
+      }
+    }
+  }
+}

@@ -16,7 +16,8 @@ mod_monitor_ui <- function(id) {
           shiny::uiOutput(ns("run_actions")),
           shiny::div(class = "cloud-actions", style = "margin-top: 8px;",
             shiny::actionButton(ns("archive"), "Archive", class = "btn-outline-secondary"),
-            shiny::actionButton(ns("delete"), "Delete", class = "btn-outline-danger")
+            shiny::actionButton(ns("delete"), "Delete", class = "btn-outline-danger"),
+            shiny::downloadButton(ns("provenance"), "Provenance", class = "btn-outline-secondary")
           )
         ),
         shiny::conditionalPanel(
@@ -203,6 +204,17 @@ mod_monitor_server <- function(id, state, runs_dir) {
       filename = function() sprintf("dragonfarm-traces-%s.json", format(Sys.time(), "%Y%m%d-%H%M%S")),
       content = function(file) store_export_otlp(file, days = 7, runs_dir = runs_dir),
       contentType = "application/json"
+    )
+
+    # Where the selected run came from, as a short Markdown report.
+    output$provenance <- shiny::downloadHandler(
+      filename = function() sprintf("provenance-%s.md", input$run %||% "run"),
+      content = function(file) {
+        p <- provenance_report(run(), runs_dir = runs_dir)
+        store_record_event("export", run()$id, ok = TRUE, detail = list(what = "provenance"), runs_dir = runs_dir)
+        writeLines(provenance_text(p), file, useBytes = TRUE)
+      },
+      contentType = "text/markdown"
     )
 
     # The record as a file for an auditor; the export itself is recorded.
@@ -485,9 +497,11 @@ mod_monitor_server <- function(id, state, runs_dir) {
 
     shiny::observeEvent(input$delete, {
       id <- input$run
+      impact <- tryCatch(deletion_impact(run = run(), runs_dir = runs_dir)$note, error = function(e) NULL)
       shiny::showModal(shiny::modalDialog(
         title = "Delete this run?",
-        sprintf("This permanently deletes %s and everything in it: the adapter, checkpoints, samples, and logs. This cannot be undone.", id),
+        shiny::p(sprintf("This permanently deletes %s and everything in it: the adapter, checkpoints, samples, and logs. This cannot be undone.", id)),
+        if (!is.null(impact)) shiny::p(impact),
         footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton(ns("delete_confirm"), "Delete permanently", class = "btn-danger")),
         easyClose = TRUE
       ))
