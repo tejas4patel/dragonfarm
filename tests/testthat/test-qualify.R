@@ -5,6 +5,8 @@ test_that("the qualification checks pass on a fresh install and write a report w
   testthat::local_mocked_bindings(dragon_python = function(...) stop("no Python here"))
   f <- withr::local_tempfile(fileext = ".md")
   r <- dragonfarm:::qualification_report(f, runs_dir = runs)
+  failing <- r$checks[r$checks$result == "FAIL", , drop = FALSE]
+  expect_equal(paste(failing$check, failing$evidence, sep = ": "), character())   # names the check if one fails
   expect_equal(r$failed, 0)
   expect_gte(r$passed, 9)
   expect_true(all(r$checks$result %in% c("PASS", "INFO")))
