@@ -90,6 +90,10 @@ records_to_df <- function(records) {
 unescape_newlines <- function(x) gsub("\\\\n", "\n", x)
 escape_newlines <- function(x) gsub("\n", "\\\\n", x)
 
+# A template in quotes, line breaks shown as \n, for print methods. cli's
+# {.val} would escape the backslash a second time ("\\n").
+show_template <- function(x) paste0("\"", escape_newlines(x), "\"")
+
 check_number <- function(x, arg, min = -Inf, max = Inf, integer = FALSE, allow_null = FALSE) {
   if (is.null(x)) {
     if (allow_null) return(invisible(NULL))

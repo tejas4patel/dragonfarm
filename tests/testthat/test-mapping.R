@@ -67,3 +67,10 @@ test_that("training on nothing says so plainly", {
   # dragon_feedback() returns sft = NULL before anyone has given feedback.
   expect_error(dragonfarm:::check_dataset(NULL, mapped = TRUE), "nothing to train on")
 })
+
+test_that("a printed template shows each line break once, as \\n", {
+  ds <- dragon_map(dragon_dataset(dragon_example_data()), prompt = "{subject}\n\n{body}", response = "reply")
+  out <- cli::cli_fmt(print(ds))
+  expect_true(any(grepl('Prompt: "{subject}\\n\\n{body}"', out, fixed = TRUE)))
+  expect_false(any(grepl("\\\\", out, fixed = TRUE)))                 # never a doubled backslash
+})

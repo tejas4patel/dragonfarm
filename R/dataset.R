@@ -70,16 +70,16 @@ print.dragon_dataset <- function(x, ...) {
       if (!is.null(x$split)) cli::cli_text("Split: {length(x$split$eval_idx)} evaluation row{?s} (seed {x$split$seed})")
       return(invisible(x))
     }
-    cli::cli_text("Prompt: {.val {escape_newlines(m$prompt)}}")
+    cli::cli_text("Prompt: {show_template(m$prompt)}")
     if (identical(m$kind, "pairs")) {
-      cli::cli_text("Chosen: {.val {escape_newlines(m$chosen)}}")
-      cli::cli_text("Rejected: {.val {escape_newlines(m$rejected)}}")
+      cli::cli_text("Chosen: {show_template(m$chosen)}")
+      cli::cli_text("Rejected: {show_template(m$rejected)}")
     } else if (identical(m$kind, "prompts")) {
       cli::cli_text("Reference: {if (is.null(m$reference)) 'none' else escape_newlines(m$reference)} (RL prompts)")
     } else {
-      cli::cli_text("Response: {.val {escape_newlines(m$response)}}")
+      cli::cli_text("Response: {show_template(m$response)}")
     }
-    if (!is.null(m$system)) cli::cli_text("System: {.val {escape_newlines(m$system)}}")
+    if (!is.null(m$system)) cli::cli_text("System: {show_template(m$system)}")
   }
   if (!is.null(x$split)) {
     cli::cli_text("Split: {length(x$split$eval_idx)} evaluation row{?s} (seed {x$split$seed})")
