@@ -1,0 +1,43 @@
+# dragonfarm for a small team: the app plus a shared Postgres catalogue.
+# DRAFT, written 2026-10-18 and not yet run: see deploy/README.md.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: dragonfarm
+      POSTGRES_USER: dragonfarm
+      POSTGRES_PASSWORD: ${DRAGONFARM_DB_PASSWORD:?set DRAGONFARM_DB_PASSWORD in a .env file next to this one}
+    volumes:
+      - catalogue:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dragonfarm -d dragonfarm"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # A shared catalogue turns on governed mode and four-eyes sign-off by
+      # default (D-10).
+      DRAGONFARM_CATALOG: postgresql://dragonfarm:${DRAGONFARM_DB_PASSWORD}@db:5432/dragonfarm
+    ports:
+      - "127.0.0.1:3838:3838"   # this machine only; put a sign-in proxy in front for a team
+    volumes:
+      - runs:/data/runs
+      - python:/data/python
+    # Uncomment on a machine with an NVIDIA GPU and the NVIDIA Container Toolkit.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  catalogue:
+  runs:
+  python:
