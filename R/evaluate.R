@@ -46,6 +46,11 @@ dragon_evaluate <- function(run, n_samples = 10, recompute = FALSE, metrics = NU
       cli::cli_abort("Run {.strong {run$id}} has no saved adapter to evaluate.")
     }
     n_arg <- if (is.infinite(n_samples)) 1000000L else as.integer(n_samples)
+    # Like training and question writing: free this session's own loaded model first.
+    if (worker_alive()) {
+      cli::cli_alert_info("Stopping the local inference worker so evaluation has the GPU.")
+      dragon_worker_stop()
+    }
     require_gpu_free("Evaluation")
     res <- run_python("dragonfarm.evaluate", c("--run-dir", run$dir, "--n-samples", n_arg))
     if (res$status != 0) python_failure_message(res, "Evaluation")

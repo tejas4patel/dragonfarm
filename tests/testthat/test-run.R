@@ -174,3 +174,16 @@ test_that("gated models need a token", {
   skip_if(file.exists(file.path(path.expand("~"), ".cache", "huggingface", "token")), "a Hugging Face token is cached")
   withr_env(expect_error(dragon_train(ds, "google/gemma-3-1b-it", runs_dir = tempfile()), "gated"))
 })
+
+test_that("re-evaluating frees this session's own loaded model first", {
+  run <- dragon_run(copy_fixture_run())
+  dir.create(file.path(run$dir, "adapter"), showWarnings = FALSE)
+  writeLines("{}", file.path(run$dir, "adapter", "adapter_config.json"))
+  order <- character()
+  local_mocked_bindings(worker_alive = function() TRUE,
+                        dragon_worker_stop = function(...) { order <<- c(order, "stop"); invisible(TRUE) },
+                        require_gpu_free = function(...) { order <<- c(order, "guard"); invisible(TRUE) },
+                        run_python = function(...) { order <<- c(order, "evaluate"); list(status = 0L) })
+  suppressMessages(dragon_evaluate(run, recompute = TRUE))
+  expect_equal(order, c("stop", "guard", "evaluate"))
+})
