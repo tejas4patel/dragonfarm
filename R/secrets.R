@@ -26,9 +26,17 @@ secret_catalog <- function() {
   )
 }
 
-keychain_available <- function() {
-  requireNamespace("keyring", quietly = TRUE) &&
-    isTRUE(tryCatch({ keyring::default_backend(); TRUE }, error = function(e) FALSE))
+keychain_available <- function() is.null(keychain_problem())
+
+# NULL when the keychain can be used; otherwise one plain sentence on why and
+# what to do. 'keyring' is only suggested, so a fresh install often lacks it.
+keychain_problem <- function(installed = requireNamespace("keyring", quietly = TRUE)) {
+  if (!installed) {
+    return("The keyring package is not installed. Run install.packages(\"keyring\") in the R console, then restart the app.")
+  }
+  err <- tryCatch({ keyring::default_backend(); NULL }, error = function(e) conditionMessage(e))
+  if (is.null(err)) return(NULL)
+  paste0("The keyring package cannot reach this computer's keychain (", err, "). Ask your admin to set the keys for you.")
 }
 
 # The only three places that touch the keychain.
@@ -60,9 +68,9 @@ secret_save <- function(service, values) {
   values <- lapply(values, function(x) trimws(x %||% ""))
   missing <- setdiff(s$vars, names(values)[vapply(values, nzchar, TRUE)])
   if (length(missing)) cli::cli_abort("Fill in {paste(missing, collapse = ' and ')}.", class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
-  if (!keychain_available()) {
-    cli::cli_abort(c("This computer's keychain cannot be used from R.",
-                     "i" = "Install the {.pkg keyring} package, or ask your admin to set the keys for you."),
+  problem <- keychain_problem()
+  if (!is.null(problem)) {
+    cli::cli_abort(c("Keys cannot be saved on this computer yet.", "i" = "{problem}"),
                    class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
   for (v in s$vars) {

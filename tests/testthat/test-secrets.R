@@ -52,9 +52,17 @@ test_that("saved keys load into a new session, without overriding an admin's", {
 
 test_that("without a usable keychain nothing is saved and it says why", {
   clean_env()
-  testthat::local_mocked_bindings(keychain_available = function() FALSE)
-  expect_error(dragonfarm:::secret_save("anthropic", list(ANTHROPIC_API_KEY = "sk-test")), "keychain")
+  testthat::local_mocked_bindings(keychain_problem = function() "The keyring package is not installed.")
+  expect_error(dragonfarm:::secret_save("anthropic", list(ANTHROPIC_API_KEY = "sk-test")), "not installed")
   expect_equal(Sys.getenv("ANTHROPIC_API_KEY"), "")
+})
+
+test_that("the keychain message names the cause and the fix", {
+  expect_match(dragonfarm:::keychain_problem(installed = FALSE), 'install.packages("keyring")', fixed = TRUE)
+  skip_if_not_installed("keyring")
+  testthat::local_mocked_bindings(default_backend = function() stop("no credential store"), .package = "keyring")
+  expect_match(dragonfarm:::keychain_problem(), "no credential store")
+  expect_false(dragonfarm:::keychain_available())
 })
 
 test_that("a kaggle.json downloaded from Kaggle is found", {

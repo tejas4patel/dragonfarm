@@ -330,7 +330,9 @@ PDF and as Word, live web pages, and a spreadsheet.
   the 'keyring' package), never in scripts or files. Kaggle's downloaded
   kaggle.json is picked up from Downloads with one click. Free tiers are
   turned on there too, with a daily cap. Messages that used to say "set
-  HF_TOKEN in the R session" now point to Settings.
+  HF_TOKEN in the R session" now point to Settings. When keys cannot be
+  saved, the page says why: either 'keyring' is not installed (with the
+  command to install it) or the keychain refused, with its own message.
 
 * An offline switch in the Settings policy card stops every model download:
   models must already be on the machine, and a missing one fails at once

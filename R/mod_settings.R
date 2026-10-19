@@ -68,10 +68,9 @@ mod_settings_server <- function(id, runs_dir) {
     messages <- shiny::reactiveValues()
 
     output$keychain_note <- shiny::renderUI({
-      if (keychain_available()) return(NULL)
-      shiny::div(class = "alert alert-warning small",
-                 "Keys cannot be saved on this computer yet: the keychain is not reachable from R. ",
-                 "Install the keyring package, or ask your admin to set the keys for you.")
+      problem <- keychain_problem()
+      if (is.null(problem)) return(NULL)
+      shiny::div(class = "alert alert-warning small", "Keys cannot be saved on this computer yet. ", problem)
     })
 
     for (svc in names(secret_catalog())) local({
