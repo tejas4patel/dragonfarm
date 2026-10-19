@@ -155,6 +155,9 @@ model](https://dragonfarm.dev/articles/documents.html).
 | Chat with a run and collect feedback | [Talk to it, anywhere it runs](https://dragonfarm.dev/articles/chat-and-feedback.html) |
 | Measure whether it helped | [Metrics, judges, and comparisons](https://dragonfarm.dev/articles/evaluate.html) |
 | Look up models, run files, and settings | [Requirements, models, and settings](https://dragonfarm.dev/articles/under-the-hood.html) |
+| See it on regulatory guidance | [Raise a regulatory dragon: FDA statistics guidance](https://dragonfarm.dev/articles/fda-guidance.html) |
+| Run it in a regulated team (records, sign-off, access) | [For IT and quality teams](https://dragonfarm.dev/articles/for-it-and-quality.html) |
+| Install on a machine without the internet | [Install without the internet](https://dragonfarm.dev/articles/offline-install.html) |
 
 ## Requirements
 
