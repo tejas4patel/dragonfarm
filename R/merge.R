@@ -21,7 +21,7 @@ dragon_merge <- function(run, out_dir = NULL) {
   args <- c("--adapter", target$adapter, "--out", out_dir, "--model", target$model)
   for (p in target$base_adapters %||% character()) args <- c(args, "--base-adapter", p)
   if (isTRUE(target$trust_remote_code)) args <- c(args, "--trust-remote-code")
-  require_gpu_free("Merging")
+  require_gpu_free("Merging", workers_block = FALSE)   # merging runs on the CPU
   res <- run_python("dragonfarm.merge", args)
   if (res$status != 0) python_failure_message(res, "Merge")
   cli::cli_alert_success("Merged model written to {.path {out_dir}}.")

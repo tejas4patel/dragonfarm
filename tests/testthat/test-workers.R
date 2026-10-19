@@ -84,7 +84,18 @@ test_that("a heavy GPU job is refused while another one runs, unless allowed", {
   expect_true(dragonfarm:::require_gpu_free("Training"))
 })
 
-test_that("another session's answering worker does not block a heavy job", {
+test_that("D-32: another session's loaded worker blocks a heavy job on a GPU machine, with how to free it", {
   testthat::local_mocked_bindings(other_workers = function() data.frame(pid = 7L, kind = "inference worker", started = Sys.time()))
+  testthat::local_mocked_bindings(gpu_machine = function() TRUE)
+  err <- tryCatch(dragonfarm:::require_gpu_free("Training"), error = function(e) e)
+  expect_equal(err$code, "GPU_BUSY")
+  expect_match(conditionMessage(err), "inference worker (pid 7)", fixed = TRUE)
+  expect_match(conditionMessage(err), "dragon_worker_stop(all = TRUE)", fixed = TRUE)
+  expect_true(dragonfarm:::require_gpu_free("Merging", workers_block = FALSE))   # merging runs on the CPU
+})
+
+test_that("on a CPU-only machine another session's worker does not block", {
+  testthat::local_mocked_bindings(other_workers = function() data.frame(pid = 7L, kind = "inference worker", started = Sys.time()))
+  testthat::local_mocked_bindings(gpu_machine = function() FALSE)
   expect_true(dragonfarm:::require_gpu_free("Training"))
 })

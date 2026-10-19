@@ -194,6 +194,12 @@ dragon_pipeline <- function(model, steps, runs_dir = dragon_runs_dir(), name = "
     # process is stopped (a cancelled pipeline).
     script_path <- file.path(pipelines_dir(runs_dir), paste0(id, ".R"))
     writeLines(pipeline_script(spec_path), script_path)
+    # The pipeline runs in another R process, so this session's worker would
+    # count as another session's and hold its training steps back (D-32).
+    if (worker_alive()) {
+      cli::cli_alert_info("Stopping this session's inference worker so the pipeline has the GPU.")
+      dragon_worker_stop()
+    }
     p <- launch_rscript(script_path, log_path)
     cli::cli_alert_success("Pipeline {.strong {id}} started in the background ({length(steps)} step{?s}).")
     cli::cli_text("Follow it with {.code dragon_pipeline_status(\"{id}\")}; log at {.path {log_path}}.")

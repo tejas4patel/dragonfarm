@@ -95,16 +95,31 @@ warn_other_workers <- function(what = "Training") {
 # session), unless options(dragonfarm.allow_parallel_gpu = TRUE).
 heavy_kinds <- c("trainer", "question generator", "evaluator", "merge")
 
-require_gpu_free <- function(what = "This job") {
+# D-32: another R session's inference worker also blocks a heavy job when
+# this machine has a GPU. It keeps its models in GPU memory, and a DPO run
+# started beside a loaded judge failed with "out of memory" minutes in
+# (2026-10-18). On a CPU-only machine it holds no GPU memory, so it only
+# warns. The other session is never touched; the message says how to free it.
+require_gpu_free <- function(what = "This job", workers_block = gpu_machine()) {
   if (isTRUE(getOption("dragonfarm.allow_parallel_gpu", FALSE))) return(invisible(TRUE))
   o <- other_workers()
-  busy <- o[o$kind %in% heavy_kinds, , drop = FALSE]
+  blocking <- c(heavy_kinds, if (isTRUE(workers_block)) "inference worker")
+  busy <- o[o$kind %in% blocking, , drop = FALSE]
   if (nrow(busy) > 0) {
+    worker <- any(busy$kind == "inference worker")
     cli::cli_abort(c(
       "{what} would share the GPU with {describe_workers(busy)}, which is still running.",
-      "i" = "Wait for it to finish, or stop it ({.fn dragon_cancel} for a training run).",
+      "i" = if (worker) "Another R session (or the app open elsewhere) has a model loaded. Free it with {.code dragon_worker_stop(all = TRUE)}; a chat there reloads its model on its next message."
+            else "Wait for it to finish, or stop it ({.fn dragon_cancel} for a training run).",
       "i" = "To run both anyway, set {.code options(dragonfarm.allow_parallel_gpu = TRUE)}."
     ), class = "dragonfarm_error", code = "GPU_BUSY")
   }
   invisible(TRUE)
+}
+
+# Whether this machine has a GPU that models load onto: an NVIDIA driver, or
+# Apple silicon (unified memory).
+gpu_machine <- function() {
+  nzchar(Sys.which("nvidia-smi")) ||
+    (identical(Sys.info()[["sysname"]], "Darwin") && R.version$arch %in% c("aarch64", "arm64"))
 }
