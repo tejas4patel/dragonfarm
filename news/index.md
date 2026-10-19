@@ -705,6 +705,14 @@ a spreadsheet.
 
 ### Fixes
 
+- On a machine with a GPU, training, question writing and evaluation now
+  refuse to start (`GPU_BUSY`) while another R session, or the app open
+  elsewhere, keeps a model loaded, instead of warning and failing with
+  “out of memory” minutes later. The message names the process and gives
+  the command that frees it; the other session is never touched. Merging
+  runs on the CPU and is not held back, and a pipeline started in the
+  background frees the starting session’s own model first.
+
 - `dragon_compare(p)` on a pipeline started with `background = TRUE`
   failed with “\$ operator is invalid for atomic vectors”, and printing
   it reported the wrong number of runs: the object has a `runs_dir` and
