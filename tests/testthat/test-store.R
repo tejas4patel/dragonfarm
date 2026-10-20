@@ -57,7 +57,7 @@ test_that("the record exports as CSV for an auditor, and the export is recorded 
   expect_equal(out$rows, 2L)
   csv <- utils::read.csv(f)
   expect_equal(csv$kind, c("tool", "approval_request")); expect_equal(csv$code[2], "NEEDS_APPROVAL")
-  expect_equal(out$sha256, dragonfarm:::digest_sha256(f))
+  expect_equal(out$sha256, dragonfarm:::file_digest(f)$sha256)
   ev <- dragonfarm:::store_events(1, runs_dir = runs)
   expect_equal(ev$kind, "record_export"); expect_match(ev$detail, out$sha256)
   later <- dragonfarm:::store_export(f, since = "2999-01-01", runs_dir = runs)
@@ -77,4 +77,13 @@ test_that("the 7-day summary counts kinds, problems, outbound hosts and waiting 
   expect_equal(as.integer(sm$problems[["NOT_ALLOWED"]]), 1L)
   expect_equal(sm$outbound$calls, 2L); expect_equal(sm$outbound$bytes, 3072)
   expect_equal(sm$waiting, 1L)
+})
+
+
+test_that("a fingerprint is named after the algorithm that made it", {
+  f <- withr::local_tempfile(lines = "abc")
+  testthat::local_mocked_bindings(requireNamespace = function(...) FALSE, .package = "base")
+  d <- dragonfarm:::file_digest(f)
+  expect_named(d, "md5")
+  expect_equal(d$md5, unname(tools::md5sum(f)))
 })

@@ -220,17 +220,19 @@ store_export <- function(file, since = NULL, runs_dir = dragon_runs_dir()) {
   ev <- if (is.null(since)) store_get(con, "SELECT * FROM events ORDER BY id")
         else store_get(con, "SELECT * FROM events WHERE at >= ? ORDER BY id", params = list(as.character(since)))
   utils::write.csv(ev, file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
-  sha <- digest_sha256(file)
+  digest <- file_digest(file)
   store_record_event("record_export", basename(file), ok = TRUE,
-                     detail = list(rows = nrow(ev), since = since, sha256 = sha), runs_dir = runs_dir)
-  invisible(list(file = file, rows = nrow(ev), sha256 = sha))
+                     detail = c(list(rows = nrow(ev), since = since), digest), runs_dir = runs_dir)
+  invisible(c(list(file = file, rows = nrow(ev)), digest))
 }
 
-digest_sha256 <- function(file) {
+# A file's fingerprint, named after the algorithm that made it: list(sha256 =)
+# with openssl, else list(md5 =), so a record never calls an MD5 a SHA-256.
+file_digest <- function(file) {
   if (requireNamespace("openssl", quietly = TRUE)) {
-    return(paste(sprintf("%02x", as.integer(unclass(openssl::sha256(file(file))))), collapse = ""))
+    return(list(sha256 = paste(sprintf("%02x", as.integer(unclass(openssl::sha256(file(file))))), collapse = "")))
   }
-  unname(tools::md5sum(file))   # without openssl: MD5, which still shows a copy is unchanged
+  list(md5 = unname(tools::md5sum(file)))   # still shows a copy is unchanged
 }
 
 # What happened recently, for an admin: events by kind, refusals and

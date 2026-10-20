@@ -66,7 +66,10 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
   })
   add("Operation", "Tool contracts are valid", {
     reg <- tool_registry(refresh = TRUE)
-    list(ok = length(reg) > 0, evidence = sprintf("%d tools: %s", length(reg), paste(sort(names(reg)), collapse = ", ")))
+    bad <- Filter(length, lapply(reg, tool_contract_problems))
+    list(ok = length(reg) > 0 && !length(bad),
+         evidence = if (length(bad)) paste(sprintf("%s: %s", names(bad), vapply(bad, paste, "", collapse = ", ")), collapse = "; ")
+                    else sprintf("%d tools, every contract complete: %s", length(reg), paste(sort(names(reg)), collapse = ", ")))
   })
   add("Operation", "An agent outside its policy is refused", {
     r <- withr::with_options(list(dragonfarm.runs_dir = tmp), tool_call("train_model", list(questions = "x", model = "m"), agent = "answer"))
@@ -104,8 +107,10 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
     list(ok = !leaked, evidence = if (leaked) "the saved judge contains the key" else "the saved judge contains no key")
   })
   add("Operation", "Personal-data patterns", {
-    planted <- c("mail jane.doe@hospital.org", "call (617) 555-0142", "SSN 123-45-6789", "Patient ID: AB-77231")
-    lookalike <- c("version 4.12.2", "$249,625 million", "revised 2021-05-01", "DOI 10.1080/01621459.2021.1981338")
+    planted <- c("mail jane.doe@hospital.org", "call (617) 555-0142", "SSN 123-45-6789", "Patient ID: AB-77231",
+                 "card 4111 1111 1111 1111", "DOB: 03/14/1962")
+    lookalike <- c("version 4.12.2", "$249,625 million", "revised 2021-05-01", "DOI 10.1080/01621459.2021.1981338",
+                   "order 1234 5678 9012 3456", "approved 03/14/1962")
     found <- vapply(planted, function(x) nrow(pii_find(x)) > 0, TRUE)
     false <- vapply(lookalike, function(x) nrow(pii_find(x)) > 0, TRUE)
     list(ok = all(found) && !any(false), evidence = sprintf("%d of %d planted found; %d of %d look-alikes flagged",
@@ -121,7 +126,7 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
   do.call(rbind, rows)
 }
 
-# Run the checks and write the report. Returns list(file, sha256, passed, failed).
+# Run the checks and write the report. Returns list(file, sha256 (md5 without openssl), passed, failed).
 qualification_report <- function(file, runs_dir = dragon_runs_dir()) {
   checks <- qualification_checks(runs_dir)
   who <- current_user() %||% "unknown"
@@ -137,9 +142,9 @@ qualification_report <- function(file, runs_dir = dragon_runs_dir()) {
     sprintf("| %s | %s | %s | %s |", checks$area, checks$check, checks$result, gsub("[|]", "/", checks$evidence))
   )
   writeLines(lines, file, useBytes = TRUE)
-  sha <- digest_sha256(file)
+  digest <- file_digest(file)
   store_record_event("qualification", basename(file), ok = !any(checks$result == "FAIL"),
-                     detail = list(passed = sum(checks$result == "PASS"), failed = sum(checks$result == "FAIL"), sha256 = sha),
+                     detail = c(list(passed = sum(checks$result == "PASS"), failed = sum(checks$result == "FAIL")), digest),
                      runs_dir = runs_dir)
-  list(file = file, sha256 = sha, passed = sum(checks$result == "PASS"), failed = sum(checks$result == "FAIL"), checks = checks)
+  c(list(file = file), digest, list(passed = sum(checks$result == "PASS"), failed = sum(checks$result == "FAIL"), checks = checks))
 }

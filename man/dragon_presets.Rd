@@ -22,8 +22,8 @@ Which size to pick depends on the task. Measured on an 8 GB laptop GPU
 (see the "Choosing a model size" article on the package website): for
 answering from documents, writing training questions, or fine-tuning on
 documents, use the 7B in 4-bit, or the 3B with less memory; models below
-3B are wrong more often (untrained, the 0.5B on 14 of 55 test questions,
-the 7B on none). For a fixed
+3B are wrong more often (untrained, the 0.5B on 16 of 55 test questions,
+the 7B on 2). For a fixed
 output format such as JSON fields or labels, the 0.5B and 1.5B reach the
 same score as larger models in a few minutes of training.
 }

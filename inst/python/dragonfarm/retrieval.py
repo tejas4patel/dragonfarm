@@ -47,6 +47,15 @@ def chunk_signature(ids):
     return hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()[:16]
 
 
+# The search models dragonfarm picks, pinned to exact Hub commits like the
+# answering presets (X2), so an index always means the same model. These are
+# the revisions every document set so far was indexed with.
+PINNED_REVISIONS = {
+    "BAAI/bge-small-en-v1.5": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+    "intfloat/multilingual-e5-small": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+}
+
+
 class Encoder:
     """A sentence encoder: tokenizer + model, mean pooled, normalised."""
 
@@ -57,8 +66,10 @@ class Encoder:
         self.model_id = model_id
         self.max_length = max_length
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.tok = AutoTokenizer.from_pretrained(model_id)
-        self.model = AutoModel.from_pretrained(model_id).to(self.device).eval()
+        rev = PINNED_REVISIONS.get(model_id)
+        self.tok = AutoTokenizer.from_pretrained(model_id, revision=rev)
+        # Safetensors only: pickle weights can run code when loaded (X2).
+        self.model = AutoModel.from_pretrained(model_id, revision=rev, use_safetensors=True).to(self.device).eval()
         self.query_prefix, self.passage_prefix = prefixes(model_id)
 
     def encode(self, texts, batch_size=32, prefix=""):

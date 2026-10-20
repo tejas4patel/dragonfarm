@@ -46,3 +46,14 @@ test_that("dragon_index() chooses by language unless a model is named", {
   dragon_index(set_with(english)); expect_equal(sent, "BAAI/bge-small-en-v1.5")
   dragon_index(de, model = "BAAI/bge-base-en-v1.5"); expect_equal(sent, "BAAI/bge-base-en-v1.5")   # a named model always wins
 })
+
+test_that("every search model dragonfarm picks is pinned to an exact revision and loaded as safetensors", {
+  py <- readLines(system.file("python", "dragonfarm", "retrieval.py", package = "dragonfarm"), warn = FALSE)
+  block <- py[seq(grep("^PINNED_REVISIONS", py), grep("^}", py)[grep("^}", py) > grep("^PINNED_REVISIONS", py)][1])]
+  for (m in c(dragonfarm:::english_embedding_model, dragonfarm:::multilingual_embedding_model)) {
+    line <- grep(m, block, fixed = TRUE, value = TRUE)
+    expect_length(line, 1)
+    expect_match(line, "\"[0-9a-f]{40}\"")
+  }
+  expect_true(any(grepl("use_safetensors=True", py, fixed = TRUE)))
+})
