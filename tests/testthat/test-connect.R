@@ -30,7 +30,7 @@ fake_browser <- function(code = "one-time-code", state = NULL) {
 }
 
 test_that("connecting OpenRouter takes the code from the browser, saves the key, and checks it", {
-  skip_if_not_installed("httpuv"); skip_if_not_installed("openssl"); skip_if(!nzchar(Sys.which("curl")), "no curl")
+  skip_on_cran(); skip_if_not_installed("httpuv"); skip_if_not_installed("openssl"); skip_if(!nzchar(Sys.which("curl")), "no curl")
   clean_env(); store <- fake_keychain()
   on.exit(dragonfarm:::store_close_all(), add = TRUE)
   seen <- NULL
@@ -47,7 +47,7 @@ test_that("connecting OpenRouter takes the code from the browser, saves the key,
 })
 
 test_that("a sign-in that comes back with the wrong state is refused and nothing is saved", {
-  skip_if_not_installed("httpuv"); skip_if_not_installed("openssl"); skip_if(!nzchar(Sys.which("curl")), "no curl")
+  skip_on_cran(); skip_if_not_installed("httpuv"); skip_if_not_installed("openssl"); skip_if(!nzchar(Sys.which("curl")), "no curl")
   clean_env(); store <- fake_keychain()
   on.exit(dragonfarm:::store_close_all(), add = TRUE)
   testthat::local_mocked_bindings(openrouter_exchange = function(...) stop("must not be called"))
@@ -57,7 +57,7 @@ test_that("a sign-in that comes back with the wrong state is refused and nothing
 })
 
 test_that("no answer from the browser times out with nothing saved", {
-  skip_if_not_installed("httpuv"); skip_if_not_installed("openssl")
+  skip_on_cran(); skip_if_not_installed("httpuv"); skip_if_not_installed("openssl")
   clean_env(); store <- fake_keychain()
   on.exit(dragonfarm:::store_close_all(), add = TRUE)
   err <- tryCatch(dragonfarm:::connect_openrouter(open = function(url) invisible(), wait = 1), error = function(e) e)

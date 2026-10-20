@@ -44,8 +44,8 @@ and so started 'Python', now mocks it).
   RETURNING).
 * New suggested packages 'httpuv' and 'askpass', used only when a person
   connects an outside service from R (a short-lived listener on localhost
-  for a browser sign-in, and a masked prompt for a pasted key). Nothing in
-  the check or the tests opens a browser or a port to the outside.
+  for a browser sign-in, and a masked prompt for a pasted key). The tests
+  that start that listener are skipped on CRAN; nothing opens a browser.
 * New import 'keyring': the app's Settings page keeps service keys in the
   operating system's keychain, so it is installed with the package. Nothing
   touches the keychain during the check; tests use an in-memory stand-in.
