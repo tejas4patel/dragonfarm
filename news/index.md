@@ -385,6 +385,24 @@ a spreadsheet.
   says “could not reach” rather than “did not accept this key” when the
   failure was not Kaggle refusing the key.
 
+- Training on a GPU in the cloud got three fixes, each measured on
+  Kaggle’s T4 with a 3B model in 4-bit and the example data:
+
+  - bfloat16 is used only where the GPU has it in hardware. The T4 only
+    emulates it, and the same run took 928 s in bfloat16 against 328 s
+    in float16, with the same held-out loss.
+  - Training uses one GPU unless you set `CUDA_VISIBLE_DEVICES`. On
+    Kaggle’s two T4s it used to split every step across both, doubling
+    the effective batch, so the same settings trained differently than
+    on a laptop.
+  - When training runs out of GPU memory in a way the process can
+    recover from, it tries once more with batch size 1, the same
+    effective batch, and gradient checkpointing on, and records the
+    change in the run’s settings. The default settings for a 3B model
+    ran out of memory on the T4 and now finish. A driver-level
+    out-of-memory error, as Windows laptops tend to give, still stops
+    the run with advice, since the process cannot recover.
+
 - Training on Kaggle with one click works again from Windows. Three
   things stopped it, all found on a real round trip with the example
   data (3.7 minutes from upload to imported run): the upload failed on
