@@ -95,7 +95,7 @@ questions, and for fine-tuning the same training rows.</p>
 <tr class="odd">
 <td>Answer questions from documents</td>
 <td>7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B</td>
-<td>The 7B was right on all 55 questions, the 0.5B wrong 14 times</td>
+<td>The 7B was right on 53 of 55 questions, the 0.5B wrong 16 times</td>
 </tr>
 <tr class="even">
 <td>Write training questions from documents</td>
@@ -129,7 +129,8 @@ sets had known answers: 23 questions about Costco’s 2024 annual report
 own manuals. Twenty more questions were about things the documents do
 not contain, such as a hot-dog sales figure, the default port of RStudio
 Server, or dplyr; the right reply to those is to say so. These numbers
-are for version 0.4.0 as released, with its search and instructions.</p>
+were measured again on 19 October 2026 with the current code, on the
+same chunks.</p>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="16%">
@@ -151,18 +152,18 @@ are for version 0.4.0 as released, with its search and instructions.</p>
 <tr class="odd">
 <td>0.5B</td>
 <td>17 of 23</td>
-<td>19 of 32</td>
-<td>14</td>
+<td>22 of 32</td>
 <td>16</td>
-<td>0.8</td>
+<td>14</td>
+<td>1.0</td>
 </tr>
 <tr class="even">
 <td>1.5B</td>
 <td>19 of 23</td>
-<td>28 of 32</td>
-<td>6</td>
+<td>27 of 32</td>
+<td>9</td>
 <td>20</td>
-<td>1.1</td>
+<td>1.2</td>
 </tr>
 <tr class="odd">
 <td>3B</td>
@@ -170,40 +171,49 @@ are for version 0.4.0 as released, with its search and instructions.</p>
 <td>30 of 32</td>
 <td>4</td>
 <td>20</td>
-<td>9.0</td>
+<td>5.1</td>
 </tr>
 <tr class="even">
 <td>7B, 4-bit</td>
-<td>23 of 23</td>
-<td>32 of 32</td>
-<td>0</td>
+<td>22 of 23</td>
+<td>31 of 32</td>
+<td>2</td>
 <td>20</td>
-<td>10.1</td>
+<td>7.7</td>
 </tr>
 </tbody>
 </table>
 <p>“Right” means the answer contained the correct figure or function
 name. That is a lenient test: small models often named the right
-function with a wrong detail around it. The 0.5B also declined 5
+function with a wrong detail around it. The 0.5B also declined 6
 answerable questions.</p>
-<p>The 3B and 7B give full answers, a median of 52 and 60 words with the
-figures, steps, or code the excerpts hold, which is why they take 9 to
-10 seconds. Asked for answers that long, the smaller models made things
-up more often (the 0.5B then declined only 10 of 25 questions it could
-not know), so they are asked for short ones: a sentence or two, often a
+<p>The 3B and 7B give full answers, a median of 50 and 69 words with the
+figures, steps, or code the excerpts hold, which is why they take 5 to 8
+seconds. Asked for answers that long, the smaller models made things up
+more often (the 0.5B then declined only 10 of 25 questions it could not
+know), so they are asked for short ones: a sentence or two, often a
 single figure or function name.</p>
-<p>As a check that these numbers are not tuned to the two test sets, the
-same models answered 20 questions about R’s installation and data import
-manuals, which were never used while developing: 15, 12, 19, and 20
-right for the 0.5B, 1.5B, 3B, and 7B, with the 1.5B, 3B, and 7B
-declining at least four of five questions those manuals do not
-cover.</p>
+<p>As a check that these numbers are not tuned to the two test sets, in
+an earlier run the same models answered 20 questions about R’s
+installation and data import manuals, which were never used while
+developing: 15, 12, 19, and 20 right for the 0.5B, 1.5B, 3B, and 7B,
+with the 1.5B, 3B, and 7B declining at least four of five questions
+those manuals do not cover.</p>
 <p>The columns that matter most are “wrong or empty” and “declined”. The
-7B was right on all 55 and declined every question it could not know.
-The smaller models were wrong four to fourteen times, and the 0.5B still
-answered 4 of the 20 questions the documents do not cover. That is the
-real cost of a small model on documents: not fewer answers, but answers
-you cannot tell from the right ones.</p>
+7B was right on 53 of 55 and declined every question it could not know.
+One miss was a figure from a table given in thousands, read as units:
+136,800 cardholders instead of 136.8 million. The other described
+<code><a href="https://rdrr.io/r/stats/nlm.html" class="external-link">nlm()</a></code>, as the manual’s own example does, where we expected
+<code><a href="https://rdrr.io/r/stats/nls.html" class="external-link">nls()</a></code>. The smaller models were wrong four to sixteen times,
+and the 0.5B still answered 6 of the 20 questions the documents do not
+cover.</p>
+<p>The cardholder slip has a cause we could test. For 7B-sized models,
+dragonfarm marks the excerpts as quoted text, so that instructions
+planted in a document are not followed. With the marking switched off,
+the 7B read the figure correctly (23 of 23), and no other answer changed
+grade. We keep the marking: it halved how often the 7B obeyed a planted
+instruction. That is the real cost of a small model on documents: not
+fewer answers, but answers you cannot tell from the right ones.</p>
 <p>It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of
 the unanswerable questions (it made up details about Costco’s
 executives) and the 1.5B half of them (it named a Costco mobile game the

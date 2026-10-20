@@ -169,10 +169,10 @@ dragon_merge(run, "models/support-0.5b")        # a standalone model that loads 
   been retrieved.
 - Model size matters for answering, mostly in how a model fails. On 55
   questions with known answers (an annual report and R’s manuals), the
-  7B in 4-bit was right on all of them; the 3B and 1.5B were wrong or
-  empty four and six times, the 0.5B 14 times. On 20 questions the
+  7B in 4-bit was right on 53 of them; the 3B and 1.5B were wrong or
+  empty four and nine times, the 0.5B 16 times. On 20 questions the
   documents do not cover, the 7B, 3B, and 1.5B said so every time, the
-  0.5B 16 times. The 4-bit 7B uses about the memory of a full-precision
+  0.5B 14 times. The 4-bit 7B uses about the memory of a full-precision
   3B. All the numbers, including fine-tuning and a fixed-format task,
   are in [Choosing a model
   size](https://dragonfarm.dev/articles/model-sizes.md).
