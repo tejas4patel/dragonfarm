@@ -1,5 +1,5 @@
 # Kaggle without the browser. With the user's Kaggle API key (kaggle.json,
-# or KAGGLE_USERNAME and KAGGLE_KEY), dragonfarm uploads the packed run as a
+# or KAGGLE_USERNAME with KAGGLE_KEY or a newer API token), dragonfarm uploads the packed run as a
 # private dataset, starts the notebook on a GPU, waits for it, downloads the
 # output and imports it: one click in the app. The Kaggle command-line tool
 # comes from PyPI and runs in a cached environment of its own (reticulate's
@@ -11,14 +11,28 @@ kaggle_json_path <- function() {
 }
 
 kaggle_ready <- function() {
-  (nzchar(Sys.getenv("KAGGLE_USERNAME")) && nzchar(Sys.getenv("KAGGLE_KEY"))) || file.exists(kaggle_json_path())
+  (nzchar(Sys.getenv("KAGGLE_USERNAME")) && nzchar(Sys.getenv("KAGGLE_KEY"))) || nzchar(Sys.getenv("KAGGLE_API_TOKEN")) ||
+    file.exists(kaggle_json_path())
+}
+
+# Kaggle's newer "Generate New Token" gives one API token (KGAT_...), which
+# the Kaggle CLI 2.x reads from KAGGLE_API_TOKEN, not KAGGLE_KEY. A token
+# saved in the Key box is passed on under that name.
+kaggle_token_env <- function(key = Sys.getenv("KAGGLE_KEY"), token = Sys.getenv("KAGGLE_API_TOKEN")) {
+  if (!nzchar(token) && startsWith(key, "KGAT_")) c(KAGGLE_API_TOKEN = key) else character()
 }
 
 # Run the Kaggle CLI. Returns list(ok, out) and never throws.
 kaggle_cli <- function(args) {
-  out <- tryCatch(suppressWarnings(reticulate::uv_run_tool("kaggle", args, stdout = TRUE, stderr = TRUE)),
-                  error = function(e) structure(conditionMessage(e), status = 1L))
+  out <- withr::with_envvar(kaggle_token_env(), tryCatch(
+    suppressWarnings(reticulate::uv_run_tool("kaggle", args, stdout = TRUE, stderr = TRUE)),
+    error = function(e) structure(conditionMessage(e), status = 1L)))
   list(ok = is.null(attr(out, "status")) || identical(as.integer(attr(out, "status")), 0L), out = as.character(out))
+}
+
+# Did a failed CLI call fail because Kaggle refused the credentials?
+kaggle_auth_failed <- function(out) {
+  any(grepl("401|403|Unauthori[sz]ed|Forbidden|auth login|generate an API token", out, ignore.case = TRUE))
 }
 
 # Where a cloud round trip stands, kept in the run's status.json so the app
@@ -122,7 +136,7 @@ kaggle_start <- function(run) {
   run <- dragon_run(run)
   if (!kaggle_ready()) {
     cli::cli_abort(c("No Kaggle key found.",
-                     "i" = "On kaggle.com: Settings > API > Create New Token, then save kaggle.json in {.path {dirname(kaggle_json_path())}}."),
+                     "i" = "On kaggle.com: Settings > API > Generate New Token, then save it in Settings, or save kaggle.json in {.path {dirname(kaggle_json_path())}}."),
                    class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
   bundle_run(run)   # again, so the Kaggle metadata carries the user's name

@@ -31,7 +31,7 @@ settings_card_ui <- function(ns, svc) {
     bslib::card_header(shiny::span(s$title), shiny::uiOutput(ns(paste0("pill_", svc)), inline = TRUE)),
     shiny::p(class = "hint", s$why),
     shiny::tags$a(href = s$get_url, target = "_blank", rel = "noopener", class = "small",
-                  if (identical(svc, "kaggle")) "Get my key: Settings > API > Create New Token" else "Get my key"),
+                  if (identical(svc, "kaggle")) "Get my key: Settings > API > Generate New Token" else "Get my key"),
     if (identical(svc, "kaggle")) shiny::uiOutput(ns("kaggle_found")),
     fields,
     shiny::div(class = "btn-row",
@@ -43,7 +43,7 @@ settings_card_ui <- function(ns, svc) {
 
 settings_label <- function(var) {
   switch(var, HF_TOKEN = "Access token", ANTHROPIC_API_KEY = "API key", KAGGLE_USERNAME = "Username",
-         KAGGLE_KEY = "Key", LIGHTNING_USER_ID = "User id", LIGHTNING_API_KEY = "API key", "API key")
+         KAGGLE_KEY = "Key or API token", LIGHTNING_USER_ID = "User id", LIGHTNING_API_KEY = "API key", "API key")
 }
 
 settings_pill <- function(st) {

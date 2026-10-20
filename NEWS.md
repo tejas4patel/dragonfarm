@@ -332,7 +332,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   turned on there too, with a daily cap. Messages that used to say "set
   HF_TOKEN in the R session" now point to Settings. When keys cannot be
   saved, the page says why: either 'keyring' is not installed (with the
-  command to install it) or the keychain refused, with its own message.
+  command to install it) or the keychain refused, with its own message. Kaggle's
+  newer API tokens (from "Generate New Token") work in the Key box, and the
+  Kaggle check now says "could not reach" rather than "did not accept this
+  key" when the failure was not Kaggle refusing the key.
 
 * An offline switch in the Settings policy card stops every model download:
   models must already be on the machine, and a missing one fails at once

@@ -370,7 +370,7 @@ mod_train_server <- function(id, state, nav_to, runs_dir = dragon_runs_dir()) {
       if (!p %in% c("kaggle", "lightning")) return(NULL)
       if (auto_ready(p)) return(shiny::p(class = "hint", sprintf("Your %s key is set up: dragonfarm does everything there for you.", provider_name(p))))
       shiny::p(class = "hint", switch(p,
-        kaggle = "Tip: with a Kaggle key (kaggle.com, Settings > API > Create New Token, saved as kaggle.json in your .kaggle folder) dragonfarm runs Kaggle for you, with no clicks there.",
+        kaggle = "Tip: with a Kaggle key (kaggle.com, Settings > API > Generate New Token, saved in Settings) dragonfarm runs Kaggle for you, with no clicks there.",
         lightning = "Tip: with your Lightning AI keys (your profile's Keys page: user id and API key) dragonfarm starts a GPU Studio, trains and brings the results back for you."))
     })
 

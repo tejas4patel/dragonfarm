@@ -129,7 +129,7 @@ secret_check <- function(service) {
     kaggle = {
       outbound_check("https://www.kaggle.com", "check that a saved key works")
       k <- kaggle_cli(c("kernels", "list", "--mine", "--page-size", "1"))
-      list(ok = k$ok, status = if (k$ok) 200L else 401L)
+      list(ok = k$ok, status = if (k$ok) 200L else if (kaggle_auth_failed(k$out)) 401L else NA_integer_)
     },
     lightning = return(list(ok = NA, message = "Saved. Lightning checks the keys when you first train there.")),
     return(list(ok = NA, message = "Saved."))

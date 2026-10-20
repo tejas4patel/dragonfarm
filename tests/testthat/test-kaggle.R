@@ -67,7 +67,30 @@ test_that("Kaggle statuses are read plainly", {
 })
 
 test_that("without a Kaggle key it says how to get one", {
-  withr::local_envvar(KAGGLE_USERNAME = "", KAGGLE_KEY = "", KAGGLE_CONFIG_DIR = withr::local_tempdir())
+  withr::local_envvar(KAGGLE_USERNAME = "", KAGGLE_KEY = "", KAGGLE_API_TOKEN = "", KAGGLE_CONFIG_DIR = withr::local_tempdir())
   expect_false(dragonfarm:::kaggle_ready())
-  expect_error(dragonfarm:::kaggle_start(structure(list(dir = tempdir(), id = "x"), class = "dragon_run")), "Create New Token")
+  expect_error(dragonfarm:::kaggle_start(structure(list(dir = tempdir(), id = "x"), class = "dragon_run")), "Generate New Token")
+})
+
+test_that("a newer Kaggle API token in the Key box reaches the CLI as KAGGLE_API_TOKEN", {
+  expect_equal(dragonfarm:::kaggle_token_env(key = "KGAT_abc", token = ""), c(KAGGLE_API_TOKEN = "KGAT_abc"))
+  expect_length(dragonfarm:::kaggle_token_env(key = "0123456789abcdef0123456789abcdef", token = ""), 0)
+  expect_length(dragonfarm:::kaggle_token_env(key = "KGAT_abc", token = "KGAT_set"), 0)
+  withr::local_envvar(KAGGLE_KEY = "KGAT_abc", KAGGLE_API_TOKEN = "", KAGGLE_USERNAME = "ana")
+  seen <- NULL
+  testthat::local_mocked_bindings(uv_run_tool = function(...) { seen <<- Sys.getenv("KAGGLE_API_TOKEN"); "ok" }, .package = "reticulate")
+  expect_true(dragonfarm:::kaggle_cli("--version")$ok)
+  expect_equal(seen, "KGAT_abc")
+  expect_equal(Sys.getenv("KAGGLE_API_TOKEN"), "")
+})
+
+test_that("a Kaggle check only says the key was refused when Kaggle said so", {
+  expect_true(dragonfarm:::kaggle_auth_failed(c("401 Client Error: Unauthorized for url")))
+  expect_true(dragonfarm:::kaggle_auth_failed(c("Recommended: log in with OAuth", "    kaggle auth login")))
+  expect_false(dragonfarm:::kaggle_auth_failed(c("ConnectionError: Max retries exceeded")))
+  testthat::local_mocked_bindings(outbound_check = function(...) invisible(TRUE),
+                                  kaggle_cli = function(args) list(ok = FALSE, out = "ConnectionError: timed out"))
+  expect_match(dragonfarm:::secret_check("kaggle")$message, "Could not reach")
+  testthat::local_mocked_bindings(kaggle_cli = function(args) list(ok = FALSE, out = "401 Unauthorized"))
+  expect_match(dragonfarm:::secret_check("kaggle")$message, "did not accept")
 })
