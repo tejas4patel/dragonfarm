@@ -403,6 +403,21 @@ a spreadsheet.
     out-of-memory error, as Windows laptops tend to give, still stops
     the run with advice, since the process cannot recover.
 
+- Checks found by an independent review of the validation pack:
+
+  - The two search models dragonfarm picks are pinned to exact Hub
+    commits and load from safetensors only, like the answering models
+    (the revisions every document set so far was indexed with, so no
+    index changes).
+  - A file’s fingerprint in the record is named after the algorithm that
+    made it: `sha256`, or `md5` when the openssl package is missing (it
+    used to be called `sha256` either way).
+  - The qualification report’s tool check now validates every tool
+    contract, and its personal-data check also plants a card number and
+    a date of birth (and their look-alikes).
+  - The model notes shown next to each preset use the re-measured
+    numbers.
+
 - Training on Kaggle with one click works again from Windows. Three
   things stopped it, all found on a real round trip with the example
   data (3.7 minutes from upload to imported run): the upload failed on

@@ -25,10 +25,10 @@ Which size to pick depends on the task. Measured on an 8 GB laptop GPU
 (see the "Choosing a model size" article on the package website): for
 answering from documents, writing training questions, or fine-tuning on
 documents, use the 7B in 4-bit, or the 3B with less memory; models below
-3B are wrong more often (untrained, the 0.5B on 14 of 55 test questions,
-the 7B on none). For a fixed output format such as JSON fields or
-labels, the 0.5B and 1.5B reach the same score as larger models in a few
-minutes of training.
+3B are wrong more often (untrained, the 0.5B on 16 of 55 test questions,
+the 7B on 2). For a fixed output format such as JSON fields or labels,
+the 0.5B and 1.5B reach the same score as larger models in a few minutes
+of training.
 
 ## Examples
 
@@ -57,10 +57,10 @@ dragon_presets()
 #>                                                                                                                  notes
 #> 1                                                      Fastest. Trains on a CPU in minutes. Used by the package tests.
 #> 2                                                                           Tiny. For trying the workflow on a laptop.
-#> 3 App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Wrong on 14 of 55 document questions.
+#> 3 App default. Fixed formats such as JSON: 20 of 20 after 3 minutes of training. Wrong on 16 of 55 document questions.
 #> 4                                                                                          Needs a Hugging Face token.
 #> 5                                                                                          Needs a Hugging Face token.
-#> 6                                 Fixed formats and house style. Wrong on 6 of 55 document questions (the 7B on none).
+#> 6                                    Fixed formats and house style. Wrong on 9 of 55 document questions (the 7B on 2).
 #> 7                                          Largest of the small presets. Turn on gradient checkpointing on 8 GB cards.
 #> 8            Documents on a smaller card: declines what the documents do not cover. Trains in 4-bit; research licence.
 #> 9  Best for documents: answering, writing training questions, fine-tuning. 4-bit, batch size 1 on an 8 GB NVIDIA card.

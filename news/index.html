@@ -95,6 +95,13 @@
 <li>Training uses one GPU unless you set <code>CUDA_VISIBLE_DEVICES</code>. On Kaggle’s two T4s it used to split every step across both, doubling the effective batch, so the same settings trained differently than on a laptop.</li>
 <li>When training runs out of GPU memory in a way the process can recover from, it tries once more with batch size 1, the same effective batch, and gradient checkpointing on, and records the change in the run’s settings. The default settings for a 3B model ran out of memory on the T4 and now finish. A driver-level out-of-memory error, as Windows laptops tend to give, still stops the run with advice, since the process cannot recover.</li>
 </ul></li>
+<li>
+<p>Checks found by an independent review of the validation pack:</p>
+<ul><li>The two search models dragonfarm picks are pinned to exact Hub commits and load from safetensors only, like the answering models (the revisions every document set so far was indexed with, so no index changes).</li>
+<li>A file’s fingerprint in the record is named after the algorithm that made it: <code>sha256</code>, or <code>md5</code> when the openssl package is missing (it used to be called <code>sha256</code> either way).</li>
+<li>The qualification report’s tool check now validates every tool contract, and its personal-data check also plants a card number and a date of birth (and their look-alikes).</li>
+<li>The model notes shown next to each preset use the re-measured numbers.</li>
+</ul></li>
 <li><p>Training on Kaggle with one click works again from Windows. Three things stopped it, all found on a real round trip with the example data (3.7 minutes from upload to imported run): the upload failed on Windows paths, Kaggle refused a notebook named like its dataset (409 Conflict), and the Kaggle tool crashed writing the notebook’s log after the results had already downloaded.</p></li>
 <li><p>Choosing a free-tier judge in Try it now lists the provider’s current models (OpenRouter: the free ones) instead of asking you to type an id that may no longer exist. Listing sends only the key, passes the outbound check, and does not count towards the daily cap, which counts model requests only.</p></li>
 <li><p>An offline switch in the Settings policy card stops every model download: models must already be on the machine, and a missing one fails at once instead of downloading. It is separate from “where data may go: nowhere”, which leaves downloads alone because they send none of your data.</p></li>
