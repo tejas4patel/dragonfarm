@@ -41,6 +41,9 @@ The first build takes about a minute: R packages come ready-built.
   people in and passes their name to the app.
 - Name the policy admins in Settings before others can reach the app.
 - Back up the `catalogue` volume: it is the record.
+- This setup connects the app as the database owner, which could switch off
+  the record's append-only protection. For a validated setup, use two roles
+  as described in the "For IT and quality" article (Two database roles).
 
 ## What was checked (2026-10-19)
 

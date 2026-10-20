@@ -141,6 +141,41 @@ Each save is a new policy version with who saved it and why. The card
 refuses a change that would leave its author without admin rights, so no one
 locks the team out by accident.
 
+### Two database roles
+
+The record is append-only because the database refuses changes and
+deletions. Whoever owns the tables could switch that off, so the app should
+not own them. Give the database two roles:
+
+- an **owner**, used once to create the catalogue and again only when an
+  upgrade changes its layout;
+- an **app** role, the one in `DRAGONFARM_CATALOG`, which can read and add
+  rows but not change, delete or switch off anything.
+
+```sql
+-- as a database administrator
+CREATE ROLE dragonfarm_owner LOGIN PASSWORD '...';
+CREATE ROLE dragonfarm_app   LOGIN PASSWORD '...';
+CREATE DATABASE dragonfarm OWNER dragonfarm_owner;
+```
+
+Then open dragonfarm once with the owner's address in
+`DRAGONFARM_CATALOG` (for example `dragonfarm::dragon_app()`), which
+creates the tables, and grant the app role what it needs:
+
+```sql
+-- as dragonfarm_owner, in the dragonfarm database
+GRANT USAGE ON SCHEMA public TO dragonfarm_app;
+GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO dragonfarm_app;
+GRANT UPDATE ON runs TO dragonfarm_app;          -- a run's state changes
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO dragonfarm_app;
+```
+
+From then on the app connects as `dragonfarm_app`. A catalogue that is
+already set up is left alone, so the app needs no more than this. Tested on
+Postgres 16: the app role records events, and changing an event, deleting
+one, or disabling or dropping the protection is refused.
+
 ## Keys
 
 Keys for outside services are kept in the operating system's keychain

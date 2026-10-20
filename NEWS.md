@@ -374,6 +374,12 @@ PDF and as Word, live web pages, and a spreadsheet.
     finish. A driver-level out-of-memory error, as Windows laptops tend to
     give, still stops the run with advice, since the process cannot recover.
 
+* On Postgres, the app no longer re-creates the catalogue's tables and
+  protection on every connection when they are already current, so it can
+  connect with a role that may only read and add rows (D-37). The "For IT
+  and quality" article shows the two roles to set up; tested on Postgres 16,
+  where that role cannot change, delete or unprotect the record.
+
 * In governed mode (on by default on servers), an action now stops when it
   cannot be written to the record, with the code `RECORD_FAILED`: nothing
   goes ahead unrecorded. When the catalogue is unreachable and the policy

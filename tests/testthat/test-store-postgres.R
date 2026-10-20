@@ -64,7 +64,7 @@ test_that("on Postgres, policies, approvals and the model registry work as on SQ
 test_that("on Postgres, free-tier counts and set versions work", {
   pg_catalog()
   dragonfarm:::provider_opt_in("groq", daily_cap = 3)
-  for (i in 1:2) dragonfarm:::store_record_event("outbound", "api.groq.com", ok = TRUE)
+  for (i in 1:2) dragonfarm:::store_record_event("outbound", "api.groq.com", ok = TRUE, detail = list(purpose = "free tier: groq"))
   st <- dragonfarm:::provider_status("groq")
   expect_true(st$opted_in); expect_equal(st$daily_cap, 3); expect_equal(st$used_today, 2L)
   f <- write_fake_set()
@@ -104,4 +104,38 @@ test_that("on Postgres, identity, governed mode, access rules, fallbacks and the
   sm <- dragonfarm:::store_summary(7)
   expect_equal(sm$agents$fell_back, 1)
   expect_equal(dragonfarm:::store_events(1)$actor, "jo.lee")
+})
+
+test_that("an app role that only reads and appends works and cannot remove the protection (D-37)", {
+  con <- pg_catalog()
+  schema <- DBI::dbGetQuery(con, "SELECT current_schema() AS s")$s
+  tag <- paste(sample(letters, 8, TRUE), collapse = "")
+  owner <- paste0("df_owner_", tag); app <- paste0("df_app_", tag)
+  DBI::dbExecute(con, sprintf("CREATE ROLE %s NOLOGIN", owner))
+  DBI::dbExecute(con, sprintf("CREATE ROLE %s NOLOGIN", app))
+  withr::defer({
+    DBI::dbExecute(con, "RESET ROLE")
+    DBI::dbExecute(con, sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schema))
+    DBI::dbExecute(con, sprintf("CREATE SCHEMA %s", schema))   # the fixture drops it again
+    DBI::dbExecute(con, sprintf("DROP OWNED BY %s, %s", owner, app))
+    DBI::dbExecute(con, sprintf("DROP ROLE %s", app)); DBI::dbExecute(con, sprintf("DROP ROLE %s", owner))
+  })
+  DBI::dbExecute(con, sprintf("ALTER SCHEMA %s OWNER TO %s", schema, owner))
+  # The owner sets the catalogue up once.
+  DBI::dbExecute(con, sprintf("SET ROLE %s", owner))
+  dragonfarm:::store_migrate(con)
+  expect_true(dragonfarm:::store_pg_current(con))
+  for (g in c(sprintf("GRANT USAGE ON SCHEMA %s TO %s", schema, app),
+              sprintf("GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA %s TO %s", schema, app),
+              sprintf("GRANT UPDATE ON %s.runs TO %s", schema, app),
+              sprintf("GRANT USAGE ON ALL SEQUENCES IN SCHEMA %s TO %s", schema, app))) DBI::dbExecute(con, g)
+  # The app connects with the restricted role.
+  DBI::dbExecute(con, "RESET ROLE"); DBI::dbExecute(con, sprintf("SET ROLE %s", app))
+  expect_silent(dragonfarm:::store_migrate(con))                      # nothing to set up, nothing attempted
+  expect_true(is.numeric(dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE)))
+  refused <- function(sql) inherits(tryCatch(DBI::dbExecute(con, sql), error = function(e) e), "error")
+  expect_true(refused("UPDATE events SET ok = 0"))
+  expect_true(refused("ALTER TABLE events DISABLE TRIGGER ALL"))
+  expect_true(refused("DROP TRIGGER events_append_only ON events"))
+  expect_true(refused("DELETE FROM events"))
 })

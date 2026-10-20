@@ -57,6 +57,17 @@ store_ddl_pg <- function() {
 
 store_is_pg <- function(con) inherits(con, "PqConnection")
 
+# The schema is current and all four append-only triggers are in place.
+store_pg_current <- function(con) {
+  isTRUE(tryCatch({
+    v <- DBI::dbGetQuery(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value
+    n <- DBI::dbGetQuery(con, paste("SELECT count(*) AS n FROM pg_trigger WHERE NOT tgisinternal AND tgname IN",
+                                    "('policies_append_only', 'events_append_only', 'model_versions_append_only',",
+                                    "'model_signoffs_append_only')"))$n
+    length(v) == 1 && identical(as.integer(v), store_schema_version) && as.integer(n) == 4L
+  }, error = function(e) FALSE))
+}
+
 # Queries are written with ? placeholders; Postgres wants $1, $2, ...
 store_sql <- function(con, sql) {
   if (!store_is_pg(con)) return(sql)
@@ -131,6 +142,10 @@ store_close_all <- function() {
 }
 
 store_migrate <- function(con) {
+  # A Postgres catalogue that is already current is left alone, so the app
+  # can connect with a role that may only read and append and does not own
+  # the tables (D-37): such a role cannot remove the append-only triggers.
+  if (store_is_pg(con) && store_pg_current(con)) return(invisible(con))
   for (sql in if (store_is_pg(con)) store_ddl_pg() else store_ddl) store_exec(con, sql)
   v <- store_get(con, "SELECT value FROM meta WHERE key = 'schema_version'")$value
   if (!length(v)) {
