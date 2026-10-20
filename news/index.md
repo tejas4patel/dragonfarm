@@ -385,6 +385,28 @@ a spreadsheet.
   says “could not reach” rather than “did not accept this key” when the
   failure was not Kaggle refusing the key.
 
+- Fine-tuning now uses Unsloth wherever it can: on any NVIDIA GPU, this
+  includes Windows laptops as well as Kaggle and Colab. Elsewhere
+  (Apple, CPU, or a machine where Unsloth cannot start) the standard
+  transformers + peft trainer runs as before, and every run records
+  which trainer it used and why (shown when you print a run). Measured
+  on the same run and settings:
+
+  - an 8 GB RTX 4060 laptop, Qwen2.5-1.5B in 4-bit: training 34 s
+    instead of 76 to 96 s, the whole run 118 s instead of 204 to 240 s;
+    held-out loss 1.554 against 1.515 and 1.520.
+  - Kaggle’s T4, Qwen2.5-3B in 4-bit, with Unsloth driven directly on
+    the same rows and settings: training 125 s instead of 328 s, a third
+    of the GPU memory; held-out loss 0.560 against 0.586. Unsloth keeps
+    the pinned model and revision, and its anonymous usage statistics
+    are switched off. Preference and reinforcement stages, and runs that
+    continue an earlier one, use the standard trainer for now. To choose
+    yourself, set the environment variable `DRAGONFARM_TRAIN_BACKEND` to
+    `"unsloth"` or `"transformers"` before training. The Python lock now
+    includes Unsloth, which needs transformers 5.17 (was 5.20) and
+    huggingface_hub 1.33 (was 2.2). The cloud notebook no longer removes
+    a recent torchao, which Unsloth needs; only an old one goes.
+
 - Training on a GPU in the cloud got three fixes, each measured on
   Kaggle’s T4 with a 3B model in 4-bit and the example data:
 

@@ -33,6 +33,7 @@ dragon_python_requirements()
 #> [12] "python-docx>=1.1"                               
 #> [13] "openpyxl>=3.1"                                  
 #> [14] "bitsandbytes>=0.45; platform_system != 'Darwin'"
+#> [15] "unsloth>=2026.10.7; platform_system != 'Darwin'"
 #> 
 #> $python_version
 #> [1] ">=3.10,<3.14"

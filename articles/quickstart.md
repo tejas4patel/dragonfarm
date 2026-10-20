@@ -22,7 +22,7 @@ table route](#the-table-route) at the end.
 library(dragonfarm)
 dragon_check()
 #> ✔ Python: '.../python.exe'
-#> ✔ torch 2.14.1+cu130 · transformers 5.20.1 · peft 0.21.2
+#> ✔ torch 2.14.1+cu130 · transformers 5.17.0 · peft 0.21.2
 #> ✔ Device: CUDA 13.0 · NVIDIA GeForce RTX 4060 Laptop GPU · 8 GB · bf16 yes
 #> ✔ 4-bit loading available (bitsandbytes 0.50.2).
 #> ✔ GPU memory free: 8 GB (0 GB in use elsewhere).
@@ -32,7 +32,7 @@ dragon_check()
 ```
 
 The first call builds a Python environment with torch and transformers.
-That is a 2 to 3 GB download and takes a few minutes; later calls take a
+That takes a few minutes and about 3.7 GB of disk; later calls take a
 second. The report names the device, whether 4-bit loading is available,
 and the model it will use by default to answer questions on this
 machine: a 1.5B model under 6 GB of GPU memory or on a CPU, a 3B at 6 to
