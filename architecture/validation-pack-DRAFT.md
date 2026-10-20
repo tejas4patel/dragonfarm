@@ -47,6 +47,15 @@
   21 CFR Part 11: it records who signed, when and what it means, but sign-in
   and signature controls come from your platform (for example Posit Connect).
 - Identity was tested with a simulated sign-in, not on a real Connect server.
+- On a laptop, whoever owns the SQLite file can change it; on Postgres, the
+  record is protected only if the app runs as a role that does not own the
+  tables (see the "Two database roles" setup in the IT and quality article).
+- Timestamps come from the machine's clock; keep it synchronised.
+- The personal-data scan finds fixed patterns (emails, phone numbers, US
+  social security numbers, payment cards, labelled dates of birth, record
+  ids); it misses names, addresses and non-US identifiers.
+- The default policy lets data go to any host, each call recorded; set the
+  allowed hosts for your configuration.
 
 ## 1. Installation qualification (IQ)
 
@@ -97,6 +106,7 @@ attaches it. Steps OQ-11 onwards are done by hand in the app.
 | OQ-16 | Document access rules | With a rule limiting a file to a group, a user outside the group is never shown a passage from it (Ask and Chat) | Screenshot, as two users | | |
 | OQ-17 | Replay | A recorded answer, replayed from Monitor, gives the same result or says what changed | Screenshot | | |
 | OQ-18 | Record export | "Download the record" produces a zip of every catalogue table (events, policies, model versions, sign-offs, document sets and versions, runs) with a manifest of row counts and fingerprints, and the export itself is recorded | zip, record entry | | |
+| OQ-19 | The live Postgres record (servers) | Connected to the production catalogue with `psql` as the app's own database role, `UPDATE events SET ok = 0`, `DELETE FROM events` and `ALTER TABLE events DISABLE TRIGGER ALL` are all refused (an independent challenge: the automated OQ-1 runs on a temporary SQLite file) | psql transcript | | |
 
 ## 3. Performance qualification (PQ)
 
