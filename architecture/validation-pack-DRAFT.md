@@ -93,7 +93,7 @@ attaches it. Steps OQ-11 onwards are done by hand in the app.
 | OQ-15 | Deletion impact | Delete dialog for a run with a dependent run and an approved version says so before anything is deleted | Screenshot | | |
 | OQ-16 | Document access rules | With a rule limiting a file to a group, a user outside the group is never shown a passage from it (Ask and Chat) | Screenshot, as two users | | |
 | OQ-17 | Replay | A recorded answer, replayed from Monitor, gives the same result or says what changed | Screenshot | | |
-| OQ-18 | Record export | "Download the record" produces a CSV with a fingerprint, and the export itself is recorded | CSV, record entry | | |
+| OQ-18 | Record export | "Download the record" produces a zip of every catalogue table (events, policies, model versions, sign-offs, document sets and versions, runs) with a manifest of row counts and fingerprints, and the export itself is recorded | zip, record entry | | |
 
 ## 3. Performance qualification (PQ)
 

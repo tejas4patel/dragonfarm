@@ -171,3 +171,15 @@ test_that("Monitor says how much room runs take, the largest first", {
     expect_match(output$facts$html, "Size on disk")
   })
 })
+
+test_that("Download the record gives the whole catalogue as a zip", {
+  runs_dir <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE, runs_dir = runs_dir)
+  state <- shiny::reactiveValues(run = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = runs_dir), {
+    f <- output$export_record
+    expect_true(file.exists(f))
+    expect_true("manifest.csv" %in% zip::zip_list(f)$filename)
+  })
+})

@@ -111,3 +111,23 @@ test_that("a readable policy decides: governed true stops, governed false warns"
   dragonfarm:::policy_set(p, set_by = "test", runs_dir = runs)
   expect_false(dragonfarm:::record_required(runs))
 })
+
+test_that("the whole catalogue exports as a zip of tables with a manifest, and the export is recorded", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE, runs_dir = runs)
+  p <- dragonfarm:::policy_current(runs); p$registry$governed <- FALSE
+  dragonfarm:::policy_set(p, set_by = "ana", runs_dir = runs)
+  z <- file.path(withr::local_tempdir(), "record.zip")
+  out <- dragonfarm:::store_export_all(z, runs_dir = runs)
+  files <- zip::zip_list(z)$filename
+  expect_setequal(files, c(paste0(dragonfarm:::store_export_tables, ".csv"), "manifest.csv"))
+  m <- out$manifest
+  expect_true(m$rows[m$file == "policies.csv"] >= 1)
+  expect_true(m$rows[m$file == "events.csv"] >= 2)
+  un <- withr::local_tempdir(); zip::unzip(z, exdir = un)
+  f <- file.path(un, "events.csv")
+  expect_equal(m$digest[m$file == "events.csv"], dragonfarm:::file_digest(f)[[1]])
+  ev <- dragonfarm:::store_events(runs_dir = runs, kind = "record_export")
+  expect_match(ev$detail[1], "policies")
+})

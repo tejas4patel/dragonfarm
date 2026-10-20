@@ -257,6 +257,32 @@ store_export <- function(file, since = NULL, runs_dir = dragon_runs_dir()) {
   invisible(c(list(file = file, rows = nrow(ev)), digest))
 }
 
+# The whole catalogue for an auditor (QA review D19): every table as CSV in
+# one zip, with a manifest of each file's rows and fingerprint, and the
+# export itself recorded with the zip's fingerprint.
+store_export_tables <- c("events", "policies", "model_versions", "model_signoffs", "document_sets", "set_versions", "runs")
+
+store_export_all <- function(zipfile, runs_dir = dragon_runs_dir()) {
+  con <- store_open(runs_dir)
+  dir <- tempfile("record-"); dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  manifest <- do.call(rbind, lapply(store_export_tables, function(t) {
+    order <- if (t %in% c("events", "model_signoffs")) " ORDER BY id" else ""
+    x <- store_get(con, paste0("SELECT * FROM ", t, order))
+    f <- file.path(dir, paste0(t, ".csv"))
+    utils::write.csv(x, f, row.names = FALSE, na = "", fileEncoding = "UTF-8")
+    d <- file_digest(f)
+    data.frame(file = basename(f), rows = nrow(x), algorithm = names(d), digest = d[[1]])
+  }))
+  utils::write.csv(manifest, file.path(dir, "manifest.csv"), row.names = FALSE)
+  zip::zip(zipfile, c(manifest$file, "manifest.csv"), root = dir)
+  digest <- file_digest(zipfile)
+  store_record_event("record_export", basename(zipfile), ok = TRUE,
+                     detail = c(list(tables = stats::setNames(as.list(manifest$rows), sub("[.]csv$", "", manifest$file))), digest),
+                     runs_dir = runs_dir)
+  invisible(c(list(file = zipfile, manifest = manifest), digest))
+}
+
 # A file's fingerprint, named after the algorithm that made it: list(sha256 =)
 # with openssl, else list(md5 =), so a record never calls an MD5 a SHA-256.
 file_digest <- function(file) {

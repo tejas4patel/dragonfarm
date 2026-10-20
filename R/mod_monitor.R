@@ -214,11 +214,12 @@ mod_monitor_server <- function(id, state, runs_dir) {
       contentType = "text/markdown"
     )
 
-    # The record as a file for an auditor; the export itself is recorded.
+    # The record as a file for an auditor: every table of the catalogue with
+    # a manifest of fingerprints; the export itself is recorded.
     output$export_record <- shiny::downloadHandler(
-      filename = function() sprintf("dragonfarm-record-%s.csv", format(Sys.time(), "%Y%m%d-%H%M%S")),
-      content = function(file) store_export(file, runs_dir = runs_dir),
-      contentType = "text/csv"
+      filename = function() sprintf("dragonfarm-record-%s.zip", format(Sys.time(), "%Y%m%d-%H%M%S")),
+      content = function(file) store_export_all(file, runs_dir = runs_dir),
+      contentType = "application/zip"
     )
 
     # Replay a recorded read-only call, answer or agent task and say whether it matches.
