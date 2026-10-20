@@ -231,6 +231,38 @@ nowhere.</li>
 <p>Each save is a new policy version with who saved it and why. The card
 refuses a change that would leave its author without admin rights, so no
 one locks the team out by accident.</p>
+<div class="section level3">
+<h3 id="two-database-roles">Two database roles<a class="anchor" aria-label="anchor" href="#two-database-roles"></a>
+</h3>
+<p>The record is append-only because the database refuses changes and
+deletions. Whoever owns the tables could switch that off, so the app
+should not own them. Give the database two roles:</p>
+<ul>
+<li>an <strong>owner</strong>, used once to create the catalogue and
+again only when an upgrade changes its layout;</li>
+<li>an <strong>app</strong> role, the one in
+<code>DRAGONFARM_CATALOG</code>, which can read and add rows but not
+change, delete or switch off anything.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co">-- as a database administrator</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">ROLE</span> dragonfarm_owner LOGIN <span class="kw">PASSWORD</span> <span class="st">'...'</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">ROLE</span> dragonfarm_app   LOGIN <span class="kw">PASSWORD</span> <span class="st">'...'</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">DATABASE</span> dragonfarm OWNER dragonfarm_owner;</span></code></pre></div>
+<p>Then open dragonfarm once with the owner’s address in
+<code>DRAGONFARM_CATALOG</code> (for example
+<code><a href="../reference/dragon_app.html">dragonfarm::dragon_app()</a></code>), which creates the tables, and
+grant the app role what it needs:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co">-- as dragonfarm_owner, in the dragonfarm database</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span> <span class="kw">ON</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> dragonfarm_app;</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> dragonfarm_app;</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">UPDATE</span> <span class="kw">ON</span> runs <span class="kw">TO</span> dragonfarm_app;          <span class="co">-- a run's state changes</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span> <span class="kw">ON</span> <span class="kw">ALL</span> SEQUENCES <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> dragonfarm_app;</span></code></pre></div>
+<p>From then on the app connects as <code>dragonfarm_app</code>. A
+catalogue that is already set up is left alone, so the app needs no more
+than this. Tested on Postgres 16: the app role records events, and
+changing an event, deleting one, or disabling or dropping the protection
+is refused.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="keys">Keys<a class="anchor" aria-label="anchor" href="#keys"></a>

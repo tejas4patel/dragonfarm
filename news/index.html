@@ -100,6 +100,7 @@
 <li>Training uses one GPU unless you set <code>CUDA_VISIBLE_DEVICES</code>. On Kaggle’s two T4s it used to split every step across both, doubling the effective batch, so the same settings trained differently than on a laptop.</li>
 <li>When training runs out of GPU memory in a way the process can recover from, it tries once more with batch size 1, the same effective batch, and gradient checkpointing on, and records the change in the run’s settings. The default settings for a 3B model ran out of memory on the T4 and now finish. A driver-level out-of-memory error, as Windows laptops tend to give, still stops the run with advice, since the process cannot recover.</li>
 </ul></li>
+<li><p>On Postgres, the app no longer re-creates the catalogue’s tables and protection on every connection when they are already current, so it can connect with a role that may only read and add rows (D-37). The “For IT and quality” article shows the two roles to set up; tested on Postgres 16, where that role cannot change, delete or unprotect the record.</p></li>
 <li><p>In governed mode (on by default on servers), an action now stops when it cannot be written to the record, with the code <code>RECORD_FAILED</code>: nothing goes ahead unrecorded. When the catalogue is unreachable and the policy cannot be read, a server deployment counts as governed. On a laptop outside governed mode a failed write still only warns.</p></li>
 <li>
 <p>Checks found by an independent review of the validation pack:</p>
