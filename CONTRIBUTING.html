@@ -73,7 +73,7 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">py</span> <span class="op">&lt;-</span> <span class="fu">dragonfarm</span><span class="fu">:::</span><span class="fu">dragon_python</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2</a></span><span class="op">(</span><span class="va">py</span>, <span class="st">"inst/python/tests/run.py"</span>, env <span class="op">=</span> <span class="st">"PYTHONPATH=inst/python"</span><span class="op">)</span></span></code></pre></div>
-<p>Continuous integration runs the first two on every push and the integration suite on a CPU runner, so a change that passes locally should pass there. It also runs <code>lintr::lint_package()</code> with the correctness checks in <code>.lintr</code> (static analysis, not style); run it before sending a change.</p>
+<p>Continuous integration runs the first two on every push and the integration suite on a CPU runner, so a change that passes locally should pass there. It also runs <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code> with the correctness checks in <code>.lintr</code> (static analysis, not style); run it before sending a change.</p>
 </div>
 <div class="section level2">
 <h2 id="before-you-send-a-change">Before you send a change<a class="anchor" aria-label="anchor" href="#before-you-send-a-change"></a></h2>

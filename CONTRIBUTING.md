@@ -47,9 +47,10 @@ system2(py, "inst/python/tests/run.py", env = "PYTHONPATH=inst/python")
 
 Continuous integration runs the first two on every push and the
 integration suite on a CPU runner, so a change that passes locally
-should pass there. It also runs `lintr::lint_package()` with the
-correctness checks in `.lintr` (static analysis, not style); run it
-before sending a change.
+should pass there. It also runs
+[`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+with the correctness checks in `.lintr` (static analysis, not style);
+run it before sending a change.
 
 ## Before you send a change
 
