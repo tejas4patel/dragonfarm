@@ -36,7 +36,7 @@ test_that("the daily cap stops requests, including in the middle of a chat", {
   withr::local_envvar(OPENROUTER_API_KEY = "test-key")
   dragonfarm:::provider_opt_in("openrouter", daily_cap = 2, runs_dir = runs)
   b <- dragonfarm:::provider_backend("openrouter", "m", runs_dir = runs)
-  for (i in 1:2) dragonfarm:::store_record_event("outbound", "openrouter.ai", ok = TRUE, runs_dir = runs)
+  for (i in 1:2) dragonfarm:::store_record_event("outbound", "openrouter.ai", ok = TRUE, detail = list(purpose = "free tier: openrouter"), runs_dir = runs)
   expect_equal(dragonfarm:::provider_status("openrouter", runs)$used_today, 2L)
   err <- tryCatch(dragonfarm:::chat_completion_request(b, list(list(role = "user", content = "hi")), 10, 0, 1),
                   error = function(e) e)
@@ -79,4 +79,22 @@ test_that("a free-tier judge checks the opt-in and key when it is called, not be
   expect_equal(j(c("a", "b")), c("reply to a", "reply to b"))
   expect_equal(used$provider, "groq")
   expect_error(dragonfarm:::llm_provider("nope", "m"), class = "dragonfarm_error")
+})
+
+test_that("the model picker lists chat models only, and listing does not use the daily cap", {
+  body <- list(data = list(list(id = "b/model:free"), list(id = "a/model"), list(id = "a/other:free"),
+                           list(id = "whisper-large-v3"), list(id = "meta-llama/llama-prompt-guard-2-22m")))
+  expect_equal(dragonfarm:::provider_model_ids("openrouter", body), c("a/other:free", "b/model:free"))
+  expect_equal(dragonfarm:::provider_model_ids("groq", body), c("a/model", "a/other:free", "b/model:free"))
+  expect_equal(dragonfarm:::provider_model_ids("groq", NULL), character())
+
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  withr::local_envvar(GROQ_API_KEY = "")
+  expect_equal(dragonfarm:::provider_models("groq", runs_dir = runs), character())   # no key, nothing sent
+  dragonfarm:::provider_opt_in("groq", daily_cap = 1, runs_dir = runs)
+  dragonfarm:::outbound_check("https://api.groq.com/openai/v1/models", "list the provider's models", runs_dir = runs)
+  expect_equal(dragonfarm:::provider_status("groq", runs)$used_today, 0L)
+  dragonfarm:::outbound_check("https://api.groq.com/openai/v1", "free tier: groq", runs_dir = runs)
+  expect_equal(dragonfarm:::provider_status("groq", runs)$used_today, 1L)
 })

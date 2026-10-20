@@ -160,12 +160,22 @@ mod_tryit_server <- function(id, state, runs_dir) {
       } else if (identical(input$judge_kind, "provider")) {
         shiny::tagList(
           shiny::selectInput(session$ns("judge_provider"), "Provider", choices = c("OpenRouter" = "openrouter", "Groq" = "groq")),
-          shiny::textInput(session$ns("judge_model"), "Model id", placeholder = "meta-llama/llama-3.3-70b-instruct:free")
+          shiny::uiOutput(session$ns("judge_provider_model"))
         )
       } else {
         shiny::selectInput(session$ns("judge_model"), "Model",
                            choices = c("claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"))
       }
+    })
+
+    # The provider's current models, so nobody has to guess an id that no
+    # longer exists; any id can still be typed.
+    output$judge_provider_model <- shiny::renderUI({
+      shiny::req(input$judge_provider)
+      ids <- provider_models(input$judge_provider, runs_dir = runs_dir)
+      if (!length(ids)) return(shiny::textInput(session$ns("judge_model"), "Model id", placeholder = "a model id from the provider's site"))
+      shiny::selectizeInput(session$ns("judge_model"), "Model", choices = ids, selected = ids[1],
+                            options = list(create = TRUE))
     })
 
     # The judge picked in the Judge card, or NULL after saying what is missing.

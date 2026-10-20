@@ -41,8 +41,10 @@ provider_status <- function(name, runs_dir = dragon_runs_dir()) {
   cap <- if (opted && !is.na(last$detail)) jsonlite::fromJSON(last$detail)$daily_cap else NULL
   host <- outbound_host(provider_info(name)$base_url)
   today <- format(Sys.time(), "%Y-%m-%d", tz = "UTC")
-  used <- store_get(con, "SELECT COUNT(*) AS n FROM events WHERE kind = 'outbound' AND name = ? AND ok = 1 AND substr(at, 1, 10) = ?",
-                          params = list(host, today))$n
+  # Only model requests count towards the cap, not listing the models.
+  used <- store_get(con, paste("SELECT COUNT(*) AS n FROM events WHERE kind = 'outbound' AND name = ? AND ok = 1",
+                               "AND substr(at, 1, 10) = ? AND detail LIKE '%\"purpose\":\"free tier:%'"),
+                    params = list(host, today))$n
   list(opted_in = opted, daily_cap = cap, used_today = as.integer(used))
 }
 
@@ -124,4 +126,32 @@ llm_provider <- function(name, model, system = NULL, max_new_tokens = 512, runs_
   }
   attr(fn, "label") <- paste0(name, ":", model)
   fn
+}
+
+# The provider's current chat models (OpenRouter: only the free ones), for a
+# picker in the app. Sends only the key, through the outbound check, and does
+# not count towards the daily cap. character() when there is no key, the
+# policy blocks the host, or the provider does not answer.
+provider_models <- function(name, runs_dir = dragon_runs_dir()) {
+  p <- provider_info(name)
+  key <- Sys.getenv(p$key_env, unset = "")
+  if (!nzchar(key) || !requireNamespace("httr2", quietly = TRUE)) return(character())
+  url <- paste0(p$base_url, "/models")
+  allowed <- tryCatch({ outbound_check(url, "list the provider's models", runs_dir = runs_dir); TRUE },
+                      dragonfarm_error = function(e) FALSE)
+  if (!allowed) return(character())
+  body <- tryCatch(httr2::request(url) |>
+                     httr2::req_headers(Authorization = paste("Bearer", key), .redact = "Authorization") |>
+                     httr2::req_timeout(15) |> httr2::req_perform() |> httr2::resp_body_json(),
+                   error = function(e) NULL)
+  provider_model_ids(name, body)
+}
+
+provider_model_ids <- function(name, body) {
+  ids <- unlist(lapply(body$data %||% list(), function(m) m[["id"]]))
+  if (is.null(ids)) return(character())
+  if (identical(name, "openrouter")) ids <- ids[endsWith(ids, ":free")]
+  # Speech, safety-classifier and voice models cannot answer questions.
+  ids <- ids[!grepl("whisper|guard|orpheus|tts|embed", ids, ignore.case = TRUE)]
+  sort(unique(ids))
 }
