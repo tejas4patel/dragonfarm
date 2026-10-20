@@ -144,8 +144,9 @@ store_migrate <- function(con) {
   invisible(con)
 }
 
-# Append one event. Never stops the work it records: a failed write returns
-# FALSE with a warning.
+# Append one event. When the write fails, governed mode (servers by default,
+# D-10) stops the work it records: nothing goes ahead unrecorded (D-36). Off
+# governed mode, as on a laptop, it warns and the work continues.
 store_record_event <- function(kind, name = NULL, ok = NA, code = NULL, detail = NULL, duration_ms = NULL,
                                runs_dir = dragon_runs_dir()) {
   tryCatch({
@@ -158,9 +159,24 @@ store_record_event <- function(kind, name = NULL, ok = NA, code = NULL, detail =
                                   if (is.null(duration_ms)) NA_integer_ else as.integer(duration_ms)))$id
     invisible(as.integer(id))
   }, error = function(e) {
+    if (record_required(runs_dir)) {
+      cli::cli_abort(c("Stopped: this could not be recorded, and governed mode does not let anything go ahead unrecorded.",
+                       "x" = conditionMessage(e),
+                       "i" = "Check that the catalogue database is reachable, then try again."),
+                     class = "dragonfarm_error", code = "RECORD_FAILED")
+    }
     cli::cli_warn("Could not record an event in the catalog: {conditionMessage(e)}")
     invisible(NA_integer_)
   })
+}
+
+# Whether a failed record write must stop the work: the policy's governed
+# mode, or, when the policy cannot be read either (the catalogue is down),
+# whether this is a server deployment.
+record_required <- function(runs_dir = dragon_runs_dir()) {
+  p <- tryCatch(policy_effective(policy_current(runs_dir)), error = function(e) NULL)
+  if (is.null(p)) return(isTRUE(tryCatch(deployment_is_server(), error = function(e) TRUE)))
+  isTRUE(p$registry$governed)
 }
 
 store_events <- function(limit = 100L, kind = NULL, runs_dir = dragon_runs_dir()) {

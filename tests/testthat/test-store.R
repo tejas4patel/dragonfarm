@@ -87,3 +87,27 @@ test_that("a fingerprint is named after the algorithm that made it", {
   expect_named(d, "md5")
   expect_equal(d$md5, unname(tools::md5sum(f)))
 })
+
+test_that("in governed mode a failed record write stops the work; otherwise it warns (D-36)", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  testthat::local_mocked_bindings(store_open = function(...) stop("catalogue unreachable"))
+  testthat::local_mocked_bindings(deployment_is_server = function() FALSE)
+  expect_warning(r <- dragonfarm:::store_record_event("outbound", "example.com", ok = TRUE, runs_dir = runs), "Could not record")
+  expect_true(is.na(r))
+  testthat::local_mocked_bindings(deployment_is_server = function() TRUE)
+  err <- tryCatch(dragonfarm:::store_record_event("outbound", "example.com", ok = TRUE, runs_dir = runs), error = function(e) e)
+  expect_equal(err$code, "RECORD_FAILED")
+  expect_match(conditionMessage(err), "catalogue unreachable")
+})
+
+test_that("a readable policy decides: governed true stops, governed false warns", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  p <- dragonfarm:::policy_current(runs); p$registry$governed <- TRUE
+  dragonfarm:::policy_set(p, set_by = "test", runs_dir = runs)
+  expect_true(dragonfarm:::record_required(runs))
+  p$registry$governed <- FALSE
+  dragonfarm:::policy_set(p, set_by = "test", runs_dir = runs)
+  expect_false(dragonfarm:::record_required(runs))
+})
