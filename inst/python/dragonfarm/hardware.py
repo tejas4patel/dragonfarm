@@ -31,6 +31,19 @@ TIERS = [
 ]
 
 
+# bfloat16 only where the GPU does it in hardware (compute capability 8.0 and
+# up). torch.cuda.is_bf16_supported() also says yes when it is emulated, as
+# on the T4 that Kaggle and Colab hand out: measured there (3B in 4-bit, the
+# example data, 24 steps), the same run took 928 s in bfloat16 and 328 s in
+# float16, held-out loss 0.583 and 0.586.
+def native_bf16(torch):
+    try:
+        return bool(torch.cuda.is_bf16_supported(including_emulation=False))
+    except TypeError:  # older torch has no including_emulation
+        major, _ = torch.cuda.get_device_capability(0)
+        return major >= 8 and bool(torch.cuda.is_bf16_supported())
+
+
 def bitsandbytes_version():
     """Installed bitsandbytes version, or None when it is missing or cannot load."""
     try:
@@ -138,7 +151,7 @@ def describe():
         info["device"] = "cuda"
         info["device_name"] = torch.cuda.get_device_name(0)
         info["vram_gb"] = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        info["bf16"] = bool(torch.cuda.is_bf16_supported())
+        info["bf16"] = native_bf16(torch)
         info["cuda_version"] = torch.version.cuda
         used, free = gpu_memory_gb()
         info["gpu_used_gb"] = used
@@ -178,7 +191,7 @@ def resolve(cfg: dict) -> Hardware:
         device = torch.device("cuda:0")
         device_name = torch.cuda.get_device_name(0)
         vram = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        bf16_supported = bool(torch.cuda.is_bf16_supported())
+        bf16_supported = native_bf16(torch)
     elif kind == "mps":
         device = torch.device("mps")
         device_name = "Apple MPS"

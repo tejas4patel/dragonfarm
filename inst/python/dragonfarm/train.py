@@ -378,7 +378,17 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     return STAGES[stage](cfg, run_dir, status, resume, hw, tok, model, cancel)
 
 
+# One GPU per run, unless the person chose devices: on a machine with two
+# (Kaggle's "T4 x2") the trainer would otherwise split every step across both
+# and double the effective batch, so the same settings would train
+# differently there than on a laptop. Set before torch starts CUDA.
+def pin_one_gpu(env=os.environ):
+    if "CUDA_VISIBLE_DEVICES" not in env:
+        env["CUDA_VISIBLE_DEVICES"] = "0"
+
+
 def main(argv=None):
+    pin_one_gpu()
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", required=True)
     ap.add_argument("--resume", action="store_true")
@@ -386,18 +396,74 @@ def main(argv=None):
     run_dir = Path(a.run_dir).resolve()
     status = Status(run_dir)
     status.update(state="running", pid=os.getpid(), started_at=now_iso(), finished_at=None, error=None)
+    retried = False
+    while True:
+        try:
+            result = train(run_dir, status, resume=a.resume)
+            status.update(state=result, finished_at=now_iso())
+            print(f"[dragonfarm] {result}", flush=True)
+            sys.exit(0)
+        except BaseException as e:  # noqa: BLE001 - we want SystemExit/KeyboardInterrupt too
+            if isinstance(e, SystemExit) and e.code in (0, None):
+                raise
+            traceback.print_exc()
+            change = None if retried or not recoverable_oom(e) else memory_safer(run_dir)
+            if change is None:
+                status.update(state="failed", finished_at=now_iso(), error=f"{type(e).__name__}: {e}" + memory_hint(e),
+                              error_code=classify(e))
+                sys.exit(1)
+        # Out of memory once: train again with the safer settings (outside the
+        # except block, so the failed attempt's model can be freed).
+        retried = True
+        free_gpu()
+        status.update(memory_retry=change)
+        print(f"[dragonfarm] out of GPU memory; training again with batch size {change['to']['per_device_batch_size']}, "
+              f"gradient accumulation {change['to']['gradient_accumulation']}, gradient checkpointing on "
+              "(the same effective batch)", flush=True)
+
+
+# The first fixes for an out-of-memory start, applied once: batch size 1 with
+# the accumulation raised to keep the same effective batch, and gradient
+# checkpointing on. Written to config.json, so the run's record shows the
+# settings it trained with. None when there is nothing left to lower.
+def memory_safer(run_dir):
+    path = Path(run_dir) / "config.json"
+    with open(path, encoding="utf-8") as f:
+        cfg = json.load(f)
+    t = cfg["train"]
+    before = {k: t.get(k) for k in ("per_device_batch_size", "gradient_accumulation", "gradient_checkpointing")}
+    batch = int(t.get("per_device_batch_size") or 1)
+    if batch <= 1 and t.get("gradient_checkpointing"):
+        return None
+    t["gradient_accumulation"] = int(t.get("gradient_accumulation") or 1) * batch
+    t["per_device_batch_size"] = 1
+    t["gradient_checkpointing"] = True
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+    after = {k: t.get(k) for k in before}
+    return {"from": before, "to": after}
+
+
+# Only torch's own allocator error leaves the process usable. A driver-level
+# CUDA error ("CUDA error: out of memory", sticky) poisons the CUDA context
+# for the rest of the process: seen on a Windows laptop, where the retry then
+# failed while loading the model. Those fail at once, settings unchanged.
+def recoverable_oom(err):
+    if classify(err) != "OUT_OF_MEMORY":
+        return False
+    text = f"{type(err).__name__}: {err}"
+    return "OutOfMemoryError" in type(err).__name__ or "Tried to allocate" in text and "CUDA error" not in text
+
+
+def free_gpu():
+    import gc
+    gc.collect()
     try:
-        result = train(run_dir, status, resume=a.resume)
-        status.update(state=result, finished_at=now_iso())
-        print(f"[dragonfarm] {result}", flush=True)
-        sys.exit(0)
-    except BaseException as e:  # noqa: BLE001 - we want SystemExit/KeyboardInterrupt too
-        if isinstance(e, SystemExit) and e.code in (0, None):
-            raise
-        traceback.print_exc()
-        status.update(state="failed", finished_at=now_iso(), error=f"{type(e).__name__}: {e}" + memory_hint(e),
-                      error_code=classify(e))
-        sys.exit(1)
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
 
 
 # The usual fixes, named in the status file whatever form the out-of-memory
