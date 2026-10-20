@@ -464,6 +464,11 @@ a spreadsheet.
   - The planted-instructions test counts questions that failed to run,
     warns about them, and records such a run as not clean: an error
     could otherwise hide a steered answer.
+  - “Download the record” in Monitor now gives the whole catalogue as a
+    zip: every table (events, policy versions, model versions,
+    sign-offs, document sets and their versions, runs) as CSV, with a
+    manifest of row counts and fingerprints. It used to export the
+    events only.
 
 - Training on Kaggle with one click works again from Windows. Three
   things stopped it, all found on a real round trip with the example
