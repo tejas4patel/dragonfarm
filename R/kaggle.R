@@ -23,12 +23,21 @@ kaggle_token_env <- function(key = Sys.getenv("KAGGLE_KEY"), token = Sys.getenv(
 }
 
 # Run the Kaggle CLI. Returns list(ok, out) and never throws.
-kaggle_cli <- function(args) {
-  out <- withr::with_envvar(kaggle_token_env(), tryCatch(
+kaggle_cli <- function(args, dir = NULL) {
+  if (!is.null(dir)) withr::local_dir(dir)
+  # UTF-8 mode: on Windows the CLI otherwise writes the notebook's log in the
+  # local code page and crashes on characters it cannot encode.
+  out <- withr::with_envvar(c(kaggle_token_env(), PYTHONUTF8 = "1", PYTHONIOENCODING = "utf-8"), tryCatch(
     suppressWarnings(reticulate::uv_run_tool("kaggle", args, stdout = TRUE, stderr = TRUE)),
     error = function(e) structure(conditionMessage(e), status = 1L)))
   list(ok = is.null(attr(out, "status")) || identical(as.integer(attr(out, "status")), 0L), out = as.character(out))
 }
+
+# A folder as the Kaggle CLI needs it. Uploads are run from inside the
+# folder with "-p .": the CLI's resumable upload names a note after the
+# file's path, and a full path both breaks on / under Windows (only
+# backslashes are replaced) and can pass the 260-character limit.
+kaggle_path <- function(path) normalizePath(path, winslash = "\\", mustWork = FALSE)
 
 # Did a failed CLI call fail because Kaggle refused the credentials?
 kaggle_auth_failed <- function(out) {
@@ -89,9 +98,9 @@ kaggle_round_trip <- function(run, poll = 60, max_hours = 12, dataset_wait = 600
   kaggle_stage(run, "uploading")
   outbound_check("https://www.kaggle.com", sprintf("Kaggle: upload run %s as a private dataset and train it on a GPU", run$id),
                  bytes = file.size(paths$zip), runs_dir = dirname(run$dir))
-  r <- kaggle_cli(c("datasets", "create", "-p", shQuote(paths$bundle_dir)))
+  r <- kaggle_cli(c("datasets", "create", "-p", "."), dir = paths$bundle_dir)
   if (!r$ok && any(grepl("already exists", r$out, ignore.case = TRUE))) {
-    r <- kaggle_cli(c("datasets", "version", "-p", shQuote(paths$bundle_dir), "-m", shQuote(paste("dragonfarm", now_iso()))))
+    r <- kaggle_cli(c("datasets", "version", "-p", ".", "-m", shQuote(paste("dragonfarm", now_iso()))), dir = paths$bundle_dir)
   }
   if (!r$ok) return(fail("Uploading the run to Kaggle failed.", r$out))
 
@@ -105,7 +114,7 @@ kaggle_round_trip <- function(run, poll = 60, max_hours = 12, dataset_wait = 600
   }
 
   kaggle_stage(run, "starting")
-  r <- kaggle_cli(c("kernels", "push", "-p", shQuote(paths$dir)))
+  r <- kaggle_cli(c("kernels", "push", "-p", "."), dir = paths$dir)
   if (!r$ok) return(fail("Starting the notebook on Kaggle failed.", r$out))
   kernel <- kaggle_kernel_metadata(run)$id
 
@@ -123,9 +132,11 @@ kaggle_round_trip <- function(run, poll = 60, max_hours = 12, dataset_wait = 600
   kaggle_stage(run, "downloading")
   out_dir <- tempfile("kaggle-output-")
   dir.create(out_dir)
-  r <- kaggle_cli(c("kernels", "output", kernel, "-p", shQuote(out_dir)))
+  r <- kaggle_cli(c("kernels", "output", kernel, "-p", shQuote(kaggle_path(out_dir))))
+  # The results zip is what counts: the CLI can still exit with an error
+  # after downloading it (for example while saving the notebook's log).
   zipf <- list.files(out_dir, pattern = "^dragonfarm-results-.*[.]zip$", recursive = TRUE, full.names = TRUE)
-  if (!r$ok || !length(zipf)) return(fail("Downloading the results from Kaggle failed.", r$out))
+  if (!length(zipf)) return(fail("Downloading the results from Kaggle failed.", r$out))
   dragon_import(run, zipf[[1]])
   kaggle_stage(run, "imported")
   TRUE

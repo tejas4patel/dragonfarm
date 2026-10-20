@@ -337,6 +337,13 @@ PDF and as Word, live web pages, and a spreadsheet.
   Kaggle check now says "could not reach" rather than "did not accept this
   key" when the failure was not Kaggle refusing the key.
 
+* Training on Kaggle with one click works again from Windows. Three things
+  stopped it, all found on a real round trip with the example data (3.7
+  minutes from upload to imported run): the upload failed on Windows paths,
+  Kaggle refused a notebook named like its dataset (409 Conflict), and the
+  Kaggle tool crashed writing the notebook's log after the results had
+  already downloaded.
+
 * Choosing a free-tier judge in Try it now lists the provider's current
   models (OpenRouter: the free ones) instead of asking you to type an id that
   may no longer exist. Listing sends only the key, passes the outbound check,

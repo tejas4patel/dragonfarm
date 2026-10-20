@@ -235,23 +235,26 @@ kaggle_username <- function() {
 }
 
 kaggle_slug <- function(run) {
-  slug <- substr(paste0("dragonfarm-", slugify(run$id)), 1, 50)
+  slug <- substr(paste0("dragonfarm-", slugify(run$id)), 1, 44)
   sub("-+$", "", slug)
 }
 
 kaggle_dataset_metadata <- function(run) {
   list(
-    title = substr(paste("dragonfarm", run$id), 1, 50),
+    title = substr(paste("dragonfarm", run$id), 1, 44),
     id = paste0(kaggle_username(), "/", kaggle_slug(run)),
     licenses = list(list(name = "unknown"))
   )
 }
 
+# The notebook needs a name of its own: Kaggle refuses (409 Conflict) a
+# notebook whose name is already taken by the user's dataset. Kaggle derives
+# the address from the title, so the two must match.
 kaggle_kernel_metadata <- function(run) {
   ds <- kaggle_dataset_metadata(run)
   list(
-    id = ds$id,
-    title = ds$title,
+    id = paste0(ds$id, "-train"),
+    title = paste(ds$title, "train"),
     code_file = remote_notebook_file,
     language = "python",
     kernel_type = "notebook",

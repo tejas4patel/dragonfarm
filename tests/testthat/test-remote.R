@@ -76,6 +76,10 @@ test_that("bundling writes Kaggle CLI metadata that agrees with itself", {
   slug <- sub("^.*/", "", dm$id)
   expect_lte(nchar(slug), 50)
   expect_false(grepl("-$", slug))
+  # The notebook has a name of its own (Kaggle refuses one equal to the dataset's), within 50 characters.
+  expect_equal(km$id, paste0(dm$id, "-train"))
+  expect_lte(nchar(sub("^.*/", "", km$id)), 50)
+  expect_equal(gsub("[^a-z0-9]+", "-", tolower(km$title)), sub("^.*/", "", km$id))
   expect_true(file.exists(paths$notebook))
   expect_true(file.exists(paths$readme))
   expect_true(any(grepl("## Kaggle", readLines(paths$readme))))

@@ -8,7 +8,7 @@ kaggle_run <- function(runs) {
 fake_kaggle <- function(statuses = c("running", "complete"), push_ok = TRUE, exists = FALSE, run_id) {
   calls <- character()
   k <- 0
-  f <- function(args) {
+  f <- function(args, dir = NULL) {
     cmd <- paste(args[1:2], collapse = " ")
     calls <<- c(calls, cmd)
     switch(cmd,
@@ -78,9 +78,9 @@ test_that("a newer Kaggle API token in the Key box reaches the CLI as KAGGLE_API
   expect_length(dragonfarm:::kaggle_token_env(key = "KGAT_abc", token = "KGAT_set"), 0)
   withr::local_envvar(KAGGLE_KEY = "KGAT_abc", KAGGLE_API_TOKEN = "", KAGGLE_USERNAME = "ana")
   seen <- NULL
-  testthat::local_mocked_bindings(uv_run_tool = function(...) { seen <<- Sys.getenv("KAGGLE_API_TOKEN"); "ok" }, .package = "reticulate")
+  testthat::local_mocked_bindings(uv_run_tool = function(...) { seen <<- Sys.getenv(c("KAGGLE_API_TOKEN", "PYTHONUTF8")); "ok" }, .package = "reticulate")
   expect_true(dragonfarm:::kaggle_cli("--version")$ok)
-  expect_equal(seen, "KGAT_abc")
+  expect_equal(unname(seen), c("KGAT_abc", "1"))   # and UTF-8 mode, so Windows code pages cannot crash the CLI
   expect_equal(Sys.getenv("KAGGLE_API_TOKEN"), "")
 })
 
@@ -89,8 +89,15 @@ test_that("a Kaggle check only says the key was refused when Kaggle said so", {
   expect_true(dragonfarm:::kaggle_auth_failed(c("Recommended: log in with OAuth", "    kaggle auth login")))
   expect_false(dragonfarm:::kaggle_auth_failed(c("ConnectionError: Max retries exceeded")))
   testthat::local_mocked_bindings(outbound_check = function(...) invisible(TRUE),
-                                  kaggle_cli = function(args) list(ok = FALSE, out = "ConnectionError: timed out"))
+                                  kaggle_cli = function(args, dir = NULL) list(ok = FALSE, out = "ConnectionError: timed out"))
   expect_match(dragonfarm:::secret_check("kaggle")$message, "Could not reach")
-  testthat::local_mocked_bindings(kaggle_cli = function(args) list(ok = FALSE, out = "401 Unauthorized"))
+  testthat::local_mocked_bindings(kaggle_cli = function(args, dir = NULL) list(ok = FALSE, out = "401 Unauthorized"))
   expect_match(dragonfarm:::secret_check("kaggle")$message, "did not accept")
+})
+
+test_that("folders reach the Kaggle CLI with the platform's own separators", {
+  d <- withr::local_tempdir()
+  p <- dragonfarm:::kaggle_path(d)
+  if (.Platform$OS.type == "windows") expect_false(grepl("/", p, fixed = TRUE)) else expect_false(grepl("\\", p, fixed = TRUE))
+  expect_true(dir.exists(p))
 })
