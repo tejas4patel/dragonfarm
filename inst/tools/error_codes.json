@@ -23,5 +23,6 @@
   "NOT_APPROVED": "In governed mode, a trained run that is not an approved model version.",
   "PERSONAL_DATA": "Training rows that hold likely personal data, not yet reviewed by a person.",
   "NEEDS_REVIEW": "Approving a model version whose record shows a re-read document set or unapproved personal data, without the signer's reviewed tick.",
-  "UNKNOWN": "Anything not named above."
+  "UNKNOWN": "Anything not named above.",
+  "NOT_CONNECTED": "Connecting a service did not finish: no answer from the browser, a sign-in that did not match, or nothing pasted. Nothing was saved."
 }
