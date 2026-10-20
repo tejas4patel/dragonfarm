@@ -13,7 +13,7 @@ fine-tuning the same training rows.
 
 | If you want to | Use | Because |
 |---|---|---|
-| Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | The 7B was right on all 55 questions, the 0.5B wrong 14 times |
+| Answer questions from documents | 7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B | The 7B was right on 53 of 55 questions, the 0.5B wrong 16 times |
 | Write training questions from documents | 7B | It kept 104 of 120 questions, and every one we checked was right |
 | Fine-tune on your documents | 3B or 7B | With the default "not covered" examples every size learns to decline; the larger ones keep more answers right |
 | Fine-tune a fixed format (JSON, labels, a house style) | 0.5B to 1.5B | They reach the same score in minutes |
@@ -29,37 +29,46 @@ known answers: 23 questions about Costco's 2024 annual report (a 76-page
 PDF, mostly figures from tables) and 32 questions about R's own manuals.
 Twenty more questions were about things the documents do not contain, such
 as a hot-dog sales figure, the default port of RStudio Server, or dplyr;
-the right reply to those is to say so. These numbers are for version 0.4.0
-as released, with its search and instructions.
+the right reply to those is to say so. These numbers were measured again
+on 19 October 2026 with the current code, on the same chunks.
 
 | Model | Costco figures right | R questions right | Wrong or empty, of those 55 | Declined the 20 it could not answer | Seconds per answer |
 |---|---|---|---|---|---|
-| 0.5B | 17 of 23 | 19 of 32 | 14 | 16 | 0.8 |
-| 1.5B | 19 of 23 | 28 of 32 | 6 | 20 | 1.1 |
-| 3B | 21 of 23 | 30 of 32 | 4 | 20 | 9.0 |
-| 7B, 4-bit | 23 of 23 | 32 of 32 | 0 | 20 | 10.1 |
+| 0.5B | 17 of 23 | 22 of 32 | 16 | 14 | 1.0 |
+| 1.5B | 19 of 23 | 27 of 32 | 9 | 20 | 1.2 |
+| 3B | 21 of 23 | 30 of 32 | 4 | 20 | 5.1 |
+| 7B, 4-bit | 22 of 23 | 31 of 32 | 2 | 20 | 7.7 |
 
 "Right" means the answer contained the correct figure or function name.
 That is a lenient test: small models often named the right function with a
-wrong detail around it. The 0.5B also declined 5 answerable questions.
+wrong detail around it. The 0.5B also declined 6 answerable questions.
 
-The 3B and 7B give full answers, a median of 52 and 60 words with the
-figures, steps, or code the excerpts hold, which is why they take 9 to 10
+The 3B and 7B give full answers, a median of 50 and 69 words with the
+figures, steps, or code the excerpts hold, which is why they take 5 to 8
 seconds. Asked for answers that long, the smaller models made things up
 more often (the 0.5B then declined only 10 of 25 questions it could not
 know), so they are asked for short ones: a sentence or two, often a
 single figure or function name.
 
-As a check that these numbers are not tuned to the two test sets, the same
-models answered 20 questions about R's installation and data import
+As a check that these numbers are not tuned to the two test sets, in an
+earlier run the same models answered 20 questions about R's installation and data import
 manuals, which were never used while developing: 15, 12, 19, and 20 right
 for the 0.5B, 1.5B, 3B, and 7B, with the 1.5B, 3B, and 7B declining at
 least four of five questions those manuals do not cover.
 
 The columns that matter most are "wrong or empty" and "declined". The 7B
-was right on all 55 and declined every question it could not know. The
-smaller models were wrong four to fourteen times, and
-the 0.5B still answered 4 of the 20 questions the documents do not cover.
+was right on 53 of 55 and declined every question it could not know. One
+miss was a figure from a table given in thousands, read as units: 136,800
+cardholders instead of 136.8 million. The other described `nlm()`, as the
+manual's own example does, where we expected `nls()`. The smaller models
+were wrong four to sixteen times, and the 0.5B still answered 6 of the 20
+questions the documents do not cover.
+
+The cardholder slip has a cause we could test. For 7B-sized models,
+dragonfarm marks the excerpts as quoted text, so that instructions planted
+in a document are not followed. With the marking switched off, the 7B read
+the figure correctly (23 of 23), and no other answer changed grade. We keep
+the marking: it halved how often the 7B obeyed a planted instruction.
 That is the real cost of a small model on documents: not fewer answers,
 but answers you cannot tell from the right ones.
 

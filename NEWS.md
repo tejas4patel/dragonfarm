@@ -575,6 +575,10 @@ PDF and as Word, live web pages, and a spreadsheet.
   step starts from the model the hardware check recommends (a 7B at 8 GB,
   a 3B at 6 GB) and warns when a model under 3B is chosen for documents.
   The measurements behind this are in a new article, "Choosing a model size".
+  Its answering table was measured again on the release code: the 7B now
+  misses 2 of 55 (one because excerpts are marked against planted
+  instructions, a trade-off the article explains), and every size answers
+  faster than before.
 
 * Training computes its loss through the output layer in chunks, so the
   scores for the whole vocabulary are never held at every position at once.

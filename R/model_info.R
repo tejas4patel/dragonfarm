@@ -1,16 +1,16 @@
 # What each model size does, measured, shown next to every model choice in
 # the app. The numbers are the ones in the "Choosing a model size" article
-# (Qwen 2.5 Instruct on an 8 GB laptop RTX 4060, dragonfarm 0.4.0); keep the
-# two in step when re-measuring.
+# (Qwen 2.5 Instruct on an 8 GB laptop RTX 4060; answering re-measured on
+# 2026-10-19); keep the two in step when re-measuring.
 
 model_comparison <- function(task = c("answer", "questions", "train")) {
   task <- match.arg(task)
   switch(task,
     answer = data.frame(
       Model = c("0.5B", "1.5B", "3B", "7B, 4-bit"),
-      `Wrong or empty (of 55)` = c(14, 6, 4, 0),
-      `Says "not covered" (of 20)` = c(16, 20, 20, 20),
-      `Seconds per answer` = c(0.8, 1.1, 9.0, 10.1),
+      `Wrong or empty (of 55)` = c(16, 9, 4, 2),
+      `Says "not covered" (of 20)` = c(14, 20, 20, 20),
+      `Seconds per answer` = c(1.0, 1.2, 5.1, 7.7),
       Needs = c("any machine", "any machine", "6 GB GPU", "8 GB NVIDIA"),
       check.names = FALSE, stringsAsFactors = FALSE
     ),
