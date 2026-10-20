@@ -42,8 +42,10 @@ Imports:
     zip
 Suggests:
     arrow,
+    askpass,
     ellmer,
     htmltools,
+    httpuv,
     httr2,
     knitr,
     mcptools,
