@@ -1,9 +1,9 @@
 # OpenSSF Best Practices: self-assessment (passing level)
 
 A working copy of the answers for the OpenSSF Best Practices badge
-(<https://www.bestpractices.dev>), with the evidence for each. Registering
-the project there needs the maintainer's GitHub sign-in; nothing here has
-been submitted. "Met" means the evidence below is in this repository today.
+(<https://www.bestpractices.dev>), with the evidence for each. The project is
+registered as <https://www.bestpractices.dev/projects/15710> and earned the
+passing badge on 2026-10-20 (all 67 passing criteria answered). "Met" means the evidence below is in this repository today.
 
 Last checked: 2026-10-18.
 
@@ -79,9 +79,9 @@ Last checked: 2026-10-18.
 | Dynamic analysis (suggested) | Partly | Unit, integration and headless-browser tests (`scripts/ui_walkthrough.R`, `scripts/a11y_states.R`); no fuzzing |
 | Memory-safe language | Met | R and Python |
 
-## Open items before applying
+## Open items
 
-1. Sign in at bestpractices.dev with the maintainer's GitHub account and copy these answers (the maintainer's step).
+1. Done 2026-10-20: answers entered at bestpractices.dev (project 15710), passing badge earned.
 2. Turn on GitHub private vulnerability reporting (a repository setting).
 3. Optionally state a 14-day first response in `SECURITY.md`.
 4. Tag 0.4.0 when it is released.

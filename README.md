@@ -3,6 +3,7 @@
 [![CRAN status](https://www.r-pkg.org/badges/version/dragonfarm)](https://CRAN.R-project.org/package=dragonfarm)
 [![R-CMD-check](https://github.com/tejas4patel/dragonfarm/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tejas4patel/dragonfarm/actions/workflows/R-CMD-check.yaml)
 [![Website](https://img.shields.io/badge/docs-dragonfarm.dev-FF6B35)](https://dragonfarm.dev)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15710/badge)](https://www.bestpractices.dev/projects/15710)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tejas4patel/dragonfarm/blob/main/inst/remote/dragonfarm_remote.ipynb)
 
 ![dragonfarm: raise your own dragon. Feed it your documents, ask it anything, teach it your ways. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
