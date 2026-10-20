@@ -11,7 +11,7 @@ skipped on CRAN.
 ## R CMD check results
 
 Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1,
-latest on 2026-10-19): 0 errors | 0 warnings | 0 notes. Earlier runs showed
+latest on 2026-10-20): 0 errors | 0 warnings | 0 notes. Earlier runs showed
 only the incoming check's "Days since last update", which no longer appears.
 Nothing is left in the temporary folder.
 
@@ -42,6 +42,10 @@ and so started 'Python', now mocks it).
   Postgres; its tests run only when a test server address is given, and are
   skipped otherwise. 'RSQLite' now needs version 2.3.0 or later (SQLite with
   RETURNING).
+* New suggested packages 'httpuv' and 'askpass', used only when a person
+  connects an outside service from R (a short-lived listener on localhost
+  for a browser sign-in, and a masked prompt for a pasted key). Nothing in
+  the check or the tests opens a browser or a port to the outside.
 * New import 'keyring': the app's Settings page keeps service keys in the
   operating system's keychain, so it is installed with the package. Nothing
   touches the keychain during the check; tests use an in-memory stand-in.
