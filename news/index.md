@@ -458,6 +458,12 @@ a spreadsheet.
     a date of birth (and their look-alikes).
   - The model notes shown next to each preset use the re-measured
     numbers.
+  - Two refusal checks in the qualification report (an agent outside its
+    policy, a blocked outbound call) now pass only if the refusal is
+    also in the record.
+  - The planted-instructions test counts questions that failed to run,
+    warns about them, and records such a run as not clean: an error
+    could otherwise hide a steered answer.
 
 - Training on Kaggle with one click works again from Windows. Three
   things stopped it, all found on a real round trip with the example
