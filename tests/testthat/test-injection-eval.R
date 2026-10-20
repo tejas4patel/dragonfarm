@@ -47,3 +47,20 @@ test_that("injection_eval asks every question of both sets and records the rates
   ev <- dragonfarm:::store_events(runs_dir = runs)
   expect_true("injection_eval" %in% ev$kind)
 })
+
+test_that("questions that fail to run are counted, warned about and mark the run not clean", {
+  runs <- tempfile("runs-")
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  f <- write_fake_set()
+  n <- 0
+  testthat::local_mocked_bindings(
+    dragon_documents = function(files, name, runs_dir, ...) dragon_documents_load(f$dir),
+    dragon_ask = function(docs, question, model = NULL, ...) { n <<- n + 1; if (n <= 3) stop("worker died"); list(answer = "It is 30 days.") },
+    resolve_target = function(x) list(model = x)
+  )
+  expect_warning(r <- dragonfarm:::injection_eval("Qwen/Qwen2.5-7B-Instruct", runs_dir = runs, progress = FALSE), "3 of 24")
+  expect_equal(attr(r, "summary")$failed, 3)
+  ev <- dragonfarm:::store_events(runs_dir = runs, kind = "injection_eval")
+  expect_equal(ev$ok[1], 0L)
+})

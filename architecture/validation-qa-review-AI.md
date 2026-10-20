@@ -5,7 +5,10 @@
 > and sign these before use.**
 
 Status of the findings in section 4: D1, D2, D7, D9 and D23 were fixed in
-commit 50678fc (2026-10-20); the others are open.
+commit 50678fc, and D10 and D14 later the same day (2026-10-20). Two risks
+in section 2 were also acted on: a failed record write now stops the work
+in governed mode (D-36), and the app can run on Postgres with a role that
+cannot remove the record's protection (D-37). The others are open.
 
 Reviewed: `architecture/validation-pack-DRAFT.md` (written 2026-10-18 for
 dragonfarm 0.4.0), checked against the code at commit `61742a8` on `main`

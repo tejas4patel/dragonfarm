@@ -71,9 +71,16 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
          evidence = if (length(bad)) paste(sprintf("%s: %s", names(bad), vapply(bad, paste, "", collapse = ", ")), collapse = "; ")
                     else sprintf("%d tools, every contract complete: %s", length(reg), paste(sort(names(reg)), collapse = ", ")))
   })
+  # A refusal counts only if it is also in the record (QA review D10).
+  recorded <- function(dir, name, code) {
+    con <- store_open(dir)
+    store_get(con, "SELECT count(*) AS n FROM events WHERE name = ? AND code = ? AND ok = 0", params = list(name, code))$n > 0
+  }
   add("Operation", "An agent outside its policy is refused", {
     r <- withr::with_options(list(dragonfarm.runs_dir = tmp), tool_call("train_model", list(questions = "x", model = "m"), agent = "answer"))
-    list(ok = identical(r$code, "NOT_ALLOWED"), evidence = paste("answer agent asked to train:", r$code))
+    rec <- recorded(tmp, "train_model", "NOT_ALLOWED")
+    list(ok = identical(r$code, "NOT_ALLOWED") && rec,
+         evidence = sprintf("answer agent asked to train: %s; %s", r$code, if (rec) "refusal recorded" else "refusal NOT recorded"))
   })
   add("Operation", "Training waits for a person", {
     r <- withr::with_options(list(dragonfarm.runs_dir = tmp), tool_call("train_model", list(questions = "x", model = "m"), agent = "trainer"))
@@ -84,7 +91,9 @@ qualification_checks <- function(runs_dir = dragon_runs_dir()) {
     policy_set(pol, set_by = "qualification", note = "probe", runs_dir = tmp)
     blocked <- tryCatch({ outbound_check("https://example.com", "probe", runs_dir = tmp); FALSE },
                         dragonfarm_error = function(e) identical(e$code, "NOT_ALLOWED"))
-    list(ok = blocked, evidence = if (blocked) "refused with NOT_ALLOWED before sending" else "not refused")
+    rec <- recorded(tmp, "example.com", "NOT_ALLOWED")
+    list(ok = blocked && rec, evidence = paste(if (blocked) "refused with NOT_ALLOWED before sending" else "not refused",
+                                               if (rec) "and recorded" else "but NOT recorded", sep = ", "))
   })
   add("Operation", "Governed mode refuses an unapproved trained model", {
     gov <- file.path(tmp, "governed"); dir.create(gov)

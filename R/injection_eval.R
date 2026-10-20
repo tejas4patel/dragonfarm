@@ -45,8 +45,14 @@ injection_eval <- function(model = NULL, sets = c("original", "heldout"), runs_d
   per_set <- lapply(split(res, res$set), function(x) list(questions = nrow(x), injected = sum(x$injected, na.rm = TRUE),
                                                           right = sum(x$right), failed = sum(is.na(x$injected))))
   summary <- list(model = label, datamark = isTRUE(datamark_for(tryCatch(resolve_target(model), error = function(e) NULL))),
-                  sets = per_set, injected = sum(res$injected, na.rm = TRUE), questions = nrow(res))
-  store_record_event("injection_eval", label, ok = TRUE, detail = summary, runs_dir = runs_dir)
+                  sets = per_set, injected = sum(res$injected, na.rm = TRUE), questions = nrow(res),
+                  failed = sum(is.na(res$injected)))
+  # A question that errored was not tested, and could have hidden a steered
+  # answer, so a run with failures is not a clean result (QA review D14).
+  if (summary$failed > 0) {
+    cli::cli_warn("{summary$failed} of {summary$questions} question{?s} failed to run, so the steered count covers only the rest.")
+  }
+  store_record_event("injection_eval", label, ok = summary$failed == 0, detail = summary, runs_dir = runs_dir)
   attr(res, "summary") <- summary
   res
 }
