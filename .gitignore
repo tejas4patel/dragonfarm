@@ -24,3 +24,5 @@ BACKLOG.md
 .claude/
 tests/testthat/_problems/
 tests/testthat/testthat-problems.rds
+
+deploy/.env
