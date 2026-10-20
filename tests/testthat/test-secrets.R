@@ -108,3 +108,22 @@ test_that("the Settings page saves, checks, removes, and opts in to a free tier"
     expect_true(st$opted_in); expect_equal(st$daily_cap, 20)
   })
 })
+
+test_that("Save and check with empty boxes re-checks a saved key, and asks for one when none is saved", {
+  clean_env(); store <- fake_keychain()
+  runs <- getOption("dragonfarm.runs_dir")
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  checked <- 0
+  testthat::local_mocked_bindings(secret_check = function(service) { checked <<- checked + 1; list(ok = TRUE, message = "Connected.") })
+  shiny::testServer(dragonfarm:::mod_settings_server, args = list(runs_dir = runs), {
+    session$setInputs(val_GROQ_API_KEY = "", save_groq = 1)
+    expect_match(output$msg_groq$html, "Fill in")
+    expect_equal(checked, 0)
+    session$setInputs(val_GROQ_API_KEY = "gsk_test1234", save_groq = 2)
+    expect_equal(checked, 1)
+    session$setInputs(val_GROQ_API_KEY = "", save_groq = 3)
+    expect_equal(checked, 2)
+    expect_equal(store$GROQ_API_KEY, "gsk_test1234")
+    expect_match(output$msg_groq$html, "Connected")
+  })
+})

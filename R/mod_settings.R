@@ -84,7 +84,10 @@ mod_settings_server <- function(id, runs_dir) {
       })
       shiny::observeEvent(input[[paste0("save_", svc)]], {
         values <- stats::setNames(lapply(vars, function(v) input[[paste0("val_", v)]]), vars)
-        ok <- tryCatch({ secret_save(svc, values); TRUE }, error = function(e) { messages[[svc]] <- list(ok = FALSE, message = conditionMessage(e)); FALSE })
+        # Empty boxes with a key already saved: check the saved key again.
+        empty <- !any(vapply(values, function(x) nzchar(trimws(x %||% "")), TRUE))
+        ok <- if (empty && isTRUE(secret_status(svc)$set)) TRUE else
+          tryCatch({ secret_save(svc, values); TRUE }, error = function(e) { messages[[svc]] <- list(ok = FALSE, message = conditionMessage(e)); FALSE })
         if (!ok) return()
         for (v in vars) shiny::updateTextInput(session, paste0("val_", v), value = "")
         messages[[svc]] <- tryCatch(secret_check(svc), error = function(e) list(ok = NA, message = paste("Saved; the check could not run:", conditionMessage(e))))
