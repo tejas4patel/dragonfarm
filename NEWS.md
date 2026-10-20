@@ -355,7 +355,7 @@ PDF and as Word, live web pages, and a spreadsheet.
   choose yourself, set the environment variable `DRAGONFARM_TRAIN_BACKEND`
   to `"unsloth"` or `"transformers"` before training.
   The Python lock now includes Unsloth, which needs transformers 5.17 (was
-  5.20) and huggingface_hub 1.33 (was 2.2). The cloud notebook no longer
+  5.20) and `huggingface_hub` 1.33 (was 2.2). The cloud notebook no longer
   removes a recent torchao, which Unsloth needs; only an old one goes.
 
 * Training on a GPU in the cloud got three fixes, each measured on Kaggle's
@@ -378,7 +378,7 @@ PDF and as Word, live web pages, and a spreadsheet.
   protection on every connection when they are already current, so it can
   connect with a role that may only read and add rows (D-37). The "For IT
   and quality" article shows the two roles to set up; tested on Postgres 16,
-  where that role cannot change, delete or unprotect the record.
+  where that role cannot change or delete the record or remove its protection.
 
 * In governed mode (on by default on servers), an action now stops when it
   cannot be written to the record, with the code `RECORD_FAILED`: nothing
@@ -391,7 +391,7 @@ PDF and as Word, live web pages, and a spreadsheet.
     and load from safetensors only, like the answering models (the revisions
     every document set so far was indexed with, so no index changes).
   - A file's fingerprint in the record is named after the algorithm that
-    made it: `sha256`, or `md5` when the openssl package is missing (it used
+    made it: `sha256`, or `md5` when the `openssl` package is missing (it used
     to be called `sha256` either way).
   - The qualification report's tool check now validates every tool
     contract, and its personal-data check also plants a card number and a
