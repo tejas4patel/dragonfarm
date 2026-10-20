@@ -403,6 +403,12 @@ a spreadsheet.
     out-of-memory error, as Windows laptops tend to give, still stops
     the run with advice, since the process cannot recover.
 
+- In governed mode (on by default on servers), an action now stops when
+  it cannot be written to the record, with the code `RECORD_FAILED`:
+  nothing goes ahead unrecorded. When the catalogue is unreachable and
+  the policy cannot be read, a server deployment counts as governed. On
+  a laptop outside governed mode a failed write still only warns.
+
 - Checks found by an independent review of the validation pack:
 
   - The two search models dragonfarm picks are pinned to exact Hub
