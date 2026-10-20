@@ -27,3 +27,4 @@
 ^SUPPORT\.md$
 ^\.lintr$
 ^deploy$
+^unsloth_compiled_cache$

@@ -6,6 +6,16 @@
 > produces. Acceptance criteria marked `[QA to set]` are decisions for your
 > quality unit, not for the software's author. Written 2026-10-18 for
 > dragonfarm 0.4.0.
+>
+> **Proposed values for every `[QA to set]`**, a risk assessment, what this
+> pack still lacks, and findings on it are in
+> [validation-qa-review-AI.md](validation-qa-review-AI.md): an independent
+> review by an AI QA reviewer (2026-10-20), not approved by anyone. Start
+> from it, and have your qualified person adapt and sign. Fixed since the
+> review (50678fc): D1 (the personal-data check now plants a card number and
+> a date of birth), D2 (every tool contract is validated), D7 (fingerprints
+> are named after their algorithm), D9 (the search models are pinned and
+> safetensors only), and D23 (preset notes re-measured).
 
 ## 0. About this pack
 
