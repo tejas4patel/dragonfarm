@@ -11,10 +11,9 @@ skipped on CRAN.
 ## R CMD check results
 
 Local `R CMD check --as-cran` on the 0.4.0 tarball (Windows 11, R 4.6.1,
-2026-10-18, run twice that day): 0 errors | 0 warnings | 1 note. The note is
-the incoming check's "Days since last update", from a run made six days after
-0.3.4; this release is submitted at least a month after 0.3.4, so it should
-not appear. Nothing is left in the temporary folder.
+latest on 2026-10-19): 0 errors | 0 warnings | 0 notes. Earlier runs showed
+only the incoming check's "Days since last update", which no longer appears.
+Nothing is left in the temporary folder.
 
 Every help page has an example. Those that need the 'Python' environment, a
 trained run or a GPU are wrapped in `if (interactive())`; the others (listing
@@ -43,9 +42,9 @@ and so started 'Python', now mocks it).
   Postgres; its tests run only when a test server address is given, and are
   skipped otherwise. 'RSQLite' now needs version 2.3.0 or later (SQLite with
   RETURNING).
-* New suggested package 'keyring': the app's Settings page keeps service
-  keys in the operating system's keychain. Nothing touches the keychain
-  during the check; tests use an in-memory stand-in.
+* New import 'keyring': the app's Settings page keeps service keys in the
+  operating system's keychain, so it is installed with the package. Nothing
+  touches the keychain during the check; tests use an in-memory stand-in.
 * New file `inst/python/requirements.lock` (about 100 KB): the 'Python'
   packages pinned with hashes. When the package loads, it reads the pinned
   versions from this file to declare them with `reticulate::py_require()`,
