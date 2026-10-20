@@ -1,9 +1,11 @@
-# Running dragonfarm with Docker (draft)
+# Running dragonfarm with Docker
 
-**Status: draft, not yet built or run.** Written on 2026-10-18 without a
-machine that has Docker. Until it has been tested, treat it as a starting
-point, not a supported install. Posit Connect with a shared Postgres
-catalogue remains the main route for teams.
+Tested on 2026-10-19 on Windows 11 with Docker Desktop 4.96 (WSL 2) and an
+RTX 4060 laptop GPU: the image builds, the app opens, the shared catalogue is
+Postgres and survives a restart, and a small run trains on the GPU inside
+the container. Not yet tested: Linux hosts, a team behind a sign-in proxy.
+Posit Connect with a shared Postgres catalogue remains the main route for
+teams.
 
 ## What it starts
 
@@ -12,7 +14,7 @@ catalogue remains the main route for teams.
 - `app`: the dragonfarm app on port 3838, bound to this machine only.
   Runs and document sets go in the `runs` volume; the Python environment is
   built from the package's lock on first use and kept in the `python`
-  volume (2 to 3 GB, several minutes the first time).
+  volume (about 7 minutes and a few GB the first time).
 
 With a shared catalogue, governed mode and four-eyes sign-off are on by
 default.
@@ -22,11 +24,15 @@ default.
 1. Next to `docker-compose.yml`, create a file `.env` with one line:
    `DRAGONFARM_DB_PASSWORD=` followed by a password of your choice. Keep the
    file out of version control.
-2. On a machine with an NVIDIA GPU and the NVIDIA Container Toolkit,
-   uncomment the `deploy:` block. Without it, the app runs on the CPU
-   (small models only).
-3. Run `docker compose up -d` in this folder, then open
+2. Run `docker compose up -d` in this folder, then open
    <http://127.0.0.1:3838>.
+3. With an NVIDIA GPU, add the GPU file instead:
+   `docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d`.
+   It needs a driver with container support (Docker Desktop with WSL 2 on
+   Windows, or the NVIDIA Container Toolkit on Linux). Without it the app
+   runs on the CPU (small models only).
+
+The first build takes about a minute: R packages come ready-built.
 
 ## Before a team uses it
 
@@ -36,10 +42,16 @@ default.
 - Name the policy admins in Settings before others can reach the app.
 - Back up the `catalogue` volume: it is the record.
 
-## To check once Docker is available
+## What was checked (2026-10-19)
 
-- [ ] `docker compose build` succeeds
-- [ ] The app opens and `dragon_check()` builds the Python environment
-- [ ] The catalogue is Postgres (Monitor shows records; a policy saved in
-      Settings survives a restart)
-- [ ] With the GPU block on, a small run trains on the GPU
+- [x] `docker compose build` succeeds (58 s; it stops if a package fails to
+      install)
+- [x] The app opens on <http://127.0.0.1:3838>
+- [x] The catalogue is Postgres (all 8 tables), and governed mode is on
+- [x] A policy saved in the app survives `docker compose down` and `up`
+- [x] `dragon_check()` builds the Python environment from the lock (6.9 min)
+      and sees the GPU
+- [x] With the GPU file, a small run (SmolLM2-135M, example data) trains on
+      `cuda:0` and succeeds
+- [ ] A Linux host
+- [ ] A team behind a sign-in proxy
