@@ -24,7 +24,7 @@ test_that("a failing control shows as FAIL with its evidence", {
                                   pii_find = function(text) data.frame(type = character(), match = character(), context = character()))
   checks <- dragonfarm:::qualification_checks(runs)
   row <- checks[checks$check == "Personal-data patterns", ]
-  expect_equal(row$result, "FAIL"); expect_match(row$evidence, "0 of 4 planted found")
+  expect_equal(row$result, "FAIL"); expect_match(row$evidence, "0 of 6 planted found")
 })
 
 test_that("Settings offers the report as a download", {
