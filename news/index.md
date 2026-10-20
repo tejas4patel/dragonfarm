@@ -385,6 +385,12 @@ a spreadsheet.
   says “could not reach” rather than “did not accept this key” when the
   failure was not Kaggle refusing the key.
 
+- Choosing a free-tier judge in Try it now lists the provider’s current
+  models (OpenRouter: the free ones) instead of asking you to type an id
+  that may no longer exist. Listing sends only the key, passes the
+  outbound check, and does not count towards the daily cap, which counts
+  model requests only.
+
 - An offline switch in the Settings policy card stops every model
   download: models must already be on the machine, and a missing one
   fails at once instead of downloading. It is separate from “where data
