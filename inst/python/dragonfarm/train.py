@@ -274,6 +274,9 @@ def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
             model, eval_ds, tok.pad_token_id, hw.device, batch_size=eval_batch_size(cfg)))
         n = int(cfg.get("eval", {}).get("n_samples", 10))
         if n > 0:
+            from .backend import for_inference
+
+            for_inference(model)
             samples = evaluate_or_warn(status, "Sample generation", lambda: sample_generations(
                 model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
@@ -363,6 +366,13 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     if stage not in STAGES:
         raise RuntimeError(f"unknown stage {stage!r}; this trainer knows {sorted(STAGES)}")
 
+    # Chosen first: Unsloth has to be imported before transformers (D-35).
+    from . import backend as be
+
+    lib, why = be.choose(cfg, stage)
+    status.update(backend=lib, backend_note=why)
+    print(f"[dragonfarm] trainer: {lib}" + (f" ({why})" if why else ""), flush=True)
+
     from .callbacks import CancelFlag
     from .hardware import resolve
     from .loading import load_tokenizer
@@ -372,9 +382,15 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
     status.update(device=hw.device_str, dtype=hw.dtype_name, device_name=hw.device_name, stage=stage)
     print(f"[dragonfarm] stage={stage} device={hw.device_str} dtype={hw.dtype_name} ({hw.device_name})", flush=True)
 
-    m = cfg["model"]
-    tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
-    model = load_policy(cfg, run_dir, hw, status)
+    if lib == "unsloth":
+        # Unsloth's own fused loss in training; held-out scoring stays the
+        # same chunked measure for both trainers.
+        os.environ["DRAGONFARM_FULL_LOSS"] = "1"
+        model, tok = be.load_policy_unsloth(cfg, hw, status)
+    else:
+        m = cfg["model"]
+        tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
+        model = load_policy(cfg, run_dir, hw, status)
     return STAGES[stage](cfg, run_dir, status, resume, hw, tok, model, cancel)
 
 

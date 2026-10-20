@@ -25,6 +25,7 @@ test_that("past training runs are recalled with settings and how they ended", {
   oom <- three[[2]]
   expect_equal(oom$error_code, "OUT_OF_MEMORY"); expect_false(oom$gradient_checkpointing); expect_equal(oom$max_seq_len, 1536)
   expect_true(three[[1]]$gradient_checkpointing); expect_equal(three[[1]]$minutes, 30)
+  expect_equal(three[[1]]$trainer, "transformers")          # runs from before D-35 name no back end
 
   r <- tool_call("recall_training", list(model = "Qwen/Qwen2.5-3B-Instruct", limit = 1), agent = "trainer")
   expect_true(r$ok); expect_length(r$result, 1)
@@ -34,4 +35,20 @@ test_that("past training runs are recalled with settings and how they ended", {
 test_that("old error text without a code is still classified", {
   expect_equal(dragonfarm:::legacy_error_code("Returning 2 (CUDA_ERROR_OUT_OF_MEMORY) from cuMemFree_v2"), "OUT_OF_MEMORY")
   expect_equal(dragonfarm:::legacy_error_code("something else"), "UNKNOWN")
+})
+
+
+test_that("a run says which trainer it used and when it retried after running out of memory", {
+  runs <- withr::local_tempdir()
+  withr::local_options(dragonfarm.runs_dir = runs)
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  mem_run(runs, "20261020-100000-u", "Qwen/Qwen2.5-1.5B-Instruct", "succeeded")
+  st <- jsonlite::read_json(file.path(runs, "20261020-100000-u", "status.json"))
+  st$backend <- "unsloth"
+  st$memory_retry <- list(from = list(per_device_batch_size = 4), to = list(per_device_batch_size = 1, gradient_accumulation = 16))
+  jsonlite::write_json(st, file.path(runs, "20261020-100000-u", "status.json"), auto_unbox = TRUE)
+  expect_equal(dragonfarm:::training_outcomes(runs_dir = runs)[[1]]$trainer, "unsloth")
+  out <- cli::cli_fmt(print(dragonfarm:::new_run(file.path(runs, "20261020-100000-u"))))
+  expect_true(any(grepl("Trained with: Unsloth", out)))
+  expect_true(any(grepl("ran out of GPU memory once", out)))
 })

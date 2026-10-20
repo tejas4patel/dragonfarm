@@ -25,7 +25,10 @@ dragon_python_requirements <- function() {
       "python-docx>=1.1",
       "openpyxl>=3.1",
       # 4-bit loading on NVIDIA GPUs; no macOS build, so it is left out there
-      "bitsandbytes>=0.45; platform_system != 'Darwin'"
+      "bitsandbytes>=0.45; platform_system != 'Darwin'",
+      # D-35: Unsloth trains wherever it can (NVIDIA GPUs); the trainer falls
+      # back to transformers + peft when it cannot start. Not on macOS.
+      "unsloth>=2026.10.7; platform_system != 'Darwin'"
     ),
     python_version = ">=3.10,<3.14"
   )
@@ -111,7 +114,7 @@ dragon_python <- function(quiet = FALSE) {
     return(override)
   }
   if (!quiet) {
-    cli::cli_alert_info("Preparing the Python environment. The first time this downloads torch and transformers (2 to 3 GB) and can take several minutes.")
+    cli::cli_alert_info("Preparing the Python environment. The first time this downloads torch, transformers and Unsloth (about 3.7 GB on disk) and can take several minutes.")
   }
   if (configure_torch_index() && !quiet) {
     cli::cli_alert_info("NVIDIA GPU detected: using the CUDA build of torch from {.url {Sys.getenv('UV_EXTRA_INDEX_URL')}}. Set {.envvar DRAGONFARM_TORCH_INDEX} to \"\" to use the CPU build instead.")

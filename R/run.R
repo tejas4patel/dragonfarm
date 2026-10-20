@@ -232,6 +232,12 @@ print.dragon_run <- function(x, ...) {
     }
   }
   cli::cli_text("State: {.strong {st$state}}{if (!is.null(st$device)) paste0(' on ', st$device) else ''}")
+  if (!is.null(st$backend)) {
+    cli::cli_text("Trained with: {if (identical(st$backend, 'unsloth')) 'Unsloth' else 'transformers + peft'}{if (!is.null(st$backend_note)) paste0(' (', st$backend_note, ')') else ''}")
+  }
+  if (!is.null(st$memory_retry)) {
+    cli::cli_text("{.strong Note:} ran out of GPU memory once and continued with batch size {st$memory_retry$to$per_device_batch_size} and gradient checkpointing (the same effective batch).")
+  }
   pr <- tryCatch(dragon_progress(x), error = function(e) data.frame())
   if (nrow(pr) && "loss" %in% names(pr)) {
     last <- pr[max(which(!is.na(pr$loss))), ]

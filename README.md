@@ -48,7 +48,7 @@ install.packages("dragonfarm", repos = c("https://tejas4patel.r-universe.dev", "
 
 # or the CRAN release: install.packages("dragonfarm")
 library(dragonfarm)
-dragon_check()                   # first run builds the Python environment: 2 to 3 GB
+dragon_check()                   # first run builds the Python environment: about 3.7 GB
 ```
 
 Or build it from GitHub with `pak::pak("tejas4patel/dragonfarm")`. Then open the

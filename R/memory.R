@@ -24,6 +24,6 @@ training_outcomes <- function(model = NULL, limit = 20L, runs_dir = dragon_runs_
          load_in_4bit = isTRUE(cfg$hardware$load_in_4bit), batch_size = t$per_device_batch_size,
          grad_accum = t$gradient_accumulation, max_seq_len = t$max_seq_len,
          gradient_checkpointing = isTRUE(t$gradient_checkpointing), device = st$device_name %||% st$device,
-         minutes = minutes, eval_loss = st$eval_loss)
+         minutes = minutes, eval_loss = st$eval_loss, trainer = st$backend %||% "transformers")
   })
 }
