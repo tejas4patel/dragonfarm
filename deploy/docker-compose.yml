@@ -28,14 +28,7 @@ services:
     volumes:
       - runs:/data/runs
       - python:/data/python
-    # Uncomment on a machine with an NVIDIA GPU and the NVIDIA Container Toolkit.
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    # GPU: add docker-compose.gpu.yml (see deploy/README.md).
 
 volumes:
   catalogue:

@@ -1,14 +1,23 @@
-# dragonfarm app image (DRAFT: written 2026-10-18, not yet built or run;
-# see deploy/README.md). R with dragonfarm from R-universe; the Python
-# environment is built from the package's lock on first start and kept in
-# a volume, so the image stays small and rebuilds are quick.
+# dragonfarm app image (DRAFT: see deploy/README.md for what has been
+# tested). R with dragonfarm from R-universe; its dependencies come as
+# ready-built Linux binaries from the image's package mirror (p3m.dev), so
+# nothing has to compile. The Python environment is built from the package's
+# lock on first start and kept in a volume, so the image stays small and
+# rebuilds are quick.
 FROM rocker/r-ver:4.6.1
 
+# Libraries the binary packages link against (Postgres, TLS, curl, XML, PNG,
+# zlib, libuv for fs/httpuv).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libpq-dev libssl-dev libcurl4-openssl-dev libxml2-dev curl ca-certificates \
+      libpq5 libssl3t64 libcurl4t64 libxml2 libpng16-16t64 zlib1g libuv1t64 curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN Rscript -e 'install.packages(c("dragonfarm", "RPostgres", "keyring"), repos = c("https://tejas4patel.r-universe.dev", "https://cloud.r-project.org"))'
+# install.packages() only warns when a package fails, so check afterwards and
+# stop the build if anything is missing.
+RUN Rscript -e 'repos <- c("https://tejas4patel.r-universe.dev", getOption("repos")); \
+  install.packages(c("dragonfarm", "RPostgres", "keyring"), repos = repos); \
+  missing <- setdiff(c("dragonfarm", "RPostgres", "keyring", "shiny"), rownames(installed.packages())); \
+  if (length(missing)) stop("not installed: ", paste(missing, collapse = ", "))'
 
 # Runs, document sets and the Python environment live in volumes.
 ENV DRAGONFARM_RUNS_DIR=/data/runs \

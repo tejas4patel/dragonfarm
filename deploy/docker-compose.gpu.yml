@@ -1,0 +1,13 @@
+# Adds this machine's NVIDIA GPU to the app. Use together with the main file:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# Needs an NVIDIA driver with container support (Docker Desktop with WSL 2 on
+# Windows, or the NVIDIA Container Toolkit on Linux).
+services:
+  app:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
