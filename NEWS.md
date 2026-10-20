@@ -346,6 +346,12 @@ PDF and as Word, live web pages, and a spreadsheet.
   - an 8 GB RTX 4060 laptop, Qwen2.5-1.5B in 4-bit: training 34 s instead
     of 76 to 96 s, the whole run 118 s instead of 204 to 240 s; held-out
     loss 1.554 against 1.515 and 1.520.
+  - the same laptop, Qwen2.5-3B in 4-bit on 461 rows about FDA statistics
+    guidances (3 epochs): 27.9 minutes instead of 43.4, held-out loss 0.503
+    against 0.506. Asked 24 questions with known answers and 8 the
+    guidances do not cover, the two models agreed on 31 of 32: both declined
+    all 8, neither gave a wrong answer, and the Unsloth one declined one
+    answerable question the other answered.
   - Kaggle's T4, Qwen2.5-3B in 4-bit, with Unsloth driven directly on the
     same rows and settings: training 125 s instead of 328 s, a third of the
     GPU memory; held-out loss 0.560 against 0.586.
