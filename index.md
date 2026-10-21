@@ -5,10 +5,10 @@ amber horns and neck spikes](dragon.svg)
 
 R package · on CRAN · MIT licensed · mostly fireproof
 
-Fine-tune your own language model on your own documents, from R.
-dragonfarm writes the training data for you, trains on the laptop you
-already have, and keeps every answer grounded in your documents with
-built-in RAG. No Python, no cloud. The dragon you raise is yours.
+Turn your documents into an AI model you own, without leaving RStudio.
+Check its answers against their sources, review the practice questions
+it writes, and train on your own GPU or a free cloud one. No Python to
+write, no API bill, and nothing leaves your machine unless you allow it.
 
 `install.packages("dragonfarm")`
 
@@ -33,32 +33,39 @@ base model replies side by side, each with sources](demo/06-tryit.png)
 
 Why raise one here
 
-## Fine-tuning, without the homework.
+## Own your model. Don’t rent one.
 
-Most fine-tuning tools assume you already have training data and a
-Python setup. dragonfarm starts from the documents you have.
+The AI tools in your IDE rent someone else’s model. dragonfarm raises
+one that is yours, from the documents you already have, without a
+training set or a Python setup.
 
-Training data
+Own, don’t rent
 
-### Your documents become the lessons
+### Your documents become your model
 
-It reads your documents and writes practice questions and answers. You
-keep the good ones and toss the rest. No spreadsheet of examples needed.
+It reads your documents and writes practice questions and answers; you
+keep the good ones, then train. A 7B model fits an 8 GB laptop GPU, and
+no GPU means a free one in the cloud.
 
-Your laptop
+Your workflow
 
-### Trains on the machine you have
+### Never leave RStudio
 
-A 7B model fits an 8 GB laptop GPU, and small models learn a fixed
-format in minutes. No GPU? Borrow a free one in the cloud.
+Clicks and drag and drop in an RStudio add-in, and every step is also an
+R function. Unsloth is built in: fine-tuning ran 1.5 to 2.8 times faster
+than the standard trainer on the same laptop.
 
-RAG built in
+Built for audits
 
-### Grounded by default
+### Answers you can check
 
-It answers from your documents before you train anything, and training
-keeps those passages in every example. Change a document and the model
-follows it, without retraining.
+Every answer comes with its sources, and it says “not covered” rather
+than guess. Answers are recorded and can be replayed, and nothing leaves
+your machine unless you allow it.
+
+Using ellmer or ragnar? dragonfarm is the next step after RAG: training
+your own model from the same documents. Its tools also plug into ellmer
+and MCP.
 
 Same dragon, same ticket
 
