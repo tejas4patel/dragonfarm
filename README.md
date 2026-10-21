@@ -8,15 +8,28 @@
 
 ![dragonfarm: raise your own dragon. Feed it your documents, ask it anything, teach it your ways. Six steps: Documents, Ask, Teach, Train, Monitor, Try it.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/banner.svg)
 
-**Raise your own dragon.** dragonfarm fine-tunes your own language model
-on your own documents, from R. It writes the training data for you:
-practice questions and answers from your PDFs, Word files, web pages, or
-spreadsheets, which you review before anything trains. RAG is built in,
-so it answers from your documents from the first minute, and every
-training example keeps the passages it came from. A 7B dragon fits on an 8 GB laptop GPU;
-small ones learn fixed formats such as JSON in minutes. What hatches is an
-adapter or a merged model that loads with plain Hugging Face
-`transformers`, on your own GPU or a borrowed cloud one.
+**Raise your own dragon: turn your documents into an AI model you own,
+without leaving RStudio.** Point dragonfarm at your PDFs, Word files, web
+pages, or spreadsheets; check its answers against their sources; review the
+practice questions it writes; and train on your own GPU or a free cloud one.
+No Python to write, no API bill, and nothing leaves your machine unless you
+allow it.
+
+- **Own, don't rent.** The AI tools in your IDE rent someone else's model.
+  dragonfarm trains one that is yours: an adapter or a merged model that
+  loads with plain Hugging Face `transformers`. A 7B dragon fits on an 8 GB
+  laptop GPU, and small ones learn fixed formats such as JSON in minutes.
+- **Stays in your workflow.** Clicks and drag and drop in an RStudio add-in
+  (or `dragon_app()` from any R session), and every step is also an R
+  function. Unsloth is built in: fine-tuning ran 1.5 to 2.8 times faster
+  than the standard trainer on the same 8 GB laptop.
+- **Built for audits.** RAG is built in, so every answer comes with its
+  sources, and it says "not covered" rather than guessing. Answers are
+  recorded and can be replayed; sign-offs, an outbound gate, and a draft
+  GxP validation pack serve regulated teams.
+
+Using ellmer or ragnar? dragonfarm is the next step after RAG: training your
+own model from the same documents. Its tools also plug into ellmer and MCP.
 
 ![The app, step by step: drop in documents, ask them with sources, review generated questions, train, watch the loss, compare against the base model.](https://raw.githubusercontent.com/tejas4patel/dragonfarm/main/pkgdown/assets/demo/dragonfarm-demo.gif)
 

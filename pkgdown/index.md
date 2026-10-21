@@ -4,7 +4,7 @@
 <img class="df-mascot" src="dragon.svg" alt="The dragonfarm dragon: a minimal orange dragon head in profile, with amber horns and neck spikes">
 <p class="df-eyebrow"><span class="df-dot"></span>R package · on CRAN · MIT licensed · mostly fireproof</p>
 <h1 class="df-h1">Raise your own<br><span class="df-grad">dragon.</span></h1>
-<p class="df-lede">Fine-tune your own language model on your own documents, from R. dragonfarm writes the training data for you, trains on the laptop you already have, and keeps every answer grounded in your documents with built-in RAG. No Python, no cloud. The dragon you raise is yours.</p>
+<p class="df-lede">Turn your documents into an AI model you own, without leaving RStudio. Check its answers against their sources, review the practice questions it writes, and train on your own GPU or a free cloud one. No Python to write, no API bill, and nothing leaves your machine unless you allow it.</p>
 <div class="df-cta">
 <div class="df-install"><code>install.packages(&quot;dragonfarm&quot;)</code><button class="df-copy" type="button" data-copy="install.packages(&quot;dragonfarm&quot;)">Copy</button></div>
 <a class="df-btn df-btn-primary" href="articles/quickstart.html">Start hatching</a>
@@ -30,13 +30,14 @@
 <section class="df-section alt">
 <div class="df-wrap df-reveal">
 <p class="df-kicker">Why raise one here</p>
-<h2 class="df-h2">Fine-tuning, without the homework.</h2>
-<p class="df-sub">Most fine-tuning tools assume you already have training data and a Python setup. dragonfarm starts from the documents you have.</p>
+<h2 class="df-h2">Own your model. Don&rsquo;t rent one.</h2>
+<p class="df-sub">The AI tools in your IDE rent someone else&rsquo;s model. dragonfarm raises one that is yours, from the documents you already have, without a training set or a Python setup.</p>
 <div class="df-grid3">
-<div class="df-card"><span class="df-tag">Training data</span><h3>Your documents become the lessons</h3><p>It reads your documents and writes practice questions and answers. You keep the good ones and toss the rest. No spreadsheet of examples needed.</p></div>
-<div class="df-card"><span class="df-tag">Your laptop</span><h3>Trains on the machine you have</h3><p>A 7B model fits an 8 GB laptop GPU, and small models learn a fixed format in minutes. No GPU? Borrow a free one in the cloud.</p></div>
-<div class="df-card"><span class="df-tag">RAG built in</span><h3>Grounded by default</h3><p>It answers from your documents before you train anything, and training keeps those passages in every example. Change a document and the model follows it, without retraining.</p></div>
+<div class="df-card"><span class="df-tag">Own, don&rsquo;t rent</span><h3>Your documents become your model</h3><p>It reads your documents and writes practice questions and answers; you keep the good ones, then train. A 7B model fits an 8 GB laptop GPU, and no GPU means a free one in the cloud.</p></div>
+<div class="df-card"><span class="df-tag">Your workflow</span><h3>Never leave RStudio</h3><p>Clicks and drag and drop in an RStudio add-in, and every step is also an R function. Unsloth is built in: fine-tuning ran 1.5 to 2.8 times faster than the standard trainer on the same laptop.</p></div>
+<div class="df-card"><span class="df-tag">Built for audits</span><h3>Answers you can check</h3><p>Every answer comes with its sources, and it says &ldquo;not covered&rdquo; rather than guess. Answers are recorded and can be replayed, and nothing leaves your machine unless you allow it.</p></div>
 </div>
+<p class="df-fine">Using ellmer or ragnar? dragonfarm is the next step after RAG: training your own model from the same documents. Its tools also plug into ellmer and MCP.</p>
 </div>
 </section>
 <section class="df-section">
