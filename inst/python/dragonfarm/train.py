@@ -327,6 +327,9 @@ def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
             model, eval_ds, tok.pad_token_id, hw.device, method, beta, batch_size=eval_batch_size(cfg)))
         n = int(cfg.get("eval", {}).get("n_samples", 10))
         if n > 0:
+            from .backend import for_inference
+
+            for_inference(model)
             samples = evaluate_or_warn(status, "Sample generation", lambda: sample_pair_generations(
                 model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
@@ -348,6 +351,9 @@ def run_reinforce_stage(cfg, run_dir, status, resume, hw, tok, model, cancel):
     if eval_records:
         print("[dragonfarm] evaluating", flush=True)
         n = int(cfg.get("eval", {}).get("n_samples", 10))
+        from .backend import for_inference
+
+        for_inference(model)
         metrics, samples = eval_reinforce(model, tok, rewards, eval_records, hw.device,
                                           int(rl.get("max_new_tokens", 128)), n)
     write_eval_files(run_dir, metrics, samples)
@@ -384,8 +390,11 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
 
     if lib == "unsloth":
         # Unsloth's own fused loss in training; held-out scoring stays the
-        # same chunked measure for both trainers.
+        # same chunked measure for both trainers. GRPO and the preference
+        # losses are computed from the logits, which Unsloth then has to return.
         os.environ["DRAGONFARM_FULL_LOSS"] = "1"
+        if stage in ("reinforce", "prefer"):
+            os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
         model, tok = be.load_policy_unsloth(cfg, hw, status)
     else:
         m = cfg["model"]

@@ -12,8 +12,10 @@ config.json train.backend (or DRAGONFARM_TRAIN_BACKEND): "auto" (default),
 "unsloth", or "transformers".
 """
 
+import contextlib
 import importlib.util
 import os
+import sys
 
 
 def wanted(cfg):
@@ -26,8 +28,8 @@ def choose(cfg, stage, cuda_available=None, unsloth_installed=None, start=None):
     want = wanted(cfg)
     if want == "transformers":
         return "transformers", "chosen in the run's settings"
-    if stage != "sft":
-        return "transformers", f"Unsloth is used for fine-tuning; the {stage} stage uses the standard trainer"
+    if stage not in UNSLOTH_STAGES:
+        return "transformers", f"Unsloth is not used for the {stage} stage yet; it uses the standard trainer"
     if cfg.get("model", {}).get("base_adapters"):
         return "transformers", "a run that continues an earlier one uses the standard trainer"
     if unsloth_installed is None:
@@ -56,11 +58,18 @@ def start_unsloth():
     os.environ.setdefault("UNSLOTH_COMPILE_LOCATION",
                           os.path.join(os.path.expanduser("~"), ".cache", "dragonfarm", "unsloth_compiled_cache"))
     try:
-        import unsloth  # noqa: F401
+        # Unsloth prints a banner on import; the inference worker speaks JSON
+        # on stdout, so anything Unsloth prints goes to stderr.
+        with contextlib.redirect_stdout(sys.stderr):
+            import unsloth  # noqa: F401
     except Exception as e:  # noqa: BLE001 - any failure means: use the standard trainer
         return f"{type(e).__name__}: {str(e)[:200]}"
     return None
 
+
+# Stages that train with Unsloth when it can run; each was added after an
+# A/B against the standard trainer on the same data.
+UNSLOTH_STAGES = ("sft", "reinforce")
 
 DEFAULT_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
@@ -98,8 +107,62 @@ def load_policy_unsloth(cfg, hw, status):
 
 
 def for_inference(model):
-    """Switch an Unsloth model to inference mode before samples; no-op otherwise."""
+    """Switch an Unsloth model to inference mode before generating; no-op otherwise."""
     if getattr(model, "_dragonfarm_unsloth", False):
         from unsloth import FastLanguageModel
 
         FastLanguageModel.for_inference(model)
+
+
+def for_training(model):
+    """Switch an Unsloth model back to training mode; no-op otherwise."""
+    if getattr(model, "_dragonfarm_unsloth", False):
+        from unsloth import FastLanguageModel
+
+        FastLanguageModel.for_training(model)
+
+
+# Answering, Chat and question writing (the inference worker). Same rules as
+# training: Unsloth where it can load the model, today's loader otherwise.
+# DRAGONFARM_INFER_BACKEND: "auto" (default), "unsloth" or "transformers".
+def choose_inference(req, cuda_available=None, unsloth_installed=None, start=None):
+    want = (os.environ.get("DRAGONFARM_INFER_BACKEND") or "auto").lower()
+    if want == "transformers":
+        return "transformers", "chosen in the environment"
+    if req.get("base_adapters"):
+        return "transformers", "a model that continues an earlier run loads with the standard loader"
+    if req.get("allow_pickle"):
+        return "transformers", "pickle weights load with the standard loader"
+    if unsloth_installed is None:
+        unsloth_installed = importlib.util.find_spec("unsloth") is not None
+    if not unsloth_installed:
+        return "transformers", "Unsloth is not installed in this Python environment"
+    if cuda_available is None:
+        import torch
+
+        cuda_available = torch.cuda.is_available()
+    if not cuda_available:
+        return "transformers", "Unsloth needs an NVIDIA GPU"
+    err = (start or start_unsloth)()
+    if err:
+        return "transformers", f"Unsloth could not start here ({err})"
+    return "unsloth", None
+
+
+def load_for_inference_unsloth(model_id, hw, adapter=None, revision=None, trust_remote_code=False, load_in_4bit=False,
+                               max_seq_length=8192):
+    """A model (plus an optional LoRA adapter) ready for fast generation."""
+    from unsloth import FastLanguageModel
+
+    with contextlib.redirect_stdout(sys.stderr):      # keep stdout for the worker's JSON
+        model, _ = FastLanguageModel.from_pretrained(
+            model_name=model_id, revision=revision, max_seq_length=int(max_seq_length), dtype=hw.dtype,
+            load_in_4bit=bool(load_in_4bit), trust_remote_code=bool(trust_remote_code), use_exact_model_name=True,
+        )
+        if adapter:
+            from peft import PeftModel
+
+            model = PeftModel.from_pretrained(model, str(adapter))
+        FastLanguageModel.for_inference(model)
+    model._dragonfarm_unsloth = True
+    return model

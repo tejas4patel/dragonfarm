@@ -118,6 +118,8 @@ def grpo_loss(policy_logps, ref_logps, mask, advantages, beta):
 
 
 def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
+    from .backend import for_inference, for_training
+
     rl = cfg.get("reinforce") or {}
     t = cfg["train"]
     group_size = int(rl.get("group_size", 4))
@@ -185,6 +187,7 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
 
         # 1. Sample a group per prompt and score it.
         model.eval()
+        for_inference(model)
         groups = []
         for rec in batch:
             prompt_ids, comps, texts = sample_group(model, tok, rec["prompt"], hw.device, group_size, temperature, max_new_tokens)
@@ -211,6 +214,7 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
                 breakdown[name].extend(parts[name])
 
         # 3. Policy gradient step over micro-batches of sequences.
+        for_training(model)
         model.train()
         optimizer.zero_grad(set_to_none=True)
         total_tokens = 0
