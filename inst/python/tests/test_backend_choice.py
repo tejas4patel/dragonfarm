@@ -54,13 +54,17 @@ def test_the_choice_can_be_forced():
 
 def test_answering_uses_unsloth_where_it_can_and_says_why_not_otherwise():
     from dragonfarm.backend import choose_inference
-    assert choose_inference({}, cuda_available=True, unsloth_installed=True, start=ok) == ("unsloth", None)
-    assert choose_inference({}, cuda_available=False, unsloth_installed=True, start=ok)[0] == "transformers"
-    assert choose_inference({"base_adapters": ["a"]}, cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
-    assert choose_inference({"allow_pickle": True}, cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
     old = os.environ.get("DRAGONFARM_INFER_BACKEND")
-    os.environ["DRAGONFARM_INFER_BACKEND"] = "transformers"
     try:
+        os.environ.pop("DRAGONFARM_INFER_BACKEND", None)                # default: today's loader
+        assert choose_inference({}, cuda_available=True, unsloth_installed=True,
+                                start=lambda: "should not be started") == ("transformers", None)
+        os.environ["DRAGONFARM_INFER_BACKEND"] = "unsloth"               # asked for
+        assert choose_inference({}, cuda_available=True, unsloth_installed=True, start=ok) == ("unsloth", None)
+        assert choose_inference({}, cuda_available=False, unsloth_installed=True, start=ok)[0] == "transformers"
+        assert choose_inference({"base_adapters": ["a"]}, cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
+        assert choose_inference({"allow_pickle": True}, cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
+        os.environ["DRAGONFARM_INFER_BACKEND"] = "transformers"
         assert choose_inference({}, cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
     finally:
         if old is None:

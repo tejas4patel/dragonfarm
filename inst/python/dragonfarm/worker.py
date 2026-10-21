@@ -53,12 +53,34 @@ class ModelCache:
         self.capacity = capacity
         self.items = OrderedDict()
         self.hw = None
+        self.no_unsloth = {}       # model -> why Unsloth is no longer used for it
 
     def key(self, req, four_bit=False):
         return json.dumps([req["model"], req.get("revision"), req.get("adapter"), req.get("base_adapters") or [],
                            bool(req.get("trust_remote_code", False)), bool(four_bit), bool(req.get("allow_pickle", False))])
 
+    def backend(self, req):
+        # Decided per model; Unsloth is imported on the first decision, before
+        # anything else in this process imports transformers.
+        from .backend import choose_inference
+
+        lib, why = choose_inference(req)
+        failed = self.no_unsloth.get(self.model_key(req))
+        return ("transformers", failed) if lib == "unsloth" and failed else (lib, why)
+
+    def model_key(self, req):
+        return json.dumps([req["model"], req.get("revision"), req.get("adapter")])
+
+    def drop_unsloth(self, req, err):
+        """Unsloth failed while answering with this model: today's loader from now on."""
+        k = self.model_key(req)
+        self.no_unsloth[k] = f"Unsloth failed while answering ({type(err).__name__}: {str(err)[:160]})"
+        self.items = OrderedDict((key, v) for key, v in self.items.items()
+                                 if not (json.loads(key)[:3] == json.loads(k) and getattr(v[1], "_dragonfarm_unsloth", False)))
+        self.clear_cuda()
+
     def get(self, req):
+        self.backend(req)                 # first: Unsloth must be imported before transformers
         from .hardware import resolve, wants_4bit
         from .loading import load_for_inference, load_tokenizer
 
@@ -83,14 +105,30 @@ class ModelCache:
         if four_bit:
             print(f"[dragonfarm] loading {req['model']} in 4-bit (NF4)", file=sys.stderr, flush=True)
         tok = load_tokenizer(req["model"], req.get("revision"), trust_remote_code=trust)
-        model = load_for_inference(req["model"], self.hw, adapter=req.get("adapter"), revision=req.get("revision"),
-                                   trust_remote_code=trust, base_adapters=req.get("base_adapters") or [],
-                                   load_in_4bit=four_bit, allow_pickle=bool(req.get("allow_pickle", False)))
+        lib, why = self.backend(req)
+        model = None
+        if lib == "unsloth":
+            from .backend import load_for_inference_unsloth
+
+            try:
+                model = load_for_inference_unsloth(req["model"], self.hw, adapter=req.get("adapter"),
+                                                   revision=req.get("revision"), trust_remote_code=trust,
+                                                   load_in_4bit=four_bit)
+            except Exception as e:  # noqa: BLE001 - any failure: today's loader instead
+                lib, why = "transformers", f"Unsloth could not load this model ({type(e).__name__}: {str(e)[:160]})"
+        if model is None:
+            model = load_for_inference(req["model"], self.hw, adapter=req.get("adapter"), revision=req.get("revision"),
+                                       trust_remote_code=trust, base_adapters=req.get("base_adapters") or [],
+                                       load_in_4bit=four_bit, allow_pickle=bool(req.get("allow_pickle", False)))
+        print(f"[dragonfarm] answering with {lib}" + (f" ({why})" if why else ""), file=sys.stderr, flush=True)
         self.items[k] = (tok, model)
         return tok, model
 
     def clear(self):
         self.items.clear()
+        self.clear_cuda()
+
+    def clear_cuda(self):
         try:
             import torch
 
@@ -132,9 +170,15 @@ def generate_stream(tok, model, hw, req):
     else:
         kwargs.update(do_sample=False)
 
+    failed = []
+
     def run():
-        with torch.no_grad():
-            model.generate(**kwargs)
+        try:
+            with torch.no_grad():
+                model.generate(**kwargs)
+        except BaseException as e:  # noqa: BLE001 - handed to the caller below
+            failed.append(e)
+            streamer.end()          # otherwise the loop below waits for tokens for ever
 
     thread = threading.Thread(target=run)
     thread.start()
@@ -144,11 +188,47 @@ def generate_stream(tok, model, hw, req):
             pieces.append(piece)
             emit({"ok": True, "token": piece})
     thread.join()
+    if failed:
+        failed[0].dragonfarm_tokens_sent = len(pieces)
+        raise failed[0]
     return "".join(pieces).strip()
+
+
+def answer(cache, req):
+    """One generate request. If Unsloth fails before anything was sent, the
+    model is loaded again with today's loader and the request runs once more."""
+    tok, model = cache.get(req)
+    try:
+        return run_generate(tok, model, cache.hw, req)
+    except Exception as e:  # noqa: BLE001
+        retry = (getattr(model, "_dragonfarm_unsloth", False) and not getattr(e, "dragonfarm_tokens_sent", 0)
+                 and "out of memory" not in str(e).lower())
+        if not retry:
+            raise
+        print(f"[dragonfarm] Unsloth failed while answering ({type(e).__name__}: {str(e)[:160]}); "
+              "loading the model again with the standard loader", file=sys.stderr, flush=True)
+        del model
+        cache.drop_unsloth(req, e)
+        tok, model = cache.get(req)
+        return run_generate(tok, model, cache.hw, req)
+
+
+def run_generate(tok, model, hw, req):
+    if req.get("stream"):
+        return {"ok": True, "done": True, "output": generate_stream(tok, model, hw, req), "device": hw.device_str}
+    return {"ok": True, "outputs": generate_all(tok, model, hw, req), "device": hw.device_str}
 
 
 def main():
     global _current_id
+    # Decide on Unsloth before anything here imports transformers (the search
+    # model does), so a search that comes before the first answer is fine.
+    try:
+        from .backend import choose_inference
+
+        choose_inference({})
+    except Exception:  # noqa: BLE001 - the per-model choice still falls back
+        pass
     cache = ModelCache()
     retriever = None   # created on first use; holds the small embedding model and loaded indexes
     emit({"ok": True, "ready": True})
@@ -182,13 +262,7 @@ def main():
                 emit({"ok": True, "bye": True})
                 break
             elif op == "generate":
-                tok, model = cache.get(req)
-                if req.get("stream"):
-                    output = generate_stream(tok, model, cache.hw, req)
-                    emit({"ok": True, "done": True, "output": output, "device": cache.hw.device_str})
-                else:
-                    outputs = generate_all(tok, model, cache.hw, req)
-                    emit({"ok": True, "outputs": outputs, "device": cache.hw.device_str})
+                emit(answer(cache, req))
             else:
                 emit({"ok": False, "error": f"unknown op {op!r}", "code": "UNKNOWN"})
         except Exception as e:  # noqa: BLE001 - report and keep serving

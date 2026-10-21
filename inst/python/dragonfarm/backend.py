@@ -139,13 +139,20 @@ def for_training(model):
         FastLanguageModel.for_training(model)
 
 
-# Answering, Chat and question writing (the inference worker). Same rules as
-# training: Unsloth where it can load the model, today's loader otherwise.
-# DRAGONFARM_INFER_BACKEND: "auto" (default), "unsloth" or "transformers".
+# Answering, Chat and question writing (the inference worker) use today's
+# loader by default. In the A/B (FDA questions, 2026-10-20) Unsloth gave the
+# same grades and was faster on short prompts, but slower on long document
+# prompts (up to 50 s against 15 s) and about 10-25 s slower to load, so
+# slower overall on the 7B. DRAGONFARM_INFER_BACKEND=unsloth turns it on.
+INFER_ON_UNSLOTH = False
+
+
 def choose_inference(req, cuda_available=None, unsloth_installed=None, start=None):
     want = (os.environ.get("DRAGONFARM_INFER_BACKEND") or "auto").lower()
     if want == "transformers":
         return "transformers", "chosen in the environment"
+    if want != "unsloth" and not INFER_ON_UNSLOTH:
+        return "transformers", None
     if req.get("base_adapters"):
         return "transformers", "a model that continues an earlier run loads with the standard loader"
     if req.get("allow_pickle"):
@@ -166,11 +173,28 @@ def choose_inference(req, cuda_available=None, unsloth_installed=None, start=Non
     return "unsloth", None
 
 
+def context_length(model_id, revision=None, trust_remote_code=False, fallback=32768):
+    """The model's own context length. Unsloth sizes its attention caches to
+    max_seq_length and refuses longer prompts, and answers over documents
+    often pass 8,192 tokens."""
+    try:
+        from transformers import AutoConfig
+
+        c = AutoConfig.from_pretrained(model_id, revision=revision, trust_remote_code=bool(trust_remote_code))
+        c = getattr(c, "text_config", None) or c
+        n = getattr(c, "max_position_embeddings", None)
+        return int(n) if n else fallback
+    except Exception:  # noqa: BLE001 - a guess is better than no model
+        return fallback
+
+
 def load_for_inference_unsloth(model_id, hw, adapter=None, revision=None, trust_remote_code=False, load_in_4bit=False,
-                               max_seq_length=8192):
+                               max_seq_length=None):
     """A model (plus an optional LoRA adapter) ready for fast generation."""
     from unsloth import FastLanguageModel
 
+    if max_seq_length is None:
+        max_seq_length = context_length(model_id, revision, trust_remote_code)
     with contextlib.redirect_stdout(sys.stderr):      # keep stdout for the worker's JSON
         model, _ = FastLanguageModel.from_pretrained(
             model_name=model_id, revision=revision, max_seq_length=int(max_seq_length), dtype=hw.dtype,
