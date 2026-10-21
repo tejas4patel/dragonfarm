@@ -431,6 +431,13 @@ a spreadsheet.
     out-of-memory error, as Windows laptops tend to give, still stops
     the run with advice, since the process cannot recover.
 
+- Two more controls in governed mode. A model sign-off is always in the
+  name of the person signed in: a different signer passed from R is
+  refused (D-38). A merged model saved outside its run folder is traced
+  to its run through the `dragonfarm.json` a merge writes, and answers
+  only if that run is an approved version; a merged model that cannot be
+  traced is refused (D-39). Untrained base models answer as before.
+
 - On Postgres, the app no longer re-creates the catalogue’s tables and
   protection on every connection when they are already current, so it
   can connect with a role that may only read and add rows (D-37). The
