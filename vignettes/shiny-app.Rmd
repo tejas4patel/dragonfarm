@@ -84,8 +84,9 @@ model, and estimates the number of optimizer steps from your settings. "No
 GPU here?" packages the run for a cloud GPU instead.
 
 **Monitor.** A live loss curve with evaluation points (and mean reward for
-RL runs), step count, ETA, the trainer log, and the R code for the run.
-Cancel asks the trainer to stop after the current step and save. Resume
+RL runs), step count, ETA, which trainer ran it (Unsloth, or the standard
+transformers + peft trainer and why), the trainer log, and the R code for
+the run. Cancel asks the trainer to stop after the current step and save. Resume
 picks up from the last checkpoint. Every run in the runs directory is
 listed, including ones started from the console. Below: task metrics over
 the held-out rows, a comparison table of every run, and import of results
