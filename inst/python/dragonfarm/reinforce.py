@@ -64,18 +64,45 @@ def sample_group(model, tok, msgs, device, group_size, temperature, max_new_toke
     prompt_ids = enc["input_ids"][0].tolist()
     completions, texts = [], []
     for row in out:
-        ids = row[n_prompt:].tolist()
         # Cut at the first EOS (keep it so the model learns to stop) and drop padding.
-        cut = []
-        for t in ids:
-            cut.append(t)
-            if t == tok.eos_token_id:
-                break
-        while cut and cut[-1] == tok.pad_token_id and cut[-1] != tok.eos_token_id:
-            cut.pop()
+        cut = cut_completion(row[n_prompt:].tolist(), tok.eos_token_id, tok.pad_token_id)
         completions.append(cut)
         texts.append(tok.decode(cut, skip_special_tokens=True).strip())
     return prompt_ids, completions, texts
+
+
+def cut_completion(ids, eos_id, pad_id, stopped=False):
+    """Up to and including the first EOS, padding dropped. A completion that
+    stopped on a stop token vLLM did not return still ends with EOS."""
+    cut = []
+    for t in ids:
+        cut.append(t)
+        if t == eos_id:
+            return cut
+    while cut and cut[-1] == pad_id:
+        cut.pop()
+    if stopped:
+        cut.append(eos_id)
+    return cut
+
+
+def sample_groups_vllm(model, tok, prompts, group_size, temperature, max_new_tokens, lora_dir, top_p=1.0):
+    """All of a step's groups in one vLLM call (Unsloth fast_inference), with
+    the current LoRA weights. Returns [(prompt_ids, [completion_ids], [texts])]."""
+    from vllm import SamplingParams
+
+    texts = [render_prompt(tok, msgs) for msgs in prompts]
+    model.save_lora(str(lora_dir))
+    params = SamplingParams(n=int(group_size), temperature=float(temperature), top_p=float(top_p),
+                            max_tokens=int(max_new_tokens))
+    outs = model.fast_generate(texts, sampling_params=params, lora_request=model.load_lora(str(lora_dir)), use_tqdm=False)
+    groups = []
+    for text, out in zip(texts, outs):
+        prompt_ids = tok(text, add_special_tokens=False)["input_ids"]
+        comps = [cut_completion(list(o.token_ids), tok.eos_token_id, tok.pad_token_id, o.finish_reason == "stop")
+                 for o in out.outputs]
+        groups.append((prompt_ids, comps, [tok.decode(c, skip_special_tokens=True).strip() for c in comps]))
+    return groups
 
 
 def build_batch(prompt_ids, completions, pad_id, device):
@@ -175,6 +202,7 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
           f"{total_steps} steps, rewards {rewards.names}", flush=True)
 
     unwrapped = model
+    fast = bool(getattr(model, "_dragonfarm_vllm", False))     # Unsloth loaded it with vLLM (Linux)
     step = start_step
     while step < total_steps:
         batch = []
@@ -187,10 +215,15 @@ def run_reinforce(cfg, run_dir, status, resume, hw, tok, model, cancel):
 
         # 1. Sample a group per prompt and score it.
         model.eval()
-        for_inference(model)
+        if fast:
+            sampled = sample_groups_vllm(model, tok, [rec["prompt"] for rec in batch], group_size, temperature,
+                                         max_new_tokens, run_dir / "vllm_lora")
+        else:
+            for_inference(model)
+            sampled = [sample_group(model, tok, rec["prompt"], hw.device, group_size, temperature, max_new_tokens)
+                       for rec in batch]
         groups = []
-        for rec in batch:
-            prompt_ids, comps, texts = sample_group(model, tok, rec["prompt"], hw.device, group_size, temperature, max_new_tokens)
+        for rec, (prompt_ids, comps, texts) in zip(batch, sampled):
             totals, parts = rewards.score_many(
                 [user_text(rec["prompt"])] * len(texts), texts,
                 [rec.get("reference")] * len(texts), [rec.get("fields") or {}] * len(texts),

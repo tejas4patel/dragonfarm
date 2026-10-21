@@ -24,7 +24,10 @@ def test_the_standard_trainer_otherwise_and_it_says_why():
     assert lib == "transformers" and "not installed" in why
     lib, why = choose(cfg(), "distil", cuda_available=True, unsloth_installed=True, start=ok)
     assert lib == "transformers" and "distil" in why                 # a stage not (yet) on Unsloth
-    assert choose(cfg(), "prefer", cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
+    lib, why = choose(cfg(), "prefer", cuda_available=True, unsloth_installed=True, start=ok)
+    assert lib == "transformers" and "checkpointing" in why             # preference runs: only with checkpointing
+    assert choose(cfg(gradient_checkpointing=True), "prefer", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"
+    assert choose(cfg(backend="unsloth"), "prefer", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"
     assert choose(cfg(), "reinforce", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"
     c = cfg(); c["model"]["base_adapters"] = ["base_adapters/1"]      # a run that continues an earlier one
     assert choose(c, "sft", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"

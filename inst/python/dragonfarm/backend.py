@@ -31,6 +31,11 @@ def choose(cfg, stage, cuda_available=None, unsloth_installed=None, start=None):
         return "transformers", "chosen in the run's settings"
     if stage not in UNSLOTH_STAGES:
         return "transformers", f"Unsloth is not used for the {stage} stage yet; it uses the standard trainer"
+    if stage == "prefer" and not cfg.get("train", {}).get("gradient_checkpointing") and want != "unsloth":
+        # A/B 2026-10-20: with checkpointing Unsloth tied or beat the standard
+        # trainer; without it, it ran out of memory on an 8 GB GPU where the
+        # standard trainer still finished.
+        return "transformers", "preference runs use Unsloth with gradient checkpointing on; this one has it off"
     if cfg.get("model", {}).get("base_adapters") and not (CONTINUES_ON_UNSLOTH or want == "unsloth"):
         return "transformers", "a run that continues an earlier one uses the standard trainer"
     if unsloth_installed is None:
@@ -70,7 +75,7 @@ def start_unsloth():
 
 # Stages that train with Unsloth when it can run; each was added after an
 # A/B against the standard trainer on the same data.
-UNSLOTH_STAGES = ("sft", "reinforce")
+UNSLOTH_STAGES = ("sft", "reinforce", "prefer")
 
 # Runs that continue an earlier one fold the earlier adapters into the
 # weights first, then train a fresh LoRA, on either trainer (A/B 2026-10-20).
@@ -79,7 +84,44 @@ CONTINUES_ON_UNSLOTH = True
 DEFAULT_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
 
-def load_policy_unsloth(cfg, hw, status, run_dir=None):
+def free_cuda():
+    try:
+        import gc
+
+        import torch
+
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# GRPO can sample through vLLM, which Unsloth runs beside the training model
+# (fast_inference). Linux only, and only when vLLM is installed.
+# DRAGONFARM_VLLM: "auto" (default), "1" or "0". Off by default until its A/B.
+VLLM_FOR_GRPO = False
+
+
+def choose_vllm(cfg, stage, platform=None, vllm_installed=None):
+    """Return (use_vllm, note). The note says why not, when it matters."""
+    if stage != "reinforce":
+        return False, None
+    w = (os.environ.get("DRAGONFARM_VLLM") or "auto").lower()
+    if w in ("0", "off", "no", "false"):
+        return False, "vLLM generation turned off"
+    if w not in ("1", "on", "yes", "true") and not VLLM_FOR_GRPO:
+        return False, None
+    if not (platform or sys.platform).startswith("linux"):
+        return False, "vLLM generation needs Linux (the container or Kaggle)"
+    if vllm_installed is None:
+        vllm_installed = importlib.util.find_spec("vllm") is not None
+    if not vllm_installed:
+        return False, "vLLM is not installed in this Python environment"
+    return True, None
+
+
+def load_policy_unsloth(cfg, hw, status, run_dir=None, stage="sft"):
     """Base model, earlier-stage adapters folded in, and a fresh LoRA through
     Unsloth. Returns (model, tokenizer).
 
@@ -93,12 +135,27 @@ def load_policy_unsloth(cfg, hw, status, run_dir=None):
     base_adapters = [Path(run_dir) / p for p in (m.get("base_adapters") or [])]
     if base_adapters and load_4bit:
         raise RuntimeError("chaining from a previous run is not supported with load_in_4bit")
-    print(f"[dragonfarm] loading {m['id']} with Unsloth", flush=True)
-    model, tok = FastLanguageModel.from_pretrained(
-        model_name=m["id"], revision=m.get("revision"), max_seq_length=int(t["max_seq_len"]),
-        dtype=hw.dtype, load_in_4bit=load_4bit,
-        trust_remote_code=bool(m.get("trust_remote_code", False)), use_exact_model_name=True,
-    )
+    fast, note = choose_vllm(cfg, stage)
+    if base_adapters and fast:
+        fast, note = False, "vLLM generation is not used for a run that continues an earlier one"
+    print(f"[dragonfarm] loading {m['id']} with Unsloth" + (" and vLLM for sampling" if fast else ""), flush=True)
+    kw = dict(model_name=m["id"], revision=m.get("revision"), max_seq_length=int(t["max_seq_len"]),
+              dtype=hw.dtype, load_in_4bit=load_4bit,
+              trust_remote_code=bool(m.get("trust_remote_code", False)), use_exact_model_name=True)
+    model = None
+    if fast:
+        try:
+            model, tok = FastLanguageModel.from_pretrained(
+                **kw, fast_inference=True, max_lora_rank=int(lo["r"]),
+                gpu_memory_utilization=float(os.environ.get("DRAGONFARM_VLLM_MEMORY", "0.5")))
+        except Exception as e:  # noqa: BLE001 - any failure: sample with generate() instead
+            fast, note = False, f"vLLM could not start ({type(e).__name__}: {str(e)[:160]})"
+            print(f"[dragonfarm] {note}; sampling with the model's own generate()", flush=True)
+            free_cuda()
+    if model is None:
+        model, tok = FastLanguageModel.from_pretrained(**kw)
+    if stage == "reinforce":
+        status.update(vllm=bool(fast), vllm_note=note)
     if base_adapters:
         from .loading import apply_base_adapters
 
@@ -117,6 +174,7 @@ def load_policy_unsloth(cfg, hw, status, run_dir=None):
         tok.pad_token = tok.eos_token
     tok.padding_side = "right"
     model._dragonfarm_unsloth = True
+    model._dragonfarm_vllm = bool(fast)
     trainable, total = model.get_nb_trainable_parameters()
     status.update(trainable_params=int(trainable), total_params=int(total))
     print(f"[dragonfarm] trainable params {trainable:,} of {total:,}", flush=True)

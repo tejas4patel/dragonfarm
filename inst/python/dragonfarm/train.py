@@ -395,7 +395,7 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
         os.environ["DRAGONFARM_FULL_LOSS"] = "1"
         if stage in ("reinforce", "prefer"):
             os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
-        model, tok = be.load_policy_unsloth(cfg, hw, status, run_dir)
+        model, tok = be.load_policy_unsloth(cfg, hw, status, run_dir, stage)
     else:
         m = cfg["model"]
         tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
