@@ -395,12 +395,25 @@ def train(run_dir: Path, status: Status, resume: bool) -> str:
         os.environ["DRAGONFARM_FULL_LOSS"] = "1"
         if stage in ("reinforce", "prefer"):
             os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
-        model, tok = be.load_policy_unsloth(cfg, hw, status)
+        model, tok = be.load_policy_unsloth(cfg, hw, status, run_dir)
     else:
         m = cfg["model"]
         tok = load_tokenizer(m["id"], m.get("revision"), m.get("trust_remote_code", False))
         model = load_policy(cfg, run_dir, hw, status)
     return STAGES[stage](cfg, run_dir, status, resume, hw, tok, model, cancel)
+
+
+# The most GPU memory the run's tensors held (torch's own count, not what
+# nvidia-smi shows, which includes the allocator's cache), for comparisons.
+def peak_gpu():
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return {"peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2)}
+    except Exception:  # noqa: BLE001 - a missing number is not a failed run
+        pass
+    return {}
 
 
 # One GPU per run, unless the person chose devices: on a machine with two
@@ -425,7 +438,7 @@ def main(argv=None):
     while True:
         try:
             result = train(run_dir, status, resume=a.resume)
-            status.update(state=result, finished_at=now_iso())
+            status.update(state=result, finished_at=now_iso(), **peak_gpu())
             print(f"[dragonfarm] {result}", flush=True)
             sys.exit(0)
         except BaseException as e:  # noqa: BLE001 - we want SystemExit/KeyboardInterrupt too

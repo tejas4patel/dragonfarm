@@ -16,6 +16,7 @@ import contextlib
 import importlib.util
 import os
 import sys
+from pathlib import Path
 
 
 def wanted(cfg):
@@ -30,7 +31,7 @@ def choose(cfg, stage, cuda_available=None, unsloth_installed=None, start=None):
         return "transformers", "chosen in the run's settings"
     if stage not in UNSLOTH_STAGES:
         return "transformers", f"Unsloth is not used for the {stage} stage yet; it uses the standard trainer"
-    if cfg.get("model", {}).get("base_adapters"):
+    if cfg.get("model", {}).get("base_adapters") and not (CONTINUES_ON_UNSLOTH or want == "unsloth"):
         return "transformers", "a run that continues an earlier one uses the standard trainer"
     if unsloth_installed is None:
         unsloth_installed = importlib.util.find_spec("unsloth") is not None
@@ -71,11 +72,16 @@ def start_unsloth():
 # A/B against the standard trainer on the same data.
 UNSLOTH_STAGES = ("sft", "reinforce")
 
+# Runs that continue an earlier one fold the earlier adapters into the
+# weights first, then train a fresh LoRA, on either trainer (A/B 2026-10-20).
+CONTINUES_ON_UNSLOTH = True
+
 DEFAULT_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
 
-def load_policy_unsloth(cfg, hw, status):
-    """Base model and a fresh LoRA through Unsloth. Returns (model, tokenizer).
+def load_policy_unsloth(cfg, hw, status, run_dir=None):
+    """Base model, earlier-stage adapters folded in, and a fresh LoRA through
+    Unsloth. Returns (model, tokenizer).
 
     use_exact_model_name keeps the pinned model and revision: by default
     Unsloth swaps in its own pre-quantised copies, a different repository.
@@ -83,12 +89,23 @@ def load_policy_unsloth(cfg, hw, status):
     from unsloth import FastLanguageModel
 
     m, t, lo = cfg["model"], cfg["train"], cfg["lora"]
+    load_4bit = bool(cfg.get("hardware", {}).get("load_in_4bit", False))
+    base_adapters = [Path(run_dir) / p for p in (m.get("base_adapters") or [])]
+    if base_adapters and load_4bit:
+        raise RuntimeError("chaining from a previous run is not supported with load_in_4bit")
     print(f"[dragonfarm] loading {m['id']} with Unsloth", flush=True)
     model, tok = FastLanguageModel.from_pretrained(
         model_name=m["id"], revision=m.get("revision"), max_seq_length=int(t["max_seq_len"]),
-        dtype=hw.dtype, load_in_4bit=bool(cfg.get("hardware", {}).get("load_in_4bit", False)),
+        dtype=hw.dtype, load_in_4bit=load_4bit,
         trust_remote_code=bool(m.get("trust_remote_code", False)), use_exact_model_name=True,
     )
+    if base_adapters:
+        from .loading import apply_base_adapters
+
+        print(f"[dragonfarm] folding in {len(base_adapters)} earlier adapter(s) from {m.get('base_run')}", flush=True)
+        model = apply_base_adapters(model, base_adapters)
+        if hasattr(model, "peft_config"):      # left behind by merge_and_unload; get_peft_model would reuse it
+            del model.peft_config
     targets = lo.get("target_modules", "auto")
     model = FastLanguageModel.get_peft_model(
         model, r=int(lo["r"]), lora_alpha=float(lo["alpha"]), lora_dropout=float(lo["dropout"]),

@@ -26,7 +26,9 @@ def test_the_standard_trainer_otherwise_and_it_says_why():
     assert lib == "transformers" and "distil" in why                 # a stage not (yet) on Unsloth
     assert choose(cfg(), "prefer", cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
     assert choose(cfg(), "reinforce", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"
-    c = cfg(); c["model"]["base_adapters"] = ["base_adapters/1"]
+    c = cfg(); c["model"]["base_adapters"] = ["base_adapters/1"]      # a run that continues an earlier one
+    assert choose(c, "sft", cuda_available=True, unsloth_installed=True, start=ok)[0] == "unsloth"
+    c["train"]["backend"] = "transformers"
     assert choose(c, "sft", cuda_available=True, unsloth_installed=True, start=ok)[0] == "transformers"
 
 
