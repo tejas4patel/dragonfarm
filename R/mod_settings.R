@@ -8,6 +8,10 @@ mod_settings_ui <- function(id) {
   ns <- shiny::NS(id)
   cards <- lapply(names(secret_catalog()), function(svc) settings_card_ui(ns, svc))
   shiny::tagList(
+    bslib::card(
+      bslib::card_header("Where things run"),
+      shiny::uiOutput(ns("where"))
+    ),
     shiny::uiOutput(ns("keychain_note")),
     do.call(bslib::layout_columns, c(list(col_widths = c(6, 6)), cards)),
     mod_policy_ui(ns("policy")),
@@ -66,6 +70,17 @@ mod_settings_server <- function(id, runs_dir) {
     )
     tick <- shiny::reactiveVal(0)     # bumped after every save or remove
     messages <- shiny::reactiveValues()
+
+    # Where answering, training and outside calls go, from what is already
+    # known (no Python, no network); refreshed when keys or opt-ins change.
+    output$where <- shiny::renderUI({
+      tick()
+      w <- tryCatch(where_report(runs_dir, hardware = the$hardware), error = function(e) NULL)
+      if (is.null(w)) return(shiny::p(class = "hint", "Not available yet."))
+      groups <- where_lines(w)
+      shiny::div(class = "df-where", lapply(names(groups), function(g) shiny::tagList(
+        shiny::strong(g), shiny::tags$ul(lapply(groups[[g]], shiny::tags$li)))))
+    })
 
     output$keychain_note <- shiny::renderUI({
       problem <- keychain_problem()

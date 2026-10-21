@@ -42,3 +42,17 @@ test_that("an unchecked machine says so instead of guessing", {
   w <- dragonfarm:::where_report(runs, hardware = NULL)
   expect_match(w$local$label, "dragon_check")
 })
+
+test_that("Settings shows where things run, and it follows a new opt-in", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  withr::local_envvar(GROQ_API_KEY = "gsk_test", OPENROUTER_API_KEY = "")
+  testthat::local_mocked_bindings(keychain_available = function() FALSE)
+  shiny::testServer(dragonfarm:::mod_settings_server, args = list(runs_dir = runs), {
+    html <- output$where$html
+    expect_match(html, "Where|This computer")
+    expect_match(html, "Groq: key saved, not opted in")
+    session$setInputs(cap_groq = 5, agree_groq = TRUE, optin_groq = 1)
+    expect_match(output$where$html, "Groq: in use when needed (0 of 5 requests today)", fixed = TRUE)
+  })
+})

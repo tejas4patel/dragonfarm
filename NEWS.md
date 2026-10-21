@@ -380,6 +380,11 @@ PDF and as Word, live web pages, and a spreadsheet.
     finish. A driver-level out-of-memory error, as Windows laptops tend to
     give, still stops the run with advice, since the process cannot recover.
 
+* Settings opens with a "Where things run" card: this computer and the model
+  it answers with, where training goes, which services have a key, which
+  free tiers are in use and how much of today's cap is left, and what the
+  policy lets leave the computer. It reads only what is already known.
+
 * Two more controls in governed mode. A model sign-off is always in the name
   of the person signed in: a different signer passed from R is refused
   (D-38). A merged model saved outside its run folder is traced to its run

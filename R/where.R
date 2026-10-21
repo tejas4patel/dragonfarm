@@ -88,3 +88,25 @@ print.dragon_where <- function(x, ...) {
   if (isTRUE(x$outbound$offline)) cli::cli_text("Offline switch on: no model downloads.")
   invisible(x)
 }
+
+# The report as plain lines in four groups, for the Settings card.
+where_lines <- function(x) {
+  here <- c(if (is.na(x$local$model)) x$local$label else
+              sprintf("%s. Answers with %s%s.", x$local$label, x$local$model, if (isTRUE(x$local$four_bit)) " in 4-bit" else ""),
+            sprintf("Training runs on %s.", x$train_where))
+  set <- Filter(function(s) s$set, x$services)
+  services <- if (length(set)) vapply(set, function(s) sprintf("%s (key in the %s)", s$title, s$where), "") else
+    "None yet. Add keys on this page."
+  free <- vapply(x$free, function(f) {
+    state <- if (!f$key) "no key" else if (!f$opted_in) "key saved, not opted in" else if (!f$host_allowed)
+      "opted in, but the policy blocks it" else if (!is.null(f$daily_cap))
+      sprintf("in use when needed (%d of %d requests today)", f$used_today, f$daily_cap) else "in use when needed (no daily cap)"
+    sprintf("%s: %s", f$title, state)
+  }, "")
+  hosts <- x$outbound$allowed_hosts
+  out <- c(if (is.null(hosts)) "Any host, each call recorded." else if (!length(hosts)) "Nothing: no outside hosts are allowed." else
+             paste0("Only ", paste(unlist(hosts), collapse = ", "), ", each call recorded."),
+           if (isTRUE(x$outbound$offline)) "Offline switch on: no model downloads.")
+  list("This computer" = here, "Connected services" = unname(services), "Free tiers" = unname(free),
+       "What may leave this computer" = out)
+}
