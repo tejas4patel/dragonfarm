@@ -56,7 +56,9 @@ test_that("on Postgres, policies, approvals and the model registry work as on SQ
   jsonlite::write_json(list(state = "succeeded", eval_loss = 1), file.path(d, "status.json"), auto_unbox = TRUE)
   writeLines("{}", file.path(d, "data", "train.jsonl"))
   expect_equal(dragonfarm:::registry_propose(d, "bot")$version, 1L)
-  dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "For support", signer = "ana")
+  # Four-eyes and governed mode are on with a shared catalogue: ana, signed in, signs (D-38).
+  withr::with_options(list(dragonfarm.user = "ana"),
+                      dragonfarm:::registry_sign_off("bot", 1, "approved", meaning = "For support"))
   expect_equal(dragonfarm:::registry_approved("bot")$signer, "ana")
   expect_error(DBI::dbExecute(con, "UPDATE model_signoffs SET meaning = 'x'"), "append-only")
 })

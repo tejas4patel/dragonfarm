@@ -164,3 +164,44 @@ test_that("governed mode and four-eyes are on by default on a server and off on 
   expect_false(p$registry$governed)                                               # a saved choice wins
   expect_true(p$registry$separate_signer)                                         # the unset one keeps the default
 })
+
+test_that("in governed mode a sign-off is in the signed-in person's name (D-38)", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  withr::local_options(dragonfarm.user = "ana")
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- TRUE; pol$registry$separate_signer <- FALSE
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "governed", runs_dir = runs)
+  dragonfarm:::registry_propose(fake_run(runs, "run-1"), "m", runs_dir = runs)
+  err <- tryCatch(dragonfarm:::registry_sign_off("m", 1, "approved", meaning = "ok", signer = "bob", runs_dir = runs), error = function(e) e)
+  expect_equal(err$code, "NOT_ALLOWED"); expect_match(conditionMessage(err), "ana")
+  expect_equal(dragonfarm:::registry_status("m", 1, runs), "candidate")
+  dragonfarm:::registry_sign_off("m", 1, "approved", meaning = "ok", runs_dir = runs)   # the signed-in person
+  expect_equal(dragonfarm:::registry_status("m", 1, runs), "approved")
+})
+
+test_that("in governed mode a merged copy saved anywhere answers only if its run is approved (D-39)", {
+  runs <- withr::local_tempdir()
+  on.exit(dragonfarm:::store_close_all(), add = TRUE)
+  withr::local_options(dragonfarm.user = "ana")
+  r1 <- fake_run(runs, "run-1")
+  elsewhere <- file.path(withr::local_tempdir(), "my-merged-model"); dir.create(elsewhere)
+  jsonlite::write_json(list(base_model = "Qwen/Qwen2.5-0.5B-Instruct", adapter = file.path(r1, "adapter")),
+                       file.path(elsewhere, "dragonfarm.json"), auto_unbox = TRUE)
+  plain <- file.path(withr::local_tempdir(), "a-base-model"); dir.create(plain)
+  untraceable <- file.path(withr::local_tempdir(), "lost-merge"); dir.create(untraceable)
+  jsonlite::write_json(list(base_model = "x"), file.path(untraceable, "dragonfarm.json"), auto_unbox = TRUE)
+  expect_equal(dragonfarm:::merged_model_run(elsewhere), "run-1")
+  expect_null(dragonfarm:::merged_model_run(plain))
+  expect_true(is.na(dragonfarm:::merged_model_run(untraceable)))
+  expect_true(dragonfarm:::serving_check(list(model = elsewhere, adapter = NULL), runs))   # governed mode off
+  pol <- dragonfarm:::policy_default(); pol$registry$governed <- TRUE; pol$registry$separate_signer <- FALSE
+  dragonfarm:::policy_set(pol, set_by = "admin", note = "governed", runs_dir = runs)
+  code <- function(m) tryCatch({ dragonfarm:::serving_check(list(model = m, adapter = NULL), runs); "allowed" },
+                               dragonfarm_error = function(e) e$code)
+  expect_equal(code(elsewhere), "NOT_APPROVED")
+  expect_equal(code(untraceable), "NOT_APPROVED")
+  expect_equal(code(plain), "allowed")                                                     # a base model folder
+  dragonfarm:::registry_propose(r1, "m", runs_dir = runs)
+  dragonfarm:::registry_sign_off("m", 1, "approved", meaning = "ok", runs_dir = runs)
+  expect_equal(code(elsewhere), "allowed")
+})

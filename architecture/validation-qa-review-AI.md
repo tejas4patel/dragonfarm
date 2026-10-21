@@ -5,8 +5,8 @@
 > and sign these before use.**
 
 Status of the findings in section 4: D1, D2, D7, D9 and D23 were fixed in
-commit 50678fc, and D3, D4, D5, D6, D10, D13 to D22 later the same day
-(2026-10-20). Two risks
+commit 50678fc, and D3 to D6 and D10 to D22 later the same day
+(2026-10-20); D8 (tag the release) is the maintainer's release step. Two risks
 in section 2 were also acted on: a failed record write now stops the work
 in governed mode (D-36), and the app can run on Postgres with a role that
 cannot remove the record's protection (D-37). The others are open.

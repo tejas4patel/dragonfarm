@@ -81,6 +81,12 @@ registry_sign_off <- function(name, version, decision = c("approved", "rejected"
                    class = "dragonfarm_error", code = "INVALID_ARGUMENTS")
   }
   policy <- policy_current(runs_dir)
+  # D-38: in governed mode the signature is the signed-in person's, so a
+  # script cannot sign in someone else's name.
+  if (isTRUE(policy$registry$governed) && !identical(signer, current_user())) {
+    cli::cli_abort("In governed mode a sign-off is in the name of the person signed in ({current_user()}), not {signer}.",
+                   class = "dragonfarm_error", code = "NOT_ALLOWED")
+  }
   if (isTRUE(policy$registry$separate_signer) && identical(signer, row$proposed_by)) {
     cli::cli_abort("The policy needs someone other than the proposer ({row$proposed_by}) to sign off.",
                    class = "dragonfarm_error", code = "NOT_ALLOWED")
@@ -136,19 +142,40 @@ registry_approved <- function(name, runs_dir = dragon_runs_dir()) {
 # anyone approves it.
 serving_check <- function(target, runs_dir = dragon_runs_dir()) {
   if (is.null(target)) return(invisible(TRUE))
-  # A run's adapter (<run>/adapter) or its merged copy in the default place
-  # (<run>/merged). A merged copy saved elsewhere cannot be traced to its run.
-  merged <- is.null(target$adapter) && is.character(target$model) && dir.exists(target$model) &&
-    identical(basename(target$model), "merged") && file.exists(file.path(dirname(target$model), "config.json"))
-  if (is.null(target$adapter) && !merged) return(invisible(TRUE))
+  # A run's adapter (<run>/adapter), or a merged copy: in the default place
+  # (<run>/merged), or anywhere, traced through the dragonfarm.json a merge
+  # writes (D-39). A local model folder without that file is a base model.
+  merged_run <- if (is.null(target$adapter)) merged_model_run(target$model) else NULL
+  if (is.null(target$adapter) && is.null(merged_run)) return(invisible(TRUE))
   policy <- tryCatch(policy_current(runs_dir), error = function(e) NULL)
   if (!isTRUE(policy$registry$governed)) return(invisible(TRUE))
-  run_id <- basename(dirname(if (merged) target$model else target$adapter))
+  run_id <- if (!is.null(merged_run)) merged_run else basename(dirname(target$adapter))
+  if (is.na(run_id)) {
+    cli::cli_abort(c("This merged model cannot be traced to the run it came from, so it does not answer in governed mode.",
+                     "i" = "Merge again from an approved run, or answer with the run itself."),
+                   class = "dragonfarm_error", code = "NOT_APPROVED")
+  }
   l <- tryCatch(registry_list(runs_dir = runs_dir), error = function(e) NULL)
   if (!is.null(l) && any(l$run_id == run_id & l$status == "approved")) return(invisible(TRUE))
   cli::cli_abort(c("{.val {run_id}} is not an approved model version, and only approved versions answer in governed mode.",
                    "i" = "Propose it and have it signed off in Monitor, Model versions, or answer with an untrained model."),
                  class = "dragonfarm_error", code = "NOT_APPROVED")
+}
+
+# The run a merged model came from: NULL for anything that is not a merged
+# model, NA for one whose run cannot be told.
+merged_model_run <- function(model) {
+  if (!is.character(model) || length(model) != 1 || !dir.exists(model)) return(NULL)
+  marker <- file.path(model, "dragonfarm.json")
+  if (file.exists(marker)) {
+    adapter <- tryCatch(read_json(marker)$adapter, error = function(e) NULL)
+    if (is.character(adapter) && length(adapter) == 1 && nzchar(adapter)) return(basename(dirname(adapter)))
+    return(NA_character_)
+  }
+  if (identical(basename(model), "merged") && file.exists(file.path(dirname(model), "config.json"))) {
+    return(basename(dirname(model)))
+  }
+  NULL
 }
 
 # For run pickers in governed mode: " - not approved" after runs that are not
