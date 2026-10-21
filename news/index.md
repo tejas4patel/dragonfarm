@@ -405,13 +405,46 @@ a spreadsheet.
     the same rows and settings: training 125 s instead of 328 s, a third
     of the GPU memory; held-out loss 0.560 against 0.586. Unsloth keeps
     the pinned model and revision, and its anonymous usage statistics
-    are switched off. Preference and reinforcement stages, and runs that
-    continue an earlier one, use the standard trainer for now. To choose
-    yourself, set the environment variable `DRAGONFARM_TRAIN_BACKEND` to
-    `"unsloth"` or `"transformers"` before training. The Python lock now
-    includes Unsloth, which needs transformers 5.17 (was 5.20) and
-    `huggingface_hub` 1.33 (was 2.2). The cloud notebook no longer
-    removes a recent torchao, which Unsloth needs; only an old one goes.
+    are switched off. To choose yourself, set the environment variable
+    `DRAGONFARM_TRAIN_BACKEND` to `"unsloth"` or `"transformers"` before
+    training. Monitor shows which trainer a run used (“Trained with”),
+    and runs record their peak GPU memory as torch counts it.
+
+- The other stages were each compared with the standard path on the same
+  data and settings, on the 8 GB laptop, and switched only where Unsloth
+  tied or beat it:
+
+  - Reinforcement learning
+    ([`dragon_reinforce()`](https://dragonfarm.dev/reference/dragon_reinforce.md),
+    GRPO) uses Unsloth. On Qwen2.5-1.5B in 4-bit (sums, 57 steps): 6.9
+    minutes instead of 8.7, the same peak GPU memory (4.2 GB) and the
+    same held-out reward (1.300 on 40 prompts).
+  - Preference runs
+    ([`dragon_prefer()`](https://dragonfarm.dev/reference/dragon_prefer.md),
+    DPO and ORPO) use Unsloth when gradient checkpointing is on. On
+    Qwen2.5-0.5B, 198 pairs, batch 1 with checkpointing: DPO 3.4 minutes
+    instead of 3.7 and ORPO 2.9 instead of 3.3, the same peak memory and
+    the same held-out preference accuracy (1.000 and 0.889). Without
+    checkpointing, at batch 2, Unsloth ran out of memory on the 8 GB GPU
+    where the standard trainer finished, so such runs keep the standard
+    trainer.
+  - Runs that continue an earlier one fold the earlier adapters in and
+    then train with Unsloth too: a DPO run on top of a fine-tune took
+    8.3 minutes instead of 10.8, same peak memory and held-out accuracy.
+  - Answering, Chat, Try it and question writing keep the standard
+    loader. With Unsloth the grades were the same (32 of 32 FDA
+    questions, on a 3B and a 7B), and short prompts were answered
+    faster, but long document prompts were slower (up to 50 s against
+    15 s) and the first answer waited 10 to 25 s longer, so it was
+    slower overall. Set `DRAGONFARM_INFER_BACKEND` to `"unsloth"` to use
+    it anyway; if it fails on a model, that model is loaded again with
+    the standard loader.
+  - Merging keeps today’s route: the weights came out the same, and it
+    took 1.4 minutes on the CPU against 12.9 with Unsloth for a 3B.
+    Export to GGUF is unchanged. The Python lock now includes Unsloth,
+    which needs transformers 5.17 (was 5.20) and `huggingface_hub` 1.33
+    (was 2.2). The cloud notebook no longer removes a recent torchao,
+    which Unsloth needs; only an old one goes.
 
 - Training on a GPU in the cloud got three fixes, each measured on
   Kaggle’s T4 with a 3B model in 4-bit and the example data:
@@ -824,6 +857,9 @@ a spreadsheet.
   redirect.
 
 ### Fixes
+
+- A streamed answer (Chat, Try it) whose generation fails part-way now
+  reports the error; the worker used to wait for more text for ever.
 
 - On a machine with a GPU, training, question writing and evaluation now
   refuse to start (`GPU_BUSY`) while another R session, or the app open
