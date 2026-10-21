@@ -213,8 +213,11 @@ would untick those two.</p>
 <h2 id="then-it-trains-on-the-laptop">Then it trains, on the laptop<a class="anchor" aria-label="anchor" href="#then-it-trains-on-the-laptop"></a>
 </h2>
 <p>A 3B model in 4-bit trained on the 407 questions plus 61 “not
-covered” examples in <strong>41 minutes</strong> on an 8 GB laptop
-GPU.</p>
+covered” examples in <strong>28 minutes</strong> on an 8 GB laptop GPU,
+with Unsloth, which dragonfarm now uses on NVIDIA GPUs. The standard
+trainer took 41 minutes on the same rows; the table below is from that
+run, and the Unsloth-trained model scored the same (23 of 24 right, 8 of
+8 declined).</p>
 <table class="table">
 <thead><tr class="header">
 <th>Model</th>
