@@ -438,6 +438,7 @@ mod_monitor_server <- function(id, state, runs_dir) {
           else "fine-tune")),
         if (!is.null(cfg$model$base_run)) shiny::div(class = "kv", shiny::span("Continues"), shiny::code(cfg$model$base_run)),
         shiny::div(class = "kv", shiny::span("Device"), shiny::strong(st$device %||% "-")),
+        if (!is.null(trained <- trainer_label(st))) shiny::div(class = "kv", shiny::span("Trained with"), shiny::strong(trained)),
         shiny::div(class = "kv", shiny::span("Size on disk"), shiny::strong(fmt_bytes(dir_bytes(r$dir)))),
         shiny::div(class = "kv", shiny::span("Step"), shiny::strong(sprintf("%d / %s", as.integer(step), st$total_steps %||% "?"))),
         shiny::div(class = "kv", shiny::span("Loss"), shiny::strong(last_loss)),

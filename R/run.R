@@ -214,6 +214,14 @@ dragon_delete_run <- function(run, runs_dir = dragon_runs_dir(), force = FALSE) 
   invisible(info$id)
 }
 
+# Which trainer a run used, with the reason when it was not Unsloth; NULL for
+# runs from before the trainer was recorded.
+trainer_label <- function(st) {
+  if (is.null(st$backend)) return(NULL)
+  paste0(if (identical(st$backend, "unsloth")) "Unsloth" else "transformers + peft",
+         if (!is.null(st$backend_note)) paste0(" (", st$backend_note, ")") else "")
+}
+
 #' @export
 print.dragon_run <- function(x, ...) {
   st <- tryCatch(dragon_status(x), error = function(e) list(state = "unknown"))
@@ -232,9 +240,7 @@ print.dragon_run <- function(x, ...) {
     }
   }
   cli::cli_text("State: {.strong {st$state}}{if (!is.null(st$device)) paste0(' on ', st$device) else ''}")
-  if (!is.null(st$backend)) {
-    cli::cli_text("Trained with: {if (identical(st$backend, 'unsloth')) 'Unsloth' else 'transformers + peft'}{if (!is.null(st$backend_note)) paste0(' (', st$backend_note, ')') else ''}")
-  }
+  if (!is.null(trained <- trainer_label(st))) cli::cli_text("Trained with: {trained}")
   if (!is.null(st$memory_retry)) {
     cli::cli_text("{.strong Note:} ran out of GPU memory once and continued with batch size {st$memory_retry$to$per_device_batch_size} and gradient checkpointing (the same effective batch).")
   }

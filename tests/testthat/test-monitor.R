@@ -169,6 +169,24 @@ test_that("Monitor says how much room runs take, the largest first", {
     session$setInputs(show_archived = FALSE, run = basename(dir))
     expect_match(output$space$html, "1 run uses")
     expect_match(output$facts$html, "Size on disk")
+    expect_no_match(output$facts$html, "Trained with")                 # not recorded for this run
+  })
+})
+
+test_that("Monitor says which trainer a run used, and why when it was not Unsloth", {
+  expect_null(dragonfarm:::trainer_label(list(state = "succeeded")))
+  expect_equal(dragonfarm:::trainer_label(list(backend = "unsloth")), "Unsloth")
+  expect_equal(dragonfarm:::trainer_label(list(backend = "transformers", backend_note = "Unsloth needs an NVIDIA GPU")),
+               "transformers + peft (Unsloth needs an NVIDIA GPU)")
+  dir <- copy_fixture_run()
+  st <- jsonlite::read_json(file.path(dir, "status.json"))
+  st$backend <- "unsloth"
+  jsonlite::write_json(st, file.path(dir, "status.json"), auto_unbox = TRUE, null = "null")
+  state <- shiny::reactiveValues(run = NULL, dataset = NULL)
+  shiny::testServer(dragonfarm:::mod_monitor_server, args = list(state = state, runs_dir = dirname(dir)), {
+    session$setInputs(show_archived = FALSE, run = basename(dir))
+    expect_match(output$facts$html, "Trained with")
+    expect_match(output$facts$html, "Unsloth")
   })
 })
 
