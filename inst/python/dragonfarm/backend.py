@@ -121,6 +121,20 @@ def choose_vllm(cfg, stage, platform=None, vllm_installed=None):
     return True, None
 
 
+def vllm_kwargs(kw, download=None):
+    """Loading arguments for Unsloth with vLLM. vLLM loads the default branch
+    and ignores a revision, so a pinned revision is fetched first and loaded
+    from its local folder: the run trains the model it says it trains."""
+    kw = dict(kw)
+    revision = kw.pop("revision", None)
+    if revision:
+        if download is None:
+            from huggingface_hub import snapshot_download as download
+        kw["model_name"] = download(kw["model_name"], revision=revision,
+                                    allow_patterns=["*.json", "*.safetensors", "*.txt", "*.model", "*.tiktoken"])
+    return kw
+
+
 def load_policy_unsloth(cfg, hw, status, run_dir=None, stage="sft"):
     """Base model, earlier-stage adapters folded in, and a fresh LoRA through
     Unsloth. Returns (model, tokenizer).
@@ -146,7 +160,7 @@ def load_policy_unsloth(cfg, hw, status, run_dir=None, stage="sft"):
     if fast:
         try:
             model, tok = FastLanguageModel.from_pretrained(
-                **kw, fast_inference=True, max_lora_rank=int(lo["r"]),
+                **vllm_kwargs(kw), fast_inference=True, max_lora_rank=int(lo["r"]),
                 gpu_memory_utilization=float(os.environ.get("DRAGONFARM_VLLM_MEMORY", "0.5")))
         except Exception as e:  # noqa: BLE001 - any failure: sample with generate() instead
             fast, note = False, f"vLLM could not start ({type(e).__name__}: {str(e)[:160]})"

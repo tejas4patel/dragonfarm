@@ -38,3 +38,17 @@ def test_completions_end_at_eos_and_lose_padding():
     assert cut_completion([5, 6, 0, 0], eos_id=2, pad_id=0) == [5, 6]
     assert cut_completion([5, 6], eos_id=2, pad_id=0, stopped=True) == [5, 6, 2]    # vLLM left the stop token out
     assert cut_completion([5, 2], eos_id=2, pad_id=2) == [5, 2]                     # pad and EOS the same token
+
+
+def test_vllm_loads_the_pinned_revision_from_its_local_folder():
+    from dragonfarm.backend import vllm_kwargs
+
+    calls = []
+
+    def download(repo, revision, allow_patterns):
+        calls.append((repo, revision))
+        return f"/cache/{repo}/{revision}"
+
+    kw = vllm_kwargs({"model_name": "Qwen/Q", "revision": "abc123", "dtype": None}, download=download)
+    assert kw == {"model_name": "/cache/Qwen/Q/abc123", "dtype": None} and calls == [("Qwen/Q", "abc123")]
+    assert vllm_kwargs({"model_name": "Qwen/Q", "revision": None}, download=download) == {"model_name": "Qwen/Q"}
