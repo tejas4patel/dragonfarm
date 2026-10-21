@@ -64,7 +64,10 @@ R*, a fine book, but not a lesson). In the app you would untick those two.
 ## Then it trains, on the laptop
 
 A 3B model in 4-bit trained on the 407 questions plus 61 "not covered"
-examples in **41 minutes** on an 8 GB laptop GPU.
+examples in **28 minutes** on an 8 GB laptop GPU, with Unsloth, which
+dragonfarm now uses on NVIDIA GPUs. The standard trainer took 41 minutes
+on the same rows; the table below is from that run, and the Unsloth-trained
+model scored the same (23 of 24 right, 8 of 8 declined).
 
 | Model | Right, of 24 | Declined, of 8 | Median answer | Median time |
 |---|---|---|---|---|
