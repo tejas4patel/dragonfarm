@@ -1,0 +1,963 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>dragonfarm</title>
+  <link>https://dragonfarm.dev/</link>
+  <atom:link href="https://dragonfarm.dev/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>Raise your own dragon: fine-tune your own model on your documents, from R. Articles from the dragonfarm package.</description>
+  <language>en-gb</language>
+  <lastBuildDate>Fri, 16 Oct 2026 12:00:00 +0000</lastBuildDate>
+  <item>
+    <title>Fine-tune your own model from R, starting from your documents</title>
+    <link>https://dragonfarm.dev/articles/introducing-0-4-0.html</link>
+    <guid isPermaLink="true">https://dragonfarm.dev/articles/introducing-0-4-0.html</guid>
+    <pubDate>Fri, 16 Oct 2026 12:00:00 +0000</pubDate>
+    <category>R</category>
+    <description>dragonfarm 0.4.0 turns your documents into training data, fine-tunes a language model on your own laptop, and keeps every answer grounded in your documents with built-in RAG. Raise your own dragon.</description>
+    <content:encoded><![CDATA[<p><img class="df-post-mascot" src="https://dragonfarm.dev/dragon.svg" alt="The dragonfarm dragon: a minimal orange dragon head in profile, with amber horns and neck spikes"></p>
+<p class="lead">
+dragonfarm 0.4.0 lets you fine-tune your own language model on your own
+documents, from R. It writes the training data for you, trains on the
+laptop you already have, and keeps every answer grounded in your
+documents. No Python, no cloud, no bill. Raise your own dragon.
+</p>
+<div class="section level2">
+<h2 id="the-hard-part-is-the-training-data">The hard part is the training data
+</h2>
+<p>Fine-tuning needs examples: hundreds of questions with good answers.
+Most people don’t have those. They have documents.</p>
+<p>So dragonfarm reads your documents and writes the practice questions
+and answers itself. You look through them, keep the good ones, and toss
+the rest. That review is the point: it is what stops a model from
+learning confident mistakes.</p>
+<div class="float">
+<img src="https://dragonfarm.dev/demo/03-teach.png" alt="The Teach step: practice questions grouped by the passage they came from, each with a checkbox, and the reason for any that were flagged."><div class="figcaption">The Teach step: practice questions grouped by
+the passage they came from, each with a checkbox, and the reason for any
+that were flagged.</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="trains-on-the-laptop-you-have">Trains on the laptop you have
+</h2>
+<ul>
+<li>
+<strong>A 7B model fits an 8 GB laptop GPU</strong>, trained in
+4-bit.</li>
+<li>
+<strong>Small models learn fast.</strong> Turning support tickets
+into JSON, even the smallest model scored 20 of 20 after under three
+minutes of training.</li>
+<li>
+<strong>No GPU?</strong> It sends the training to a free Colab or
+Kaggle GPU and brings the model home.</li>
+</ul>
+<p>What you get back is yours: a model that runs on your machine and
+loads anywhere with standard tools. No subscription, no leash.</p>
+</div>
+<div class="section level2">
+<h2 id="rag-built-in-from-the-start">RAG built in, from the start
+</h2>
+<p>Before you train anything, dragonfarm already answers from your
+documents: it finds the most relevant passages and the model answers
+from them. I fed it Costco’s 2024 annual report, all 76 pages:</p>
+<div class="df-ba df-qa">
+<div class="df-reply after">
+<span class="df-who">Question</span>
+<p class="df-q">
+Who is Costco’s independent registered public accounting firm?
+</p>
+<p>
+Costco’s independent registered public accounting firm is KPMG LLP,
+located in Seattle, WA.
+</p>
+</div>
+<div class="df-reply after">
+<span class="df-who">Question</span>
+<p class="df-q">
+What was net cash used in investing activities in fiscal 2024?
+</p>
+<p>
+Net cash used in investing activities in fiscal 2024 totaled $4,409
+million.
+</p>
+</div>
+</div>
+<p>It got 12 of 13 questions right, and on the last one said the report
+does not cover it rather than making something up.</p>
+<p>Training keeps that grounding: every practice question carries the
+passages it came from, so the model learns to answer from your
+documents, not to memorise them. That pays off when documents change. On
+support tickets, a model trained this way recalled 89 percent of the
+policy facts on tickets it had never seen, against 68 percent for
+ordinary fine-tuning, and when a policy was edited after training it
+followed the new version in 88 percent of answers. Old dragon, new
+tricks.</p>
+</div>
+<div class="section level2">
+<h2 id="six-steps-one-app">Six steps, one app
+</h2>
+<div class="float">
+<img src="https://dragonfarm.dev/demo/dragonfarm-demo.gif" alt="The app, step by step: drop in documents, ask them questions, review the practice questions, train, watch it learn, compare against the original model."><div class="figcaption">The app, step by step: drop in documents, ask
+them questions, review the practice questions, train, watch it learn,
+compare against the original model.</div>
+</div>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Documents.</strong> Feed it PDFs, Word files, web pages,
+spreadsheets, or a whole folder.</li>
+<li>
+<strong>Ask.</strong> Full answers drawn from your documents, before
+any training.</li>
+<li>
+<strong>Teach.</strong> It writes practice questions; you keep the
+good ones.</li>
+<li>
+<strong>Train.</strong> It studies the pairs you kept.</li>
+<li>
+<strong>Monitor.</strong> Watch it learn.</li>
+<li>
+<strong>Try it.</strong> Put the trained dragon next to the wild
+one.</li>
+</ol>
+<p><span class="df-note">Your documents never leave your machine.
+Everything the app does is also an R function, for when you want a
+script.</span></p>
+</div>
+<div class="section level2">
+<h2 id="how-big-a-dragon-do-you-need">How big a dragon do you need?
+</h2>
+<p>The same questions, the same documents, four sizes, one 8 GB laptop
+GPU, answering with RAG before any training:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Dragon</th>
+<th>Annual report: right of 23</th>
+<th>R manuals: right of 32</th>
+<th>Said “not covered” when true, of 20</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Hatchling (0.5B)</td>
+<td>17</td>
+<td>19</td>
+<td>16</td>
+</tr>
+<tr class="even">
+<td>Drake (1.5B)</td>
+<td>19</td>
+<td>28</td>
+<td>20</td>
+</tr>
+<tr class="odd">
+<td>Wyvern (3B)</td>
+<td>21</td>
+<td>30</td>
+<td>20</td>
+</tr>
+<tr class="even">
+<td>Elder (7B)</td>
+<td>23</td>
+<td>32</td>
+<td>20</td>
+</tr>
+</tbody>
+</table>
+<p>For open questions, bigger is better. For a fixed job like extraction
+or a house style, the small ones match the big ones and train in
+minutes. The details are in <a href="https://dragonfarm.dev/articles/model-sizes.html">Choosing a model
+size</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="where-dragons-fear-to-tread">Where dragons fear to tread
+</h2>
+<ul>
+<li>Questions that need every row of a spreadsheet (“which year had the
+highest margin?”) are better answered in R, on the data.</li>
+<li>Scanned pages need OCR first, and numbers inside charts are
+lost.</li>
+<li>Small dragons trained on a few hundred examples can get cocky.
+Review the practice questions, and let a bigger dragon do the
+answering.</li>
+<li>These numbers come from a handful of documents, not yours. Try it on
+yours.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="hatch-one">Hatch one
+</h2>
+<p>dragonfarm reaches CRAN in November. Until then, get it from <a href="https://tejas4patel.r-universe.dev/dragonfarm" class="external-link">R-universe</a>,
+which builds it for Windows, Mac, and Linux. Then open the app with
+<code><a href="https://dragonfarm.dev/reference/dragon_app.html">dragon_app()</a></code>, or follow the <a href="https://dragonfarm.dev/articles/quickstart.html">quickstart</a>.</p>
+<p>dragonfarm is MIT licensed. Issues, documents that break it, and pull
+requests are welcome at <a href="https://github.com/tejas4patel/dragonfarm" class="external-link">github.com/tejas4patel/dragonfarm</a>,
+and there are a few <a href="https://github.com/tejas4patel/dragonfarm/labels/good%20first%20issue" class="external-link">good
+first issues</a> for new dragon keepers.</p>
+</div>]]></content:encoded>
+  </item>
+  <item>
+    <title>Raise a regulatory dragon: FDA statistics guidance</title>
+    <link>https://dragonfarm.dev/articles/fda-guidance.html</link>
+    <guid isPermaLink="true">https://dragonfarm.dev/articles/fda-guidance.html</guid>
+    <pubDate>Fri, 16 Oct 2026 12:00:00 +0000</pubDate>
+    <category>R</category>
+    <description>Four public FDA guidances that every trial statistician knows, read, questioned, and used to fine-tune a 3B model on an 8 GB laptop.</description>
+    <content:encoded><![CDATA[<p><img class="df-post-mascot" src="https://dragonfarm.dev/dragon.svg" alt="The dragonfarm dragon: a minimal orange dragon head in profile, with amber horns and neck spikes"></p>
+<p class="lead">
+If you work in clinical trials, you know these documents by heart, or
+wish you did: FDA’s guidances on covariate adjustment and multiple
+endpoints, the ICH E9(R1) addendum on estimands, and FDA’s one-page
+statement on statistical software. We gave all four to dragonfarm on an
+8 GB laptop, asked them questions, and trained a model on them. Here is
+what happened, numbers and all.
+</p>
+<div class="section level2">
+<h2 id="the-documents">The documents
+</h2>
+<p>Four public guidances, 65 pages, downloaded from fda.gov:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Guidance</th>
+<th>Year</th>
+<th>Pages</th>
+<th>Chunks</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://www.fda.gov/media/148910/download" class="external-link">Adjusting for
+Covariates in Randomized Clinical Trials</a></td>
+<td>2023</td>
+<td>12</td>
+<td>29</td>
+</tr>
+<tr class="even">
+<td><a href="https://www.fda.gov/media/162416/download" class="external-link">Multiple
+Endpoints in Clinical Trials</a></td>
+<td>2022</td>
+<td>29</td>
+<td>54</td>
+</tr>
+<tr class="odd">
+<td><a href="https://www.fda.gov/media/148473/download" class="external-link">E9(R1) Estimands
+and Sensitivity Analysis</a></td>
+<td>2021</td>
+<td>23</td>
+<td>72</td>
+</tr>
+<tr class="even">
+<td><a href="https://www.fda.gov/media/109552/download" class="external-link">Statistical
+Software Clarifying Statement</a></td>
+<td>2015</td>
+<td>1</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>Reading and indexing all four took under a minute.</p>
+</div>
+<div class="section level2">
+<h2 id="before-any-training-it-already-knows-them">Before any training, it already knows them
+</h2>
+<p>RAG is built in, so the first thing you can do is ask. We wrote 24
+questions with answers checked against the guidances, and 8 the
+guidances don’t cover. Both an untrained 3B and an untrained 7B got
+<strong>all 24 right</strong> and declined <strong>all 8</strong>.</p>
+<div class="df-ba df-qa">
+<div class="df-reply after">
+<span class="df-who">Question</span>
+<p class="df-q">
+In the hypothetical example in Table 1 of the covariate guidance, what
+is the unconditional odds ratio?
+</p>
+<p>
+In the hypothetical example presented in Table 1 of the covariate
+guidance document, the unconditional odds ratio in the target population
+is 4.8. This value represents the overall effect of the treatment across
+the entire population, as opposed to the conditional odds ratios
+observed within biomarker-positive and biomarker-negative subgroups,
+which were found to be 8.0 in both subgroups.
+</p>
+<span class="df-note">Qwen 2.5 7B, untrained, 11 seconds</span>
+</div>
+<div class="df-reply after">
+<span class="df-who">Question</span>
+<p class="df-q">
+Does FDA require sponsors to use a specific statistical software
+package?
+</p>
+<p>
+No, the FDA does not require sponsors to use a specific statistical
+software package. […] However, the FDA does expect sponsors to fully
+document the software package(s) used for statistical analyses,
+including the version and build identification, and to consult with FDA
+statisticians regarding the choice and suitability of statistical
+software packages at an early stage in the product development process.
+</p>
+<span class="df-note">Qwen 2.5 7B, untrained. Good news for R
+users.</span>
+</div>
+</div>
+<p>Asked for the half-life of adalimumab, it said the documents focus on
+statistical methods and don’t cover it. Good dragon.</p>
+</div>
+<div class="section level2">
+<h2 id="it-writes-its-own-practice-questions">It writes its own practice questions
+</h2>
+<p>Next, dragonfarm read every chunk and wrote practice questions with
+answers: <strong>459 in 19 minutes, 407 kept</strong> by its filters. A
+few of them:</p>
+<ul>
+<li>
+<em>What is a potential benefit of using a composite endpoint?</em>
+A composite endpoint can provide a substantially higher overall event
+rate, allowing a study with a reasonable sample size and duration to
+have adequate statistical power.</li>
+<li>
+<em>What types of outcomes can covariate-adjusted estimators of
+unconditional treatment effects be applied to?</em> Binary, ordinal,
+count, and time-to-event outcomes.</li>
+<li>
+<em>How should secondary trial objectives be handled in terms of
+estimands?</em> Those likely to support regulatory decisions should have
+their own explicitly specified estimands, each with a main estimator and
+a suitable sensitivity analysis.</li>
+</ul>
+<p>We checked 15 kept questions by hand. Thirteen were accurate and
+useful. Two show why the review step exists: one overstated the guidance
+(“a single primary endpoint is <em>needed</em> to avoid multiplicity
+issues”; the guidance also allows co-primary and composite endpoints),
+and one was trivia from the reference list (the title of <em>Multiple
+Comparisons Using R</em>, a fine book, but not a lesson). In the app you
+would untick those two.</p>
+</div>
+<div class="section level2">
+<h2 id="then-it-trains-on-the-laptop">Then it trains, on the laptop
+</h2>
+<p>A 3B model in 4-bit trained on the 407 questions plus 61 “not
+covered” examples in <strong>28 minutes</strong> on an 8 GB laptop GPU,
+with Unsloth, which dragonfarm now uses on NVIDIA GPUs. The standard
+trainer took 41 minutes on the same rows; the table below is from that
+run, and the Unsloth-trained model scored the same (23 of 24 right, 8 of
+8 declined).</p>
+<table class="table">
+<thead><tr class="header">
+<th>Model</th>
+<th>Right, of 24</th>
+<th>Declined, of 8</th>
+<th>Median answer</th>
+<th>Median time</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>3B, before training</td>
+<td>24</td>
+<td>8</td>
+<td>61 words</td>
+<td>9.2 s</td>
+</tr>
+<tr class="even">
+<td>3B, after training</td>
+<td>23</td>
+<td>8</td>
+<td>16 words</td>
+<td>6.6 s</td>
+</tr>
+<tr class="odd">
+<td>7B, no training</td>
+<td>24</td>
+<td>8</td>
+<td>64 words</td>
+<td>10.9 s</td>
+</tr>
+</tbody>
+</table>
+<p>The trained dragon knows nothing it didn’t know before: RAG already
+supplied the facts. What changed is its voice. It now answers the way
+the practice answers were written: one direct sentence, four times
+shorter and a third faster.</p>
+<p>A smaller dragon is a different story. The 1.5B got 19 of 24 right
+and declined 7 of 8 before training; trained on the same kind of
+questions, it got 22 or 23 right and declined all 8 (two runs with
+different seeds). So train a small model to make it better, and a 3B or
+7B to make it yours.</p>
+<div class="df-ba df-qa">
+<div class="df-reply">
+<span class="df-who">Before training</span>
+<p class="df-q">
+Which strategy restricts the observation time to before the intercurrent
+event?
+</p>
+<p>
+The while-on-treatment strategy restricts the observation time to before
+the intercurrent event. This is evident from [1], which states
+“While-on-Treatment Strategies: Like the composite variable strategy,
+the while-on-treatment strategy can hence be thought of as having an
+impact on the definition of the variable, in this case, by restricting
+the observation time of interest to the time before the intercurrent
+event.”
+</p>
+</div>
+<div class="df-reply after">
+<span class="df-who">After training</span>
+<p class="df-q">
+Which strategy restricts the observation time to before the intercurrent
+event?
+</p>
+<p>
+The while-on-treatment strategy restricts the observation time to before
+the intercurrent event. [1]
+</p>
+</div>
+</div>
+<p>One cost: the trained model declined one question it should have
+answered (other names for the g-computation estimator). Training with
+“not covered” examples makes a model cautious; usually that is the right
+direction, and here it was once too cautious.</p>
+</div>
+<div class="section level2">
+<h2 id="teach-it-a-house-style">Teach it a house style
+</h2>
+<p>Say your team wants every answer in two lines: the answer, then the
+guidance it comes from. You can ask for that in a prompt, or train it
+in. We tried both on the same 3B and the same 32 questions.</p>
+<table class="table">
+<thead><tr class="header">
+<th></th>
+<th>Asked for in a prompt</th>
+<th>Trained in</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Two-line format</td>
+<td>30 of 32</td>
+<td>32 of 32</td>
+</tr>
+<tr class="even">
+<td>Right guidance named</td>
+<td>13 of 32</td>
+<td>29 of 32</td>
+</tr>
+<tr class="odd">
+<td>Right answers</td>
+<td>19 of 24</td>
+<td>22 of 24</td>
+</tr>
+</tbody>
+</table>
+<p>Asked in a prompt, the untrained dragon often named the file instead
+of the guidance (“fda-covariate-adjustment-2023.pdf”) and, tangled in
+the instructions, declined five questions it could answer. Trained for
+42 minutes on 422 practice answers written in the house style, it used
+the style every time without being told:</p>
+<div class="df-ba df-qa">
+<div class="df-reply after">
+<span class="df-who">Trained in, no instructions</span>
+<p class="df-q">
+In the hypothetical example in Table 1 of the covariate guidance, what
+is the unconditional odds ratio?
+</p>
+<p>
+Answer: The unconditional odds ratio in the hypothetical target
+population is 4.8. [1]<br>Guidance: Adjusting for Covariates in
+Randomized Clinical Trials (FDA, 2023)
+</p>
+</div>
+<div class="df-reply after">
+<span class="df-who">Trained in, no instructions</span>
+<p class="df-q">
+What is the PDUFA application fee for fiscal year 2025?
+</p>
+<p>
+Answer: The documents do not cover this.<br>Guidance: none
+</p>
+</div>
+</div>
+<p>This is where fine-tuning earns its keep: not new facts, but a
+habit.</p>
+</div>
+<div class="section level2">
+<h2 id="what-this-tells-you">What this tells you
+</h2>
+<ul>
+<li>
+<strong>For facts, start with RAG.</strong> On clean regulatory
+text, retrieval plus an untrained model was already perfect on our
+questions.</li>
+<li>
+<strong>Fine-tune for voice.</strong> Training is how you get a
+model that answers the way your team writes: short and direct, a fixed
+template, your terminology. For a fixed format it beat prompting on
+every count, and it also makes a small model faster.</li>
+<li>
+<strong>Review the practice questions.</strong> Two of fifteen
+needed unticking. The review takes minutes and decides what the model
+learns.</li>
+</ul>
+<p>These are our questions on four documents, not a validation. Guidance
+is non-binding, and nothing here is regulatory advice: check the
+guidance itself before you rely on an answer.</p>
+</div>
+<div class="section level2">
+<h2 id="try-it-yourself">Try it yourself
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dragonfarm.dev">dragonfarm</a></span><span class="op">)</span></span>
+<span><span class="va">pdfs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fda-covariate-adjustment-2023.pdf"</span>,</span>
+<span>          <span class="st">"fda-multiple-endpoints-2022.pdf"</span>,</span>
+<span>          <span class="st">"ich-e9r1-estimands-2021.pdf"</span>,</span>
+<span>          <span class="st">"fda-statistical-software-statement-2015.pdf"</span><span class="op">)</span></span>
+<span><span class="va">docs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_documents.html">dragon_documents</a></span><span class="op">(</span><span class="va">pdfs</span>, name <span class="op">=</span> <span class="st">"fda-stats"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://dragonfarm.dev/reference/dragon_ask.html">dragon_ask</a></span><span class="op">(</span><span class="va">docs</span>, <span class="st">"Which standard error does FDA suggest?"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">qa</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_questions.html">dragon_questions</a></span><span class="op">(</span><span class="va">docs</span><span class="op">)</span>   <span class="co"># review them in dragon_app()</span></span>
+<span><span class="fu"><a href="https://dragonfarm.dev/reference/dragon_questions_load.html">dragon_questions_save</a></span><span class="op">(</span><span class="va">qa</span><span class="op">)</span></span>
+<span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_train.html">dragon_train</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_questions_dataset.html">dragon_questions_dataset</a></span><span class="op">(</span><span class="va">qa</span>, <span class="va">docs</span><span class="op">)</span>,</span>
+<span>  <span class="st">"Qwen/Qwen2.5-3B-Instruct"</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_hardware.html">dragon_hardware</a></span><span class="op">(</span>load_in_4bit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  args <span class="op">=</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_train_args.html">dragon_train_args</a></span><span class="op">(</span>batch_size <span class="op">=</span> <span class="fl">1</span>, grad_accum <span class="op">=</span> <span class="fl">16</span>,</span>
+<span>                           gradient_checkpointing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                           max_seq_len <span class="op">=</span> <span class="fl">1536</span><span class="op">)</span>,</span>
+<span>  wait <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Or open <code><a href="https://dragonfarm.dev/reference/dragon_app.html">dragon_app()</a></code>, drop the four PDFs on the
+Documents step, and follow the steps. Measured on an RTX 4060 laptop GPU
+with 8 GB, dragonfarm 0.4.0, on 16 October 2026.</p>
+</div>]]></content:encoded>
+  </item>
+  <item>
+    <title>Choosing a model size</title>
+    <link>https://dragonfarm.dev/articles/model-sizes.html</link>
+    <guid isPermaLink="true">https://dragonfarm.dev/articles/model-sizes.html</guid>
+    <pubDate>Thu, 15 Oct 2026 12:00:00 +0000</pubDate>
+    <category>R</category>
+    <description></description>
+    <content:encoded><![CDATA[<p>Does a smaller model cost you quality? We measured it. Four sizes of
+the same model family, Qwen 2.5 Instruct at 0.5B, 1.5B, 3B, and 7B
+parameters, ran the same tasks on the same laptop: an RTX 4060 with 8
+GB. The 7B was loaded in 4-bit, as it must be to fit. Everything else
+was identical: the same documents, the same retrieved excerpts, the same
+questions, and for fine-tuning the same training rows.</p>
+<div class="section level2">
+<h2 id="the-short-answer">The short answer
+</h2>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>If you want to</th>
+<th>Use</th>
+<th>Because</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Answer questions from documents</td>
+<td>7B in 4-bit if you have an 8 GB NVIDIA card; otherwise 3B</td>
+<td>The 7B was right on 53 of 55 questions, the 0.5B wrong 16 times</td>
+</tr>
+<tr class="even">
+<td>Write training questions from documents</td>
+<td>7B</td>
+<td>It kept 104 of 120 questions, and every one we checked was
+right</td>
+</tr>
+<tr class="odd">
+<td>Fine-tune on your documents</td>
+<td>3B or 7B</td>
+<td>With the default “not covered” examples every size learns to
+decline; the larger ones keep more answers right</td>
+</tr>
+<tr class="even">
+<td>Fine-tune a fixed format (JSON, labels, a house style)</td>
+<td>0.5B to 1.5B</td>
+<td>They reach the same score in minutes</td>
+</tr>
+</tbody>
+</table>
+<p>dragonfarm already picks the answering model for your hardware: a 7B
+in 4-bit at 8 GB and up, a 3B at 6 to 8 GB, a 1.5B below that and on a
+CPU. <code><a href="https://dragonfarm.dev/reference/dragon_check.html">dragon_check()</a></code> says which.</p>
+</div>
+<div class="section level2">
+<h2 id="answering-from-documents-before-any-training">1. Answering from documents, before any training
+</h2>
+<p>Each model answered from the four most relevant excerpts. Two test
+sets had known answers: 23 questions about Costco’s 2024 annual report
+(a 76-page PDF, mostly figures from tables) and 32 questions about R’s
+own manuals. Twenty more questions were about things the documents do
+not contain, such as a hot-dog sales figure, the default port of RStudio
+Server, or dplyr; the right reply to those is to say so. These numbers
+were measured again on 19 October 2026 with the current code, on the
+same chunks.</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr class="header">
+<th>Model</th>
+<th>Costco figures right</th>
+<th>R questions right</th>
+<th>Wrong or empty, of those 55</th>
+<th>Declined the 20 it could not answer</th>
+<th>Seconds per answer</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>17 of 23</td>
+<td>22 of 32</td>
+<td>16</td>
+<td>14</td>
+<td>1.0</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>19 of 23</td>
+<td>27 of 32</td>
+<td>9</td>
+<td>20</td>
+<td>1.2</td>
+</tr>
+<tr class="odd">
+<td>3B</td>
+<td>21 of 23</td>
+<td>30 of 32</td>
+<td>4</td>
+<td>20</td>
+<td>5.1</td>
+</tr>
+<tr class="even">
+<td>7B, 4-bit</td>
+<td>22 of 23</td>
+<td>31 of 32</td>
+<td>2</td>
+<td>20</td>
+<td>7.7</td>
+</tr>
+</tbody>
+</table>
+<p>“Right” means the answer contained the correct figure or function
+name. That is a lenient test: small models often named the right
+function with a wrong detail around it. The 0.5B also declined 6
+answerable questions.</p>
+<p>The 3B and 7B give full answers, a median of 50 and 69 words with the
+figures, steps, or code the excerpts hold, which is why they take 5 to 8
+seconds. Asked for answers that long, the smaller models made things up
+more often (the 0.5B then declined only 10 of 25 questions it could not
+know), so they are asked for short ones: a sentence or two, often a
+single figure or function name.</p>
+<p>As a check that these numbers are not tuned to the two test sets, in
+an earlier run the same models answered 20 questions about R’s
+installation and data import manuals, which were never used while
+developing: 15, 12, 19, and 20 right for the 0.5B, 1.5B, 3B, and 7B,
+with the 1.5B, 3B, and 7B declining at least four of five questions
+those manuals do not cover.</p>
+<p>The columns that matter most are “wrong or empty” and “declined”. The
+7B was right on 53 of 55 and declined every question it could not know.
+One miss was a figure from a table given in thousands, read as units:
+136,800 cardholders instead of 136.8 million. The other described
+<code><a href="https://rdrr.io/r/stats/nlm.html" class="external-link">nlm()</a></code>, as the manual’s own example does, where we expected
+<code><a href="https://rdrr.io/r/stats/nls.html" class="external-link">nls()</a></code>. The smaller models were wrong four to sixteen times,
+and the 0.5B still answered 6 of the 20 questions the documents do not
+cover.</p>
+<p>The cardholder slip has a cause we could test. For 7B-sized models,
+dragonfarm marks the excerpts as quoted text, so that instructions
+planted in a document are not followed. With the marking switched off,
+the 7B read the figure correctly (23 of 23), and no other answer changed
+grade. We keep the marking: it halved how often the 7B obeyed a planted
+instruction. That is the real cost of a small model on documents: not
+fewer answers, but answers you cannot tell from the right ones.</p>
+<p>It used to be worse. Before 0.4.0’s fixes, the 0.5B declined none of
+the unanswerable questions (it made up details about Costco’s
+executives) and the 1.5B half of them (it named a Costco mobile game the
+report never mentions). Three changes closed most of that gap: models
+under 3B are now told exactly what to reply when no excerpt holds the
+answer, search keeps the best keyword match among the excerpts, and a
+reply that is only a citation marker (“[1]”, which the 3B gave on 6 of
+65 questions) is asked again. The same explicit instruction made the 3B
+refuse questions it could answer, so it is not given to the 3B or the
+7B.</p>
+</div>
+<div class="section level2">
+<h2 id="writing-training-questions">2. Writing training questions
+</h2>
+<p>Each model wrote three questions and answers from each of the same 40
+chunks of R’s manuals. The package’s filters then dropped the weak
+pairs, and we graded twelve of each model’s kept pairs by hand against
+the source text, without knowing which model wrote them.</p>
+<table class="table">
+<thead><tr class="header">
+<th>Model</th>
+<th>Pairs kept by the filters</th>
+<th>Correct, of 12 checked</th>
+<th>Minutes</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>18 of 120</td>
+<td>6</td>
+<td>2.0</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>51 of 120</td>
+<td>11</td>
+<td>2.6</td>
+</tr>
+<tr class="odd">
+<td>3B</td>
+<td>82 of 120</td>
+<td>10</td>
+<td>3.2</td>
+</tr>
+<tr class="even">
+<td>7B, 4-bit</td>
+<td>104 of 120</td>
+<td>12</td>
+<td>3.9</td>
+</tr>
+</tbody>
+</table>
+<p>Multiply the two and the 7B gives about ten times as many usable
+pairs as the 0.5B for twice the time. The 0.5B’s bad pairs were the
+dangerous kind: fluent and wrong, such as a keyboard shortcut for
+resizing the terminal that does not exist.</p>
+</div>
+<div class="section level2">
+<h2 id="fine-tuning-on-your-documents">3. Fine-tuning on your documents
+</h2>
+<p>Each size was fine-tuned for three epochs on the same 586
+question-and-answer rows, written by the 7B from R’s manuals, with the
+retrieved excerpts in every prompt (up to 1,536 tokens). Then each
+answered the 32 R questions and the five R questions the manuals do not
+cover.</p>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+</colgroup>
+<thead><tr class="header">
+<th>Model</th>
+<th>Training time</th>
+<th>Held-out loss</th>
+<th>R questions right</th>
+<th>Declined the 5 it could not answer</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>21 min</td>
+<td>0.64</td>
+<td>27 of 32</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>36 min</td>
+<td>0.48</td>
+<td>29 of 32</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>3B, 4-bit</td>
+<td>66 min</td>
+<td>0.46</td>
+<td>30 of 32</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>7B, 4-bit</td>
+<td>4 h 19 min</td>
+<td>0.33</td>
+<td>30 of 32</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>Training helped every size answer more questions, and every tuned
+model cited a source in almost every reply. But the small models also
+learned to cite a source for things the source does not say. The tuned
+1.5B answered “Who won the 2022 football World Cup?” with “France [5]”;
+the tuned 0.5B gave RStudio Server’s port as 8443 and cited the manual
+for it. The tuned 7B said “the documents do not cover it” to four of the
+five, and for the fifth pointed to the CRAN task view that the R FAQ
+recommends.</p>
+<p>So fine-tuning a small model on documents teaches it the house style
+of an answer, sources included, without teaching it when to stop. If
+wrong answers are costly, train a 3B or 7B, or skip training and answer
+with the largest model your card runs.</p>
+<p>The cause turned out to be the training data: every training prompt
+contained its answer, so the models never saw a case where the right
+reply is “the documents do not cover this”.
+<code><a href="https://dragonfarm.dev/reference/dragon_questions_dataset.html">dragon_questions_dataset()</a></code> now adds such cases by default,
+15 percent extra rows that show a question with excerpts from another
+section. Retrained on the same rows plus those, and tested on 15
+questions the manuals do not cover:</p>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+</colgroup>
+<thead><tr class="header">
+<th>Model</th>
+<th>Declined, before</th>
+<th>Declined, with “not covered” rows</th>
+<th>R questions right, before</th>
+<th>after</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>0 of 15</td>
+<td>15 of 15</td>
+<td>24 of 32</td>
+<td>26 of 32</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>1 of 15</td>
+<td>15 of 15</td>
+<td>29 of 32</td>
+<td>28 of 32</td>
+</tr>
+<tr class="odd">
+<td>3B, 4-bit</td>
+<td>5 of 15</td>
+<td>15 of 15</td>
+<td>30 of 32</td>
+<td>30 of 32</td>
+</tr>
+</tbody>
+</table>
+<p>Both sides of this table use 0.4.0’s reading and search, which
+improved after the first tables above were measured. The cost is at most
+one answerable question; the gain is that a tuned model now says when it
+does not know. Over all 47 questions, wrong, made-up, or wrongly
+declined answers fell from 23 to 6 (0.5B), 17 to 4 (1.5B), and 12 to 2
+(3B). A small model still names fewer right details than a large
+one.</p>
+</div>
+<div class="section level2">
+<h2 id="a-fixed-format-tickets-to-json">4. A fixed format: tickets to JSON
+</h2>
+<p>The narrow case looks very different. Each model read a support
+ticket and replied with JSON naming the product and the issue category.
+Training used 190 example tickets; scoring used 20 held-out ones,
+counting a reply right only when both fields matched.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Model</th>
+<th>Untrained, both fields right</th>
+<th>Fine-tuned, both fields right</th>
+<th>Training time</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>0.5B</td>
+<td>10 of 20</td>
+<td>20 of 20</td>
+<td>2.6 min</td>
+</tr>
+<tr class="even">
+<td>1.5B</td>
+<td>16 of 20</td>
+<td>20 of 20</td>
+<td>3.8 min</td>
+</tr>
+<tr class="odd">
+<td>3B, 4-bit</td>
+<td>17 of 20</td>
+<td>20 of 20</td>
+<td>25.5 min</td>
+</tr>
+<tr class="even">
+<td>7B, 4-bit</td>
+<td>18 of 20</td>
+<td>20 of 20</td>
+<td>24.6 min</td>
+</tr>
+</tbody>
+</table>
+<p>Every size reached a perfect score after training, so the 0.5B is the
+right choice here: ten times faster to train than the 3B or the 7B, and
+quick to serve. The untrained 7B already got 18 of 20, so for a format
+this simple a large model with a good instruction may need no training
+at all.</p>
+</div>
+<div class="section level2">
+<h2 id="fitting-a-7b-on-8-gb">Fitting a 7B on 8 GB
+</h2>
+<p>The 7B trained on the 8 GB card with 4-bit loading, batch size 1, and
+gradient checkpointing, peaking at 7.9 GB of the card’s 8. At batch size
+4 without checkpointing it failed on the first step. The 3B in 4-bit
+peaked at 4.3 GB on the longest document prompts, so it fits a 6 GB
+card. In the app, the Training step sets all three when you pick a 7B.
+In code:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">run</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_train.html">dragon_train</a></span><span class="op">(</span><span class="va">ds</span>, <span class="st">"Qwen/Qwen2.5-7B-Instruct"</span>,</span>
+<span>                    hardware <span class="op">=</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_hardware.html">dragon_hardware</a></span><span class="op">(</span>load_in_4bit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>                    args <span class="op">=</span> <span class="fu"><a href="https://dragonfarm.dev/reference/dragon_train_args.html">dragon_train_args</a></span><span class="op">(</span>batch_size <span class="op">=</span> <span class="fl">1</span>, grad_accum <span class="op">=</span> <span class="fl">16</span>,</span>
+<span>                                             gradient_checkpointing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>4-bit loading needs an NVIDIA GPU. On Apple Silicon or a CPU, the
+1.5B and 3B are the practical choices, and the advice above about
+declining unanswerable questions applies with more force. On a 12-core
+laptop CPU the 1.5B starts answering after 5 to 8 seconds and finishes
+in 10 to 35; the first question also loads the model, about 45 seconds
+in all.</p>
+</div>
+<div class="section level2">
+<h2 id="how-this-was-measured">How this was measured
+</h2>
+<ul>
+<li>One laptop, an RTX 4060 with 8 GB, Windows 11, one job at a
+time.</li>
+<li>Answers at temperature 0, four retrieved excerpts, the package’s
+default instruction to answer only from the excerpts and to say when
+they do not cover the question.</li>
+<li>Scoring by pattern: a figure or a function name for answerable
+questions, a phrase such as “do not cover” for the rest. We read every
+answer to check the patterns and widened four that were too strict.</li>
+<li>The ticket set is synthetic, built from templates, so the JSON
+result shows how quickly each size learns a format, not how it copes
+with messy real tickets.</li>
+<li>These are one family of models on a few hundred questions. Measure
+on your own documents before you rely on any of it:
+<code><a href="https://dragonfarm.dev/reference/dragon_ask.html">dragon_ask()</a></code> and the app’s Try it step make that
+quick.</li>
+</ul>
+</div>]]></content:encoded>
+  </item>
+</channel>
+</rss>
