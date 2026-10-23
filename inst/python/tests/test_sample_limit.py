@@ -28,7 +28,7 @@ class Status:
         self.fields.update(kw)
 
 
-def test_prompts_over_the_limit_are_left_out_of_the_samples(monkeypatch=None):
+def test_prompts_over_the_limit_are_left_out_of_the_samples():
     import dragonfarm.evaluate_utils as eu
 
     eu.render_prompt = lambda tok, messages, tools=None: tok.apply_chat_template(messages)
