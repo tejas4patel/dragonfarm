@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/tejas4patel/dragonfarm/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/tejas4patel/dragonfarm/blob/v0.4.0/DESCRIPTION)
 
 Patel T (2026). *dragonfarm: Fine-Tune Language Models with LoRA on Your
 Documents and Data*. R package version 0.4.0, <https://dragonfarm.dev>.
