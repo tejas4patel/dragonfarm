@@ -179,7 +179,10 @@ mod_monitor_server <- function(id, state, runs_dir) {
     shiny::observe({
       ev <- shown_events()
       choices <- if (is.null(ev) || !nrow(ev)) character() else stats::setNames(as.character(ev$id), sprintf("#%s %s %s", ev$id, ev$kind, ev$name %||% ""))
-      shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices))
+      # New events arrive while the person is looking at one; keep their pick.
+      current <- shiny::isolate(input$activity_pick)
+      keep <- if (!is.null(current) && current %in% choices) current else ""
+      shiny::updateSelectInput(session, "activity_pick", choices = c("Pick an entry" = "", choices), selected = keep)
     })
     # The last 7 days at a glance, from the record.
     output$summary7 <- shiny::renderUI({

@@ -84,6 +84,18 @@ test_that("the Activity card lists events, filters them, and shows details", {
     expect_false(grepl("NEEDS_APPROVAL", output$activity))
     session$setInputs(activity_filter = "all", activity_pick = "1")
     expect_match(output$activity_detail, "warranty")
+    # A new event arrives while entry 1 is open: the list refreshes but the pick stays.
+    picks <- list()
+    testthat::local_mocked_bindings(updateSelectInput = function(session, inputId, label = NULL, choices = NULL, selected = NULL, ...) {
+      if (identical(inputId, "activity_pick")) picks[[length(picks) + 1]] <<- list(choices = choices, selected = selected)
+    }, .package = "shiny")
+    dragonfarm:::store_record_event("tool", "list_runs", ok = TRUE, runs_dir = runs_dir)
+    session$elapse(5000)
+    expect_match(output$activity, "list_runs")
+    expect_true(length(picks) >= 1)
+    last <- picks[[length(picks)]]
+    expect_true("1" %in% last$choices)
+    expect_equal(last$selected, "1")
   })
 })
 
