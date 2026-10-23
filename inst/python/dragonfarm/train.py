@@ -277,7 +277,7 @@ def run_sft(cfg, run_dir, status, resume, hw, tok, model, cancel):
             from .backend import for_inference
 
             for_inference(model)
-            samples = evaluate_or_warn(status, "Sample generation", lambda: sample_generations(
+            samples = evaluate_or_warn(status, "Sample generation", fatal=False, fn=lambda: sample_generations(
                 model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
     if metrics:
@@ -330,7 +330,7 @@ def run_prefer(cfg, run_dir, status, resume, hw, tok, model, cancel):
             from .backend import for_inference
 
             for_inference(model)
-            samples = evaluate_or_warn(status, "Sample generation", lambda: sample_pair_generations(
+            samples = evaluate_or_warn(status, "Sample generation", fatal=False, fn=lambda: sample_pair_generations(
                 model, tok, eval_records, hw.device, n=n)) or []
     write_eval_files(run_dir, metrics, samples)
     if metrics:

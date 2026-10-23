@@ -119,8 +119,13 @@ def eval_pairs(model, dataset, pad_id, device, method, beta, batch_size=4):
 
 
 def sample_pair_generations(model, tok, records, device, n=10, max_new_tokens=200):
+    from .evaluate_utils import fits_limit
+
     samples = []
-    for rec in records[:n]:
+    fitting = [rec for rec in records if fits_limit(model, tok, rec["prompt"], max_new_tokens)]
+    if len(fitting) < len(records):
+        print(f"[dragonfarm] {len(records) - len(fitting)} held-out prompt(s) longer than the model's sequence limit left out of the samples", flush=True)
+    for rec in fitting[:n]:
         prompt_msgs = rec["prompt"]
         user = next((m["content"] for m in prompt_msgs if m["role"] == "user"), "")
         generated = generate_reply(model, tok, prompt_msgs, device, max_new_tokens=max_new_tokens, temperature=0.0)

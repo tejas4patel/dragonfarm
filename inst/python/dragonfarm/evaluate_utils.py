@@ -170,24 +170,40 @@ def eval_loss(model, dataset, pad_token_id, device, batch_size=1):
     return {"eval_loss": mean, "perplexity": math.exp(min(mean, 50)), "eval_tokens": total_tokens}
 
 
-def evaluate_or_warn(status, label, fn):
-    """Run an end-of-training evaluation; on GPU out-of-memory, record a warning instead of failing the run.
+def evaluate_or_warn(status, label, fn, fatal=True):
+    """Run an end-of-training evaluation; on GPU out-of-memory (or, with
+    fatal=False, any error) record a warning instead of failing the run.
 
     By this point the adapter is saved and training has succeeded, so a run
     should not be marked failed because the GPU could not also fit the
-    evaluation.
+    evaluation, or because an illustrative step such as sample generation
+    broke.
     """
     try:
         return fn()
     except Exception as e:  # noqa: BLE001
-        if not is_oom(e):
+        if not is_oom(e) and fatal:
             raise
-        msg = (f"{label} skipped: the GPU ran out of memory after training finished. "
-               "The adapter is saved. Lower max_seq_len or eval_batch_size, or run dragon_evaluate() on a freer GPU.")
+        if is_oom(e):
+            msg = (f"{label} skipped: the GPU ran out of memory after training finished. "
+                   "The adapter is saved. Lower max_seq_len or eval_batch_size, or run dragon_evaluate() on a freer GPU.")
+        else:
+            msg = f"{label} skipped after training finished ({type(e).__name__}: {str(e)[:160]}). The adapter is saved."
         print(f"[dragonfarm] {msg}", flush=True)
         status.update(eval_warning=msg)
         free_gpu_memory()
         return None
+
+
+def fits_limit(model, tok, messages, max_new_tokens, tools=None):
+    """Whether a prompt plus its reply fits the model's sequence limit. Only
+    an Unsloth model has one (max_seq_length, set at load); the standard
+    model's context is far longer than any prompt here."""
+    limit = getattr(model, "max_seq_length", None)
+    if not limit:
+        return True
+    n = len(tok(render_prompt(tok, messages, tools), add_special_tokens=False)["input_ids"])
+    return n + int(max_new_tokens) <= int(limit)
 
 
 @torch.no_grad()
@@ -244,7 +260,12 @@ def generate_replies(model, tok, conversations, device, max_new_tokens=256, temp
 
 
 def sample_generations(model, tok, records, device, n=10, max_new_tokens=200):
-    records = records[:n]
+    # Prompts longer than the model's sequence limit (Unsloth) are left out
+    # rather than failing the run; samples are illustrative.
+    fitting = [rec for rec in records if fits_limit(model, tok, rec["messages"][:-1], max_new_tokens)]
+    if len(fitting) < len(records):
+        print(f"[dragonfarm] {len(records) - len(fitting)} held-out prompt(s) longer than the model's sequence limit left out of the samples", flush=True)
+    records = fitting[:n]
     prompts = [rec["messages"][:-1] for rec in records]
     generated = generate_replies(model, tok, prompts, device, max_new_tokens=max_new_tokens, temperature=0.0)
     samples = []
