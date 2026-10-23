@@ -72,6 +72,8 @@ test_that("a decline is the model speaking about its sources, not a quotation or
   expect_true(d("The provided excerpts do not mention the enrolment count."))
   expect_true(d("I cannot answer that."))                               # short, no source named
   expect_true(d("None of the passages found mention ggplot2."))
+  # A 3B on the NCHS documents (2026-10-22): declined, with an adjective in the way.
+  expect_true(d("Based on the information provided in the documents, there is no specific mention of the MEC examination response rate for NHANES 2021-2023."))
   # From 30 graded FDA answers: full, correct answers that used to count as declines.
   expect_false(d(paste("FDA suggests the Huber-White sandwich standard error [1], which states that sponsors should consider",
                        "a robust standard error method when the model does not include treatment by covariate interactions.",
